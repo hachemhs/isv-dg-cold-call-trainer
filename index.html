@@ -724,6 +724,342 @@ body {
   background: var(--color-primary-light);
 }
 
+
+/* Call Notes Analyzer */
+.notes-analyzer {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+.notes-analyzer h3 {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.notes-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+  resize: vertical;
+}
+
+.notes-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.btn-analyze {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: #7b2d8b;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+
+.btn-analyze:hover {
+  background: #5e1d6b;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.analysis-results {
+  margin-top: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.analysis-results.visible {
+  display: flex;
+}
+
+.analysis-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.analysis-section h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.analysis-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.analysis-section ul li {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 4px 0;
+  padding-left: 16px;
+  position: relative;
+  color: var(--color-text-secondary);
+}
+
+.analysis-section ul li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.analysis-objection {
+  border-left: 3px solid var(--color-error);
+  padding-left: 12px;
+  margin-bottom: 8px;
+}
+
+.analysis-objection .obj-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-error);
+  margin-bottom: 4px;
+}
+
+.analysis-objection .obj-response {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* App Mode Tabs */
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mode-tab:hover { color: var(--color-text); background: var(--color-bg); }
+.mode-tab.active {
+  color: white;
+  background: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.mode-content { display: none; }
+.mode-content.active { display: block; }
+
+/* Cold Openers */
+.opener-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  transition: all 0.15s;
+}
+
+.opener-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0,82,204,0.08);
+}
+
+.opener-card .opener-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+.opener-card .opener-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+.cold-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cold-stat {
+  text-align: center;
+  padding: 10px 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+}
+
+.cold-stat .stat-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.cold-stat .stat-desc {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* AWS Solutions Reference */
+.solutions-panel {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.solutions-header {
+  padding: 14px 16px;
+  background: var(--aws-dark);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.solutions-header i { transition: transform 0.2s; }
+
+.solutions-body {
+  display: none;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+}
+
+.solutions-body.visible { display: block; }
+
+.solutions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .solutions-grid { grid-template-columns: 1fr; }
+}
+
+.solution-card {
+  padding: 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.solution-card h5 {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.solution-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.solution-card ul li {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  padding: 2px 0;
+  padding-left: 12px;
+  position: relative;
+}
+
+.solution-card ul li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--aws-orange);
+  font-weight: 700;
+}
+
+.meddpicc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.meddpicc-item {
+  padding: 8px 10px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.meddpicc-item .letter {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--aws-orange);
+}
+
+.meddpicc-item .label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-top: 2px;
+}
+
+.meddpicc-item .desc {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
 </style>
 </head>
 <body>
@@ -734,7 +1070,112 @@ body {
   <span class="badge">EMEA</span>
 </div>
 
+
 <div class="container">
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('prospecting')"><i class="fa-solid fa-phone"></i> Prospecting</button>
+    <button class="mode-tab" onclick="switchMode('notes')"><i class="fa-solid fa-clipboard-list"></i> Call Notes Analyzer</button>
+    <button class="mode-tab" onclick="switchMode('solutions')"><i class="fa-solid fa-cube"></i> AWS Solutions</button>
+  </div>
+
+  <!-- NOTES ANALYZER MODE -->
+  <div class="mode-content" id="mode-notes">
+    <div class="notes-analyzer">
+      <h3><i class="fa-solid fa-clipboard-list" style="color:#7b2d8b"></i> Call Notes Analyzer</h3>
+      <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px;">Paste call notes, meeting summaries, or Zoom transcripts from any customer interaction. The AI will extract objections, recommend next steps, and generate follow-up talking points.</p>
+      <textarea class="notes-textarea" id="callNotesInput" placeholder="Paste your call notes here...&#10;&#10;Example:&#10;Called John at Acme Corp. He said they're evaluating Azure for their ML workloads. Budget is tight this quarter but interested in learning more about marketplace. Mentioned the CTO needs to sign off. Asked to send materials and reconnect in Q3. They had a bad experience with a cloud migration 2 years ago."></textarea>
+      <button class="btn-analyze" onclick="analyzeCallNotes()"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Notes</button>
+      <div class="analysis-results" id="notesResults"></div>
+    </div>
+  </div>
+
+  <!-- AWS SOLUTIONS REFERENCE MODE -->
+  <div class="mode-content" id="mode-solutions">
+    <div class="solutions-panel">
+      <div class="solutions-header" onclick="toggleSolutions()">
+        <span><i class="fa-solid fa-cube"></i> AWS Solutions & Value Propositions — Quick Reference</span>
+        <i class="fa-solid fa-chevron-down" id="solutionsChevron"></i>
+      </div>
+      <div class="solutions-body visible" id="solutionsBody">
+        <div class="solutions-grid">
+          <div class="solution-card">
+            <h5><i class="fa-solid fa-brain" style="color:#7b2d8b"></i> GenAI / AI</h5>
+            <ul>
+              <li><strong>Bedrock:</strong> Broadest model selection (Claude, Llama, Mistral, Cohere, Stability, Amazon). Single API. Production-grade.</li>
+              <li><strong>AgentCore:</strong> Deploy AI agents at scale. Framework-agnostic. Sandboxed runtime. Built-in guardrails. Production in weeks, not months.</li>
+              <li><strong>SageMaker/HyperPod:</strong> ML training with 88.3% win rate. 230+ Graviton instance types. 50K+ customers.</li>
+              <li><strong>AI Services:</strong> Transcribe, Textract, Rekognition, Comprehend, Translate, Polly — all managed, all production-ready.</li>
+            </ul>
+          </div>
+          <div class="solution-card">
+            <h5><i class="fa-solid fa-store" style="color:var(--aws-orange)"></i> Marketplace / Co-Sell</h5>
+            <ul>
+              <li><strong>310K+</strong> active enterprise buyers with committed spend</li>
+              <li><strong>100%</strong> of purchases apply toward customer EDP (up to 25% annual)</li>
+              <li><strong>70%</strong> procurement discovery time savings</li>
+              <li><strong>60%</strong> streamlined procurement savings</li>
+              <li><strong>ISV Accelerate:</strong> 65% higher close, 54% larger deals, 51% revenue growth, 30% faster TTM</li>
+            </ul>
+          </div>
+          <div class="solution-card">
+            <h5><i class="fa-solid fa-coins" style="color:var(--color-success)"></i> Cost / Infrastructure</h5>
+            <ul>
+              <li><strong>160+</strong> price reductions since 2006</li>
+              <li><strong>258%</strong> three-year ROI for managed databases. 5-month payback period.</li>
+              <li><strong>43%</strong> lower three-year total cost of operations</li>
+              <li><strong>Graviton:</strong> 50K+ customers, 230+ instance types, 20+ managed services</li>
+              <li><strong>Nitro System:</strong> Purpose-built hardware for security and performance isolation</li>
+            </ul>
+          </div>
+          <div class="solution-card">
+            <h5><i class="fa-solid fa-shield-halved" style="color:var(--color-error)"></i> Security & Compliance</h5>
+            <ul>
+              <li>Customer data <strong>never leaves your VPC</strong>. Never trains AWS models.</li>
+              <li>Holistic security: authentication, monitoring, data protection, deployment</li>
+              <li>Enterprise-grade compliance certifications (SOC, ISO, HIPAA, GDPR, etc.)</li>
+              <li>Region/AZ model recommended by Gartner for HA enterprise applications</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- MEDDPICC Framework -->
+        <div style="margin-top:16px; padding:14px; background:var(--color-bg); border:1px solid var(--color-border-light); border-radius:var(--radius-md);">
+          <h5 style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <i class="fa-solid fa-list-check" style="color:var(--color-primary)"></i> MEDDPICC Qualification Framework
+          </h5>
+          <div class="meddpicc-grid">
+            <div class="meddpicc-item"><div class="letter">M</div><div class="label">Metrics</div><div class="desc">Business impact of problems</div></div>
+            <div class="meddpicc-item"><div class="letter">E</div><div class="label">Economic Buyer</div><div class="desc">Who funds the initiative</div></div>
+            <div class="meddpicc-item"><div class="letter">D</div><div class="label">Decision Criteria</div><div class="desc">Requirements confirmed</div></div>
+            <div class="meddpicc-item"><div class="letter">D</div><div class="label">Decision Process</div><div class="desc">Steps and players</div></div>
+            <div class="meddpicc-item"><div class="letter">P</div><div class="label">Paper Process</div><div class="desc">Budget and timeline</div></div>
+            <div class="meddpicc-item"><div class="letter">I</div><div class="label">Implicate Pain</div><div class="desc">Problems being solved</div></div>
+            <div class="meddpicc-item"><div class="letter">C</div><div class="label">Champion</div><div class="desc">Who owns solving it</div></div>
+            <div class="meddpicc-item"><div class="letter">C</div><div class="label">Competition</div><div class="desc">Competitive landscape</div></div>
+          </div>
+        </div>
+
+        <!-- Cold Calling Stats -->
+        <div style="margin-top:16px; padding:14px; background:var(--color-bg); border:1px solid var(--color-border-light); border-radius:var(--radius-md);">
+          <h5 style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+            <i class="fa-solid fa-chart-bar" style="color:var(--color-warning)"></i> Cold Calling Benchmarks (2025-2026)
+          </h5>
+          <div class="cold-stats">
+            <div class="cold-stat"><div class="stat-num">2-5%</div><div class="stat-desc">B2B cold call conversion rate</div></div>
+            <div class="cold-stat"><div class="stat-num">8</div><div class="stat-desc">Avg attempts to reach decision-maker</div></div>
+            <div class="cold-stat"><div class="stat-num">4-5pm</div><div class="stat-desc">Best time (midweek, prospect TZ)</div></div>
+            <div class="cold-stat"><div class="stat-num">50-60%</div><div class="stat-desc">B2B buyers prefer phone</div></div>
+            <div class="cold-stat"><div class="stat-num">80%</div><div class="stat-desc">Sales close after 5th contact</div></div>
+            <div class="cold-stat"><div class="stat-num">38%</div><div class="stat-desc">Conversion boost from coaching</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROSPECTING MODE (original content) -->
+  <div class="mode-content active" id="mode-prospecting">
   <div class="main-grid">
     <!-- LEFT: Customer Input Panel -->
     <div class="input-panel">
@@ -847,8 +1288,8 @@ body {
         <p>Fill in the customer details on the left and hit "Generate Talking Points" to get predicted objections, call scripts, and discovery questions tailored to this prospect.</p>
       </div>
     </div>
-</div>
-</div>
+  </div><!-- end mode-prospecting -->
+</div><!-- end container -->
 
 <!-- LIVE OBJECTION COACH - Floating Panel -->
 <div class="coach-panel" id="coachPanel">
@@ -1422,6 +1863,41 @@ function renderResults(objections, script, questions, company, industry, persona
       </div>
     </div>
 
+    
+    \${objective === 'discovery' ? \`
+    <!-- Pure Cold Call Openers (No Prior Engagement) -->
+    <div class="result-card" style="border-left:3px solid var(--aws-orange)">
+      <h3><span class="icon" style="background:var(--color-warning-light);color:var(--color-warning)"><i class="fa-solid fa-bolt"></i></span> Pure Cold Call Openers (No Prior Engagement)</h3>
+      <p style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">Use these when calling without any prior contact or relationship. Each is designed to earn 30 seconds of attention.</p>
+      <div class="opener-card">
+        <div class="opener-label">1. Permission-Based Opener</div>
+        <div class="opener-text">"Hi [Name], this is [Your Name] from AWS. I know I'm calling out of the blue — do you have 30 seconds so I can tell you why, and then you can decide if it's worth continuing?"</div>
+      </div>
+      <div class="opener-card">
+        <div class="opener-label">2. Pattern Interrupt</div>
+        <div class="opener-text">"Hi [Name], this is [Your Name] from AWS — we haven't spoken before. I'm not going to pretend we have a meeting. I saw \${document.getElementById('context').value || '[specific trigger about their company]'} and thought of one thing that might be relevant. Can I share it in 20 seconds?"</div>
+      </div>
+      <div class="opener-card">
+        <div class="opener-label">3. Curiosity Hook</div>
+        <div class="opener-text">"Hi [Name], this is [Your Name]. Quick question — if I could show you how ISVs in ${industry} are generating new revenue from a channel they're currently ignoring, would that be worth 2 minutes?"</div>
+      </div>
+      <div class="opener-card">
+        <div class="opener-label">4. Referral Pattern</div>
+        <div class="opener-text">"Hi [Name], I've been working with several ${industry} companies in \${document.getElementById('region').value ? document.getElementById('region').selectedOptions[0].text : 'EMEA'} and your name kept coming up as someone who'd find this relevant. Do you have 30 seconds?"</div>
+      </div>
+      <div class="opener-card">
+        <div class="opener-label">5. Data-Led Opener</div>
+        <div class="opener-text">"Hi [Name], I noticed \${document.getElementById('context').value || '[specific data about their company — hiring, product launch, funding]'}. That's usually a sign of [relevant business challenge]. Am I off base?"</div>
+      </div>
+      <div class="cold-stats">
+        <div class="cold-stat"><div class="stat-num">2-5%</div><div class="stat-desc">Cold call conversion</div></div>
+        <div class="cold-stat"><div class="stat-num">8</div><div class="stat-desc">Attempts to reach DM</div></div>
+        <div class="cold-stat"><div class="stat-num">4-5pm</div><div class="stat-desc">Best call time</div></div>
+        <div class="cold-stat"><div class="stat-num">80%</div><div class="stat-desc">Close after 5th touch</div></div>
+      </div>
+    </div>
+    \` : ''}
+
     <!-- Predicted Objections -->
     <div class="result-card">
       <h3><span class="icon" style="background:var(--color-error-light);color:var(--color-error)"><i class="fa-solid fa-shield-halved"></i></span> Predicted Objections & Responses</h3>
@@ -1698,6 +2174,13 @@ function generatePACRA(text, category) {
       advance: "Let me show you a 5-minute revenue comparison — credits saved vs. pipeline generated. If the numbers don't speak, I'll be the first to say so.",
       dataPoint: "AWS Highspot (ISV Accelerate): 65% higher close rates, 54% larger deals, 51% higher revenue growth. Marketplace purchases apply 100% toward EDP (up to 25% annual commitment)."
     },
+    'Agentic AI': {
+      acknowledge: "That's a smart question — AI agents are getting a lot of hype, but the enterprise impact is real.",
+      clarify: "When you say that, is it more about the technology maturity, or that you don't yet see where agents fit in your product/operations?",
+      reframe: "Here's what's concrete: Gartner predicts 33% of enterprise apps will include agentic AI by 2028 (up from <1% today). ISVs who act now are redefining customer experiences on their terms — those who wait will spend the next decade catching up. A single AI agent can replace many human users, disrupting per-seat licensing. The shift from outputs to outcomes is already happening.",
+      advance: "Would a 20-minute executive briefing on 'SaaS Transformation in the Agentic AI Era' be worth your team's time? It covers where agents create value, how commercial models are shifting, and what the 90-day path looks like.",
+      dataPoint: "Highspot (Agentic AI ISV Sales Play): Gartner: 33% enterprise apps with agentic AI by 2028. 15% of daily decisions made autonomously. 700K+ hours saved (335 dev-years). Thomson Reuters: 1.5M lines/month, 4X faster. Employees spend 2.5hrs/day searching — agents deliver in seconds."
+    },
     'General': {
       acknowledge: "I hear you — thanks for sharing that.",
       clarify: "Can you help me understand a bit more? Is it more about timing, budget, or just not seeing the relevance right now?",
@@ -1747,6 +2230,245 @@ function renderCoachResponse(objection, response) {
     </div>
   `;
 }
+
+
+// ============================================
+// MODE SWITCHING
+// ============================================
+function switchMode(mode) {
+  // Update tabs
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  
+  // Update content
+  document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+}
+
+// ============================================
+// CALL NOTES ANALYZER
+// ============================================
+function analyzeCallNotes() {
+  const notes = document.getElementById('callNotesInput').value.trim();
+  if (!notes) { alert('Please paste call notes to analyze.'); return; }
+  
+  const lower = notes.toLowerCase();
+  const results = {
+    objections: [],
+    nextSteps: [],
+    emailPoints: [],
+    callPoints: []
+  };
+
+  // DETECT OBJECTIONS
+  if (lower.match(/budget|cost|expensive|price|afford|tight|no money|can't spend/)) {
+    results.objections.push({
+      type: 'Budget / Cost Concern',
+      response: "Reframe around ROI: 'Many ISVs started in the same position. The unlock was AWS Marketplace — transactions draw down existing EDP commitments, so it's not new budget. Would it help to model the ROI for your deal size?'",
+      emailPoint: "Share cost optimization case study and EDP draw-down explanation"
+    });
+  }
+  
+  if (lower.match(/azure|microsoft|gcp|google cloud|competitor|alternative/)) {
+    const competitor = lower.includes('azure') ? 'Azure' : lower.includes('gcp') || lower.includes('google') ? 'GCP' : 'competitor';
+    results.objections.push({
+      type: `Competitor Mention (${competitor})`,
+      response: `Don't bash ${competitor}. Instead: 'Many ISVs run multi-cloud not to replace ${competitor}, but to unlock new revenue channels. AWS Marketplace gives access to 310K+ buyers with pre-committed spend. Would a GTM comparison be worthwhile?'`,
+      emailPoint: `Include ${competitor} vs. AWS comparison focusing on marketplace revenue opportunity, not just infra cost`
+    });
+  }
+  
+  if (lower.match(/not ready|next quarter|next year|too early|not a priority|not now|revisit later|q[2-4]|h[12]/)) {
+    results.objections.push({
+      type: 'Timing / Priority',
+      response: "Acknowledge timing while creating urgency: 'ISVs who started their AI strategy 6 months early are now significantly ahead. Would a 15-min discovery help clarify where this fits in your roadmap — even if action is later?'",
+      emailPoint: "Position a 'no-commitment discovery' focused on roadmap alignment rather than immediate action"
+    });
+  }
+  
+  if (lower.match(/cto|ceo|boss|manager|decision|sign off|approval|stakeholder|leadership|board/)) {
+    results.objections.push({
+      type: 'Authority / Decision-Making',
+      response: "Map the decision process: 'What would your leadership need to see? I can prepare a one-page tailored to their priorities — cost savings, revenue growth, or competitive positioning.'",
+      emailPoint: "Prepare executive summary tailored to the decision-maker's priorities (1-page max)"
+    });
+  }
+  
+  if (lower.match(/tried before|bad experience|didn't work|failed|burned|migration issue/)) {
+    results.objections.push({
+      type: 'Past Negative Experience',
+      response: "Validate and differentiate: 'The landscape has changed — Bedrock AgentCore reduces complexity by 60%, managed services deploy in weeks not months. Would a 20-min show-and-tell of what\'s new be worth it?'",
+      emailPoint: "Acknowledge past experience, highlight what's changed specifically (AgentCore, managed services, reduced complexity)"
+    });
+  }
+  
+  if (lower.match(/resource|bandwidth|team.*small|capacity|engineer|developer.*busy/)) {
+    results.objections.push({
+      type: 'Resource / Capacity Constraint',
+      response: "Offer minimal-lift path: 'What if there's a path requiring minimal engineering? Many ISVs start with listing what they have — no re-architecture needed. We also provide credits and technical resources.'",
+      emailPoint: "Outline the minimal-lift onboarding path + available credits and ISV-specific technical resources"
+    });
+  }
+  
+  if (lower.match(/security|compliance|gdpr|hipaa|data privacy|regulation/)) {
+    results.objections.push({
+      type: 'Security / Compliance Concern',
+      response: "Lead with trust: 'AWS provides holistic security — data never leaves your VPC, never trains our models. Built-in guardrails, enterprise-grade certifications. Would a security architecture overview be valuable?'",
+      emailPoint: "Share AWS compliance certifications relevant to their industry + data privacy guarantees"
+    });
+  }
+  
+  if (lower.match(/ai.*not ready|data.*not ready|don't have data|data quality|data foundation/)) {
+    results.objections.push({
+      type: 'Data / AI Readiness Gap',
+      response: "Position foundation work: 'Foundation and AI work happen in parallel. Our AI Maturity Assessment identifies gaps and creates a roadmap in 2 hours. Would that be a useful starting point?'",
+      emailPoint: "Propose AI Maturity Assessment (AIM) as no-commitment first step + Data Readiness Workshop details"
+    });
+  }
+
+  if (lower.match(/send.*email|send.*info|send.*material|just email|send.*deck/)) {
+    results.objections.push({
+      type: 'Deflection (Send Me Info)',
+      response: "Qualify before sending: 'Happy to — what's the #1 challenge you're working on? I'll send something specific rather than generic content. If it resonates, would 15 minutes next week work?'",
+      emailPoint: "Send highly personalized content based on their stated challenge — NOT generic collateral"
+    });
+  }
+
+  // DETECT POSITIVE SIGNALS
+  if (lower.match(/interested|sounds good|tell me more|show me|curious|open to/)) {
+    results.nextSteps.push('🟢 POSITIVE SIGNAL: Customer expressed interest — schedule follow-up meeting within 48 hours');
+    results.callPoints.push('Build on expressed interest — reference their specific area of curiosity and expand');
+  }
+  
+  if (lower.match(/demo|workshop|hands-on|see it in action|proof of concept|pilot|poc/)) {
+    results.nextSteps.push('🟢 DEMO REQUEST: Schedule GenAI Builder Lab or technical demo — customer wants to see it working');
+    results.callPoints.push('Confirm demo format preference (hands-on lab vs. walkthrough) and who from their team should attend');
+  }
+  
+  if (lower.match(/timeline|when|launch|roadmap|planning|quarter/)) {
+    results.nextSteps.push('📅 TIMELINE SIGNAL: Customer mentioned timing — align proposal to their planning cycle');
+    results.emailPoints.push('Reference their timeline and position AWS engagement to align with their planning cadence');
+  }
+  
+  if (lower.match(/marketplace|listing|partner|co-sell/)) {
+    results.nextSteps.push('🏪 MARKETPLACE INTEREST: Share Marketplace Private Offer mechanics and co-sell program details');
+    results.emailPoints.push('Include Marketplace revenue data (65% higher close rates, EDP draw-down mechanics)');
+  }
+
+  // DETECT ACTION ITEMS
+  if (lower.match(/follow up|follow-up|get back|reconnect|touch base|circle back/)) {
+    results.nextSteps.push('📞 Follow up within 48 hours — set specific calendar reminder');
+  }
+  if (lower.match(/send|share|forward|provide|email them/)) {
+    results.nextSteps.push('📧 Prepare and send promised materials within 24 hours');
+  }
+  if (lower.match(/schedule|book|set up|arrange|meeting/)) {
+    results.nextSteps.push('📅 Book the next meeting NOW — suggest 2 specific time slots');
+  }
+  if (lower.match(/connect with|introduce|loop in|bring in|include/)) {
+    results.nextSteps.push('🤝 Make the introduction — connect relevant stakeholders within 24 hours');
+  }
+  if (lower.match(/proposal|quote|pricing|offer/)) {
+    results.nextSteps.push('💰 Prepare pricing/proposal tailored to their stated requirements');
+  }
+
+  // GENERATE EMAIL POINTS
+  results.emailPoints.push('Reference specific points from the conversation to show you listened');
+  results.emailPoints.push('Restate the key challenge they mentioned and how AWS addresses it');
+  if (results.objections.length > 0) {
+    results.emailPoints.push('Address the top objection with data/proof points (don\'t ignore it)');
+  }
+  results.emailPoints.push('Include ONE clear call-to-action (meeting invite, not multiple asks)');
+  results.emailPoints.push('Keep email under 150 words — concise and scannable');
+  
+  // Add objection-specific email points
+  results.objections.forEach(obj => {
+    if (obj.emailPoint) results.emailPoints.push(obj.emailPoint);
+  });
+
+  // GENERATE CALL POINTS
+  results.callPoints.push('Open with: "Last time we spoke, you mentioned [X]. Has anything changed since then?"');
+  results.callPoints.push('Confirm understanding of their priorities before pitching');
+  if (results.objections.length > 0) {
+    results.callPoints.push('Proactively address their top concern before they raise it again');
+  }
+  results.callPoints.push('Ask: "What would need to be true for you to move forward this quarter?"');
+  results.callPoints.push('Close with specific next step — never end a call without a scheduled follow-up');
+
+  // Add default next steps if none detected
+  if (results.nextSteps.length === 0) {
+    results.nextSteps.push('📞 Schedule follow-up call within 5 business days');
+    results.nextSteps.push('📧 Send personalized follow-up email within 24 hours');
+    results.nextSteps.push('📝 Log interaction in SFDC with clear next steps');
+  }
+  
+  // Always add these
+  results.nextSteps.push('📝 Update SFDC opportunity with call notes and next steps');
+  results.nextSteps.push('🔔 Set calendar reminder for follow-up action');
+
+  renderNotesAnalysis(results);
+}
+
+function renderNotesAnalysis(results) {
+  const el = document.getElementById('notesResults');
+  el.classList.add('visible');
+  
+  let objectionHtml = '';
+  if (results.objections.length > 0) {
+    objectionHtml = results.objections.map(obj => `
+      <div class="analysis-objection">
+        <div class="obj-text">🚨 ${obj.type}</div>
+        <div class="obj-response"><strong>Suggested response:</strong> ${obj.response}</div>
+      </div>
+    `).join('');
+  } else {
+    objectionHtml = '<p style="font-size:12px;color:var(--color-success);">✅ No clear objections detected — positive signal!</p>';
+  }
+
+  el.innerHTML = `
+    <div class="analysis-section" style="border-left:3px solid var(--color-error)">
+      <h4><i class="fa-solid fa-triangle-exclamation" style="color:var(--color-error)"></i> Objections Detected (${results.objections.length})</h4>
+      ${objectionHtml}
+    </div>
+
+    <div class="analysis-section" style="border-left:3px solid var(--color-success)">
+      <h4><i class="fa-solid fa-list-check" style="color:var(--color-success)"></i> Recommended Next Steps</h4>
+      <ul>${results.nextSteps.map(s => '<li>' + s + '</li>').join('')}</ul>
+    </div>
+
+    <div class="analysis-section" style="border-left:3px solid var(--color-primary)">
+      <h4><i class="fa-solid fa-envelope" style="color:var(--color-primary)"></i> Follow-up Email Talking Points</h4>
+      <button class="copy-btn" onclick="copySection('emailPoints')" style="float:right"><i class="fa-solid fa-copy"></i> Copy</button>
+      <ul id="emailPoints">${results.emailPoints.map(s => '<li>' + s + '</li>').join('')}</ul>
+    </div>
+
+    <div class="analysis-section" style="border-left:3px solid var(--color-warning)">
+      <h4><i class="fa-solid fa-phone" style="color:var(--color-warning)"></i> Next Call Discussion Points</h4>
+      <ul>${results.callPoints.map(s => '<li>' + s + '</li>').join('')}</ul>
+    </div>
+  `;
+}
+
+function copySection(id) {
+  const el = document.getElementById(id);
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = el.previousElementSibling;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy'; }, 2000);
+  });
+}
+
+// ============================================
+// SOLUTIONS PANEL TOGGLE
+// ============================================
+function toggleSolutions() {
+  const body = document.getElementById('solutionsBody');
+  const chevron = document.getElementById('solutionsChevron');
+  body.classList.toggle('visible');
+  chevron.style.transform = body.classList.contains('visible') ? 'rotate(0)' : 'rotate(-90deg)';
+}
+
 </script>
 </body>
 </html>
