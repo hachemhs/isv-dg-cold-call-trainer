@@ -66,6 +66,11 @@ body {
   opacity: 0.95;
 }
 
+.app-header h1:hover, .app-header .logo:hover {
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
 .app-header .badge {
   background: var(--aws-orange);
   color: var(--aws-dark);
@@ -1065,9 +1070,9 @@ body {
 <body>
 
 <div class="app-header">
-  <div class="logo"><i class="fa-brands fa-aws"></i></div>
-  <h1>ISV DG Cold Call AI Trainer</h1>
-  <span class="badge">EMEA</span>
+  <div class="logo" style="cursor:pointer" onclick="goHome()"><i class="fa-brands fa-aws"></i></div>
+  <h1 style="cursor:pointer" onclick="goHome()">ISV DG Cold Call AI Trainer</h1>
+  <span class="badge" style="cursor:pointer" onclick="goHome()">EMEA</span>
 </div>
 
 
@@ -2238,11 +2243,19 @@ function renderCoachResponse(objection, response) {
 function switchMode(mode) {
   // Update tabs
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.mode-tab').forEach(t => {
+    if (t.textContent.toLowerCase().includes(mode === 'prospecting' ? 'prospect' : mode === 'notes' ? 'call notes' : 'aws')) {
+      t.classList.add('active');
+    }
+  });
   
   // Update content
   document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
   document.getElementById('mode-' + mode).classList.add('active');
+}
+
+function goHome() {
+  switchMode('prospecting');
 }
 
 // ============================================
