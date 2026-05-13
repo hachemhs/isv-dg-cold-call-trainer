@@ -1077,6 +1077,25 @@ body {
 </div>
 
 
+
+<!-- ROLEPLAY SIMULATOR -->
+<div style="max-width:600px;margin:20px auto;padding:0 24px;">
+  <div style="background:#ffffff;border:2px solid #7b2d8b;border-radius:12px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+    <h3 style="font-size:17px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a2e;"><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Cold Call Roleplay Simulator</h3>
+    <p style="font-size:13px;color:#8993a4;margin-bottom:18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Practice cold calling against an AI customer. Handle objections and book a meeting.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Industry</label><select id="rpIndustryMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option></select></div>
+      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Customer Persona</label><select id="rpPersonaMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option></select></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Difficulty</label><select id="rpDifficultyMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div>
+      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Objective</label><select id="rpObjectiveMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="discovery">Discovery Call</option><option value="demo">Demo Invite</option><option value="cosell">Co-Sell Intro</option></select></div>
+    </div>
+    <p style="background:#e6f0ff;padding:10px;border-radius:8px;font-size:12px;color:#44546f;margin:12px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><strong>How it works:</strong> AI plays a resistant customer. 6-8 exchanges. Score + coaching at the end.</p>
+    <a href="roleplay.html" target="_blank" style="display:block;width:100%;padding:13px;background:#7b2d8b;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">▶ Launch Roleplay Simulator</a>
+  </div>
+</div>
+
 <div class="container">
   <!-- Mode Tabs -->
   <div class="mode-tabs">
@@ -1300,32 +1319,7 @@ body {
   </div><!-- end container -->
 
 
-<!-- ROLEPLAY SIMULATOR - Always Visible Section -->
-<div style="max-width:1400px;margin:0 auto;padding:0 24px 24px;">
-  <div style="border-top:2px solid var(--color-border-light);margin-top:8px;padding-top:24px;">
-    <div id="rpSetupInline" style="max-width:540px;margin:0 auto;">
-      <div style="background:var(--color-bg-secondary);border:1px solid var(--color-border-light);border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-        <h3 style="font-size:17px;margin-bottom:4px;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Cold Call Roleplay Simulator</h3>
-        <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:18px;">Practice cold calling against an AI customer. Handle their objections and book a meeting.</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:var(--color-text-secondary);display:block;margin-bottom:5px;">Industry</label><select id="rpIndustryMain" style="width:100%;padding:10px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;background:var(--color-bg);"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option><option value="ecommerce">E-Commerce</option></select></div>
-          <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:var(--color-text-secondary);display:block;margin-bottom:5px;">Customer Persona</label><select id="rpPersonaMain" style="width:100%;padding:10px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;background:var(--color-bg);"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option></select></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:var(--color-text-secondary);display:block;margin-bottom:5px;">Difficulty</label><select id="rpDifficultyMain" style="width:100%;padding:10px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;background:var(--color-bg);"><option value="easy">Easy (1-2 mild objections)</option><option value="medium" selected>Medium (3-4 objections)</option><option value="hard">Hard (5+ harsh, tries to hang up)</option></select></div>
-          <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:var(--color-text-secondary);display:block;margin-bottom:5px;">Call Objective</label><select id="rpObjectiveMain" style="width:100%;padding:10px;border:1px solid var(--color-border);border-radius:4px;font-size:13px;background:var(--color-bg);"><option value="discovery">Discovery Call</option><option value="demo">Demo / Workshop Invite</option><option value="cosell">Co-Sell Introduction</option></select></div>
-        </div>
-        <div style="background:var(--color-info-light);padding:12px;border-radius:8px;font-size:12px;color:var(--color-text-secondary);margin:14px 0;">
-          <strong>How it works:</strong> The AI plays a resistant customer trying to end the call. You have 6-8 exchanges. Your responses are scored on rapport, objection handling, discovery questions, and closing. You'll get a scorecard with coaching tips at the end.
-        </div>
-        <button onclick="launchRoleplay()" style="width:100%;padding:13px;background:#7b2d8b;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;"><i class="fa-solid fa-phone"></i> Start Simulation</button>
-      </div>
-    </div>
-    <div id="rpIframeContainer" style="display:none;max-width:620px;margin:20px auto 0;">
-      <iframe id="rpIframe" style="width:100%;height:650px;border:none;border-radius:12px;"></iframe>
-    </div>
-  </div>
-</div>
+
 
 <!-- LIVE OBJECTION COACH - Floating Panel -->
 <div class="coach-panel" id="coachPanel">
