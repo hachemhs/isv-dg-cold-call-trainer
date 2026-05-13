@@ -1172,92 +1172,7 @@ function showTyping() {
 
 // ===== CONTEXT ENRICHMENT — Makes responses reference actual company situation =====
 function contextEnrichResponse(resp, dgrText) {
-  if(!state || !state.cfg || !state.cfg.company) return resp;
-  var company = state.cfg.company;
-  var lower = dgrText.toLowerCase();
-  var turn = state.turn;
-  
-  // Don't enrich very short responses (mood indicators like "Mm-hmm")
-  if(resp.length < 30) return resp;
-  
-  // 40% chance to add company context to any response
-  if(Math.random() > 0.4) return resp;
-  
-  // Context additions based on what DGR said
-  var additions = [];
-  
-  if(lower.match(/help|solve|offer|solution|value|benefit|improve/)) {
-    additions = [
-      " Because right now our main headache is " + company.painPoints.split('.')[0].toLowerCase() + ".",
-      " We\'re dealing with " + company.painPoints.split('.')[0].toLowerCase() + " so if you can address THAT specifically...",
-      " Our priority right now is " + company.priorities[0].toLowerCase() + " — anything else is secondary.",
-      " What matters to us is " + company.priorities[0].toLowerCase() + ". Full stop."
-    ];
-  }
-  else if(lower.match(/cloud|aws|platform|infrastructure|tech/)) {
-    additions = [
-      " We\'re currently on " + company.techStack.split(',')[0] + " by the way, in case that matters.",
-      " For context, our stack is " + company.techStack.split(',').slice(0,2).join(' + ') + ".",
-      " We run " + company.techStack.split(',')[0] + " — that\'s our baseline."
-    ];
-  }
-  else if(lower.match(/similar|like you|companies|industry|sector/)) {
-    additions = [
-      " We compete with " + company.competitors.split(',')[0] + " so speed matters.",
-      " Our space is crowded — " + company.competitors + " — so anything that gives us an edge...",
-      " " + company.competitors.split(',')[0] + " is doing something similar apparently. That worries me."
-    ];
-  }
-  else if(lower.match(/meeting|call|time|calendar|schedule|15 min|demo/)) {
-    additions = [
-      " But be aware — " + company.painPoints.split('.')[0].toLowerCase() + " is what I\'d want to discuss.",
-      " If we meet, come prepared to talk about " + company.priorities[0].toLowerCase() + ". Not a generic pitch.",
-      " Fine but make it relevant to " + company.industry.split('—')[0].trim() + ". No generic slides."
-    ];
-  }
-  else if(lower.match(/cost|price|save|roi|invest|budget/)) {
-    additions = [
-      " Our current spend is " + company.budget.split('.')[0] + " so that\'s the envelope.",
-      " Context: " + company.budget.split('.')[0] + ". Not a lot of room.",
-      " " + company.budget.split('.')[0] + " — every new tool needs to justify itself."
-    ];
-  }
-  else if(lower.match(/team|people|resource|hire|engineer|staff/)) {
-    additions = [
-      " I\'ve got " + state.cfg.backstory.team + " on my team. Always under-resourced.",
-      " We\'re " + company.size.split(',')[0] + " total. Not huge.",
-      " My team is " + state.cfg.backstory.team + " — stretched thin as it is."
-    ];
-  }
-  else if(lower.match(/challenge|problem|pain|struggle|issue|concern/)) {
-    var painIdx = Math.floor(Math.random() * Math.min(3, company.painPoints.split('.').length));
-    additions = [
-      " Honestly? " + company.painPoints.split('.')[painIdx] + ". That\'s the real one.",
-      " The thing keeping me up at night: " + company.painPoints.split('.')[0] + ".",
-      " If I\'m being candid — " + company.painPoints.split('.')[painIdx] + "."
-    ];
-  }
-  else {
-    // Generic context additions for any other topic
-    additions = [
-      " For context — we\'re " + company.size.split(',')[0] + ", " + company.industry.split('—')[0].trim() + ".",
-      " Just so you know where we\'re at: " + company.priorities[0].toLowerCase() + " is priority one.",
-      " Background: we just " + company.recentDecisions.split('.')[0].toLowerCase() + ". Still processing that.",
-      " FYI we\'re in " + company.industry.split('—')[0].trim() + ". " + company.size.split(',')[0] + ".",
-      " Bit of context: " + company.recentDecisions.split('.')[0] + "."
-    ];
-  }
-  
-  if(additions.length > 0) {
-    var addition = additions[Math.floor(Math.random() * additions.length)];
-    // Add to end of response (after last sentence)
-    if(resp.endsWith('?')) {
-      return resp + ' ' + addition.trim();
-    } else {
-      return resp + addition;
-    }
-  }
-  
+  // New engine already includes context naturally — no enrichment needed
   return resp;
 }
 
@@ -2066,843 +1981,411 @@ function buildContextualReply(dgrText, contexts, d) {
 
 
 function generateContextualResponse(dgrText, scoreResult) {
-  var contexts = detectContext(dgrText);
-  var d = state.difficulty;
-  var cfg = state.cfg;
-  var lower = dgrText.toLowerCase();
-  
-
-
-  
-  // === GUARANTEED RESPONSE SYSTEM (BULLETPROOF) ===
-  // Safe accessor — never crashes regardless of input
-  function safe(obj, key, fallback) {
-    try { 
-      if(!obj || obj[key] === undefined || obj[key] === null) return fallback || '';
-      return String(obj[key]);
-    } catch(e) { return fallback || ''; }
-  }
-  function safeArr(obj, key, idx) {
-    try {
-      if(!obj || !obj[key] || !Array.isArray(obj[key])) return '';
-      return obj[key][idx || 0] || '';
-    } catch(e) { return ''; }
-  }
-  
-  var simpleResponse = null;
+  var lower = dgrText.toLowerCase().trim();
+  var cfg = state.cfg || {};
   var company = (cfg && cfg.company && typeof cfg.company === 'object') ? cfg.company : {};
-  var companyName = safe(company, 'name', 'our company');
-  var companyIndustry = safe(company, 'industry', '');
-  var companySize = safe(company, 'size', '');
-  var companyTech = safe(company, 'techStack', '');
-  var companyFirstTech = companyTech ? companyTech.split(',')[0].trim() : '';
-  var companyPriority = safeArr(company, 'priorities', 0);
-  var companyPain = safe(company, 'painPoints', '');
-  var companyFirstPain = companyPain ? companyPain.split('.')[0].trim() : '';
-  var companyBudget = safe(company, 'budget', '');
-  var companyFuture = safe(company, 'futurePlans', '');
-  var companyCompetitors = safe(company, 'competitors', '');
-  var companyRecent = safe(company, 'recentDecisions', '');
+  var d = state.difficulty;
+  var turn = state.turn || 0;
+  var patience = state.patience || 50;
   
-  // Build contextual response based on DGR's message keywords
-  if(lower.match(/^(hi|hello|hey|good morning|good afternoon|calling from|this is|my name)/)) {
-    simpleResponse = pickFrom([
-      "Yeah, go on. What's this about?",
-      "Okay. You've got about 2 minutes. What do you want?",
-      "Right. And what's this regarding exactly?",
-      "Mm-hmm. I'm listening. Briefly.",
-      "Sure. What do you need?"
-    ]);
+  // === SAFE HELPERS ===
+  function pick(arr) {
+    if(!arr || !arr.length) return "Mm-hmm. Go on.";
+    var available = arr.filter(function(r) { return !state.usedResponses.has(r); });
+    if(available.length === 0) { state.usedResponses.clear(); available = arr; }
+    var p = available[Math.floor(Math.random() * available.length)];
+    state.usedResponses.add(p);
+    return p;
   }
-  else if(lower.match(/how are you|how's your day|how's it going|hope you're well/)) {
-    simpleResponse = pickFrom([
-      "Busy. What's this about?",
-      "Fine. Look — what do you need? I'm in between things.",
-      "Good, thanks. But I know this isn't a social call. What's up?",
-      "Can't complain. But I'm guessing you didn't call to ask about my day. Go on."
-    ]);
-  }
-  else if(lower.match(/aws|amazon web|cloud/)) {
-    simpleResponse = pickFrom([
-      "AWS. Right. " + (companyFirstTech ? "We use " + companyFirstTech + " currently." : "We have some cloud already.") + " What specifically?",
-      "Okay, cloud stuff. What's the angle here? What are you actually offering?",
-      "Yeah we know AWS exists. What's the specific reason for the call?",
-      (companyFirstTech ? "We're on " + companyFirstTech + "." : "We're already in the cloud.") + " What would change?",
-      "Another AWS call. Okay — you've got 30 seconds to tell me something the last person didn't."
-    ]);
-  }
-  else if(lower.match(/ai|genai|machine learning|bedrock|agent|artificial intel/)) {
-    simpleResponse = pickFrom([
-      "AI. Everyone's talking about AI. What's YOUR angle that's different from the last 5 people who called?",
-      "Okay — AI. We've been looking at this. " + (companyPriority ? "Our focus is " + companyPriority + " though." : "But what specifically?"),
-      (companyFirstPain ? companyFirstPain + ". Can you help with THAT?" : "What's the practical application?"),
-      "Interesting. We're cautious about AI hype. What's the ROI look like realistically?",
-      "GenAI — heard it all. Give me something concrete, not another pitch about transformation."
-    ]);
-  }
-  else if(lower.match(/meeting|calendar|15 min|quick call|demo|schedule|catch up|slot/)) {
-    if(state.patience > 55 && state.turn >= 3) {
-      simpleResponse = pickFrom([
-        "Hmm. Maybe. What would we actually cover in that time?",
-        "15 minutes? What specifically would you show me that I can't read in an email?",
-        (companyPriority ? "But it needs to be about " + companyPriority + ". Not a generic overview." : "But make it specific to us."),
-        "Tell you what — send me a calendar invite for next week. Tentatively yes.",
-        "Alright. But if it's a generic deck, I'm dropping after 5 minutes. Deal?"
-      ]);
-    } else {
-      simpleResponse = pickFrom([
-        "A meeting? We've barely talked. Slow down — tell me WHY first.",
-        "You haven't earned that yet. What's the value? Give me a reason.",
-        "No meeting. Not yet. You haven't said anything that makes me want to give you more time.",
-        "Let's not jump to meetings. What problem are you solving for me?",
-        "Pump the brakes. We're not there yet. Tell me what's in it for me."
-      ]);
+  function s(val, fallback) { return (val && typeof val === 'string') ? val : (fallback || ''); }
+  function firstOf(val, sep) { return s(val).split(sep || '.')[0].trim(); }
+  function randPriority() {
+    if(company.priorities && Array.isArray(company.priorities) && company.priorities.length > 0) {
+      return company.priorities[Math.floor(Math.random() * company.priorities.length)];
     }
-  }
-  else if(lower.match(/cost|save|roi|budget|price|cheaper|reduce spend|money/)) {
-    simpleResponse = pickFrom([
-      (companyBudget ? companyBudget.split('.')[0] + ". That's our reality." : "Budget's tight.") + " What kind of savings are we talking?",
-      "ROI is the only language I speak. Give me numbers — actual numbers for a company our size.",
-      "Cost savings from what baseline? We'd need to compare apples to apples.",
-      "Everyone promises savings. What's different about your claim?",
-      "Money talk — okay. But I need specifics, not percentages from a case study I can't verify."
-    ]);
-  }
-  else if(lower.match(/competitor|azure|gcp|google|microsoft/)) {
-    simpleResponse = pickFrom([
-      (companyCompetitors ? "We compete with " + companyCompetitors.split(',')[0].trim() + ". But on cloud — " : "") + "what's AWS doing that others aren't?",
-      "We've looked at alternatives. Convince me you're better for our use case.",
-      "Every cloud vendor says they're the best. What's genuinely unique?",
-      "We have a relationship with another provider. Why would I switch?",
-      "Vendor comparison is exhausting. Give me ONE thing that's clearly better. Just one."
-    ]);
-  }
-  else if(lower.match(/security|compliance|gdpr|data protect|encrypt|regulat/)) {
-    simpleResponse = pickFrom([
-      "Security is non-negotiable for us. What certifications do you have?",
-      "GDPR compliance — how do you handle data residency in Europe specifically?",
-      "Our CISO would need to sign off. What's the security posture?",
-      "Compliance is where cloud conversations get killed. How do you handle [our industry] regulations?",
-      "Before we go further — where does our data physically sit? And who has access?"
-    ]);
-  }
-  else if(lower.indexOf('?') >= 0) {
-    // DGR asked a good question — reward with a real answer
-    simpleResponse = pickFrom([
-      (companyFirstPain ? companyFirstPain + ". " : "") + "That's the honest answer.",
-      "Good question. " + (companyPriority ? "Our main focus is " + companyPriority + "." : "We're focused on growth right now."),
-      (companyFuture ? companyFuture.split('.')[0] + ". " : "") + "Does that help frame things?",
-      "Honestly? " + (companyFirstPain ? companyFirstPain : "We're trying to do more with less") + ".",
-      (companySize ? "We're " + companySize.split(',')[0] + ". " : "") + (companyPriority ? companyPriority + " is top of mind." : "Scaling is top of mind."),
-      "Fair question. Let me think... " + (companyFirstPain ? companyFirstPain + ". That's what keeps me up at night." : "We need to move faster. That's the honest answer.")
-    ]);
-  }
-  else {
-    // Generic but still contextual
-    simpleResponse = pickFrom([
-      "Okay. " + (companyFirstPain ? "Look, our real problem is " + companyFirstPain.toLowerCase() + ". If you can help with that, I'll listen." : "What's the actual value here for us?"),
-      "Mm-hmm. " + (state.turn > 2 ? "I'm still not sure what you're offering ME specifically." : "Go on. I'm listening."),
-      "Right. " + (companyPriority ? "How does this help with " + companyPriority.toLowerCase() + "? That's all I care about right now." : "And how does this apply to us specifically?"),
-      (state.patience > 60 ? "Okay I'm listening. " : "Look — ") + (companyRecent ? "We just " + companyRecent.split('.')[0].toLowerCase() + ". Where does this fit?" : "What's the bottom line?"),
-      "That's interesting in theory. " + (companySize ? "For a " + companySize.split(',')[0].toLowerCase() + " company" : "For us") + " — what does it look like in practice?",
-      (companyFuture ? "We're planning to " + companyFuture.split('.')[0].toLowerCase() + ". " : "") + "Does what you're saying connect to that?"
-    ]);
+    return '';
   }
   
-  // This ensures something ALWAYS gets returned
+  // === CONVERSATION MEMORY ===
+  if(!state.convMemory) state.convMemory = {
+    lastCustomerQuestion: null,
+    customerAskedFor: null, // what info they requested
+    dgrClaimed: [],  // claims DGR made
+    topicsRaised: [],
+    unansweredQuestions: [],
+    dgrWasVague: 0,
+    dgrWasSpecific: 0,
+    customerInterestLevel: 'neutral', // cold, neutral, warm, hot
+    lastDgrMessage: '',
+    consecutiveGeneric: 0
+  };
+  var mem = state.convMemory;
   
-
-    try {
-  // === REPETITION DETECTION — Customer calls out repeated questions/topics ===
+  // === ANALYZE DGR INPUT ===
+  var inputLength = dgrText.split(/\s+/).length;
+  var isShort = inputLength < 5;
+  var isLong = inputLength > 40;
+  var hasQuestion = dgrText.indexOf('?') >= 0;
+  var isGreeting = /^(hi|hello|hey|good|morning|afternoon|this is|my name|i'm calling|calling from)/i.test(lower);
+  var isGeneric = /help you|grow your business|save you|transform|optimize|leverage|synergy|solution|empower|enable|accelerate your/i.test(lower);
+  var isSpecific = /\d+%|\$\d|£\d|\d+ (customer|user|company|employee|hour|day|week)|(case study|for example|specifically|in your case|for .+ industry)/i.test(lower);
+  var mentionsProduct = /bedrock|sagemaker|lambda|s3|ec2|marketplace|graviton|eks|ecs|dynamodb|aurora|connect|kendra|lex/i.test(lower);
+  var isClosing = /meeting|calendar|schedule|15 min|demo|follow.?up|next step|catch up|slot|book/i.test(lower);
+  var answersQuestion = mem.lastCustomerQuestion && (hasQuestion === false) && inputLength > 8;
+  var mentionsCompetitor = /azure|google|gcp|microsoft|oracle|openai|anthropic/i.test(lower);
+  var mentionsAI = /ai|genai|machine learn|bedrock|agent|model|llm|gpt|claude/i.test(lower);
+  var mentionsCost = /cost|price|save|roi|budget|spend|cheaper|investment|tcl|tco/i.test(lower);
   
-  // Track DGR's topics per turn
-  if(!state.dgrTopicHistory) state.dgrTopicHistory = [];
+  // Track what DGR said
+  if(isGeneric) { mem.dgrWasVague++; mem.consecutiveGeneric++; }
+  else if(isSpecific || mentionsProduct) { mem.dgrWasSpecific++; mem.consecutiveGeneric = 0; }
+  else { mem.consecutiveGeneric = 0; }
   
+  // Detect if DGR made a claim
+  if(lower.match(/we (can|help|offer|provide|have|do|build|enable)/)) {
+    var claim = dgrText.match(/we (can|help|offer|provide|have|do|build|enable)[^.?!]*/i);
+    if(claim) mem.dgrClaimed.push(claim[0].substring(0, 60));
+  }
+  
+  // Update interest level based on conversation quality
+  if(isSpecific && hasQuestion) mem.customerInterestLevel = 'warm';
+  else if(mem.consecutiveGeneric >= 3) mem.customerInterestLevel = 'cold';
+  else if(patience > 70 && mem.dgrWasSpecific > mem.dgrWasVague) mem.customerInterestLevel = 'warm';
+  else if(patience < 40) mem.customerInterestLevel = 'cold';
+  
+  mem.lastDgrMessage = dgrText;
+  
+  // === REPETITION DETECTION ===
   var currentTopics = [];
-  if(lower.match(/ai|genai|machine learn|bedrock|agent|model/)) currentTopics.push('AI');
-  if(lower.match(/cost|price|save|roi|budget|spend|cheaper/)) currentTopics.push('cost');
-  if(lower.match(/meeting|calendar|schedule|demo|15 min|catch up/)) currentTopics.push('meeting');
-  if(lower.match(/cloud|migrat|infra|server|compute/)) currentTopics.push('cloud');
-  if(lower.match(/security|compliance|gdpr|data protect|encrypt/)) currentTopics.push('security');
-  if(lower.match(/competitor|azure|gcp|google|microsoft/)) currentTopics.push('competitor');
-  if(lower.match(/challenge|problem|pain|struggle|issue|blocker/)) currentTopics.push('challenges');
-  if(lower.match(/team|headcount|hiring|resource|staff/)) currentTopics.push('team');
-  if(lower.match(/timeline|roadmap|plan|when|quarter|deadline/)) currentTopics.push('timeline');
-  if(lower.match(/partner|marketplace|co-sell|isvs/)) currentTopics.push('marketplace');
-  if(lower.match(/what.*do|tell.*about|how.*work|can you explain/)) currentTopics.push('explain');
+  if(mentionsAI) currentTopics.push('AI');
+  if(mentionsCost) currentTopics.push('cost');
+  if(isClosing) currentTopics.push('meeting');
+  if(/cloud|migrat|infra/i.test(lower)) currentTopics.push('cloud');
+  if(/security|compliance|gdpr/i.test(lower)) currentTopics.push('security');
+  if(mentionsCompetitor) currentTopics.push('competitors');
   
-  // Check for repetition
-  var repeatedTopics = currentTopics.filter(function(t) {
-    return state.dgrTopicHistory.filter(function(h) { return h === t; }).length >= 1;
+  var repeated = currentTopics.filter(function(t) {
+    return mem.topicsRaised.filter(function(h) { return h === t; }).length >= 2;
   });
+  currentTopics.forEach(function(t) { mem.topicsRaised.push(t); });
   
-  // Store this turn's topics
-  currentTopics.forEach(function(t) { state.dgrTopicHistory.push(t); });
+  if(repeated.length > 0 && turn > 3) {
+    state.patience -= 8;
+    return pick([
+      "You\'ve mentioned " + repeated[0] + " three times now. I heard you. What ELSE?",
+      "We keep circling back to " + repeated[0] + ". Either move forward or let\'s end here.",
+      "Didn\'t we cover " + repeated[0] + " already? Tell me something new.",
+      "Same topic again. Look — I got it. " + repeated[0] + ". Next?"
+    ]);
+  }
   
-  // If DGR is repeating topics they already covered, call it out (high priority)
-  if(repeatedTopics.length > 0 && state.turn > 2) {
-    var repeatCount = state.dgrTopicHistory.filter(function(h) { return h === repeatedTopics[0]; }).length;
-    
-    if(repeatCount >= 3) {
-      // Third time — very frustrated
-      state.patience -= 12;
-      return pickFrom([
-        "Okay — you've now brought up " + repeatedTopics[0] + " three times. I feel like we're going in circles. What are you ACTUALLY trying to get to?",
-        "We keep coming back to the same thing. I'm starting to think you don't have much else to offer. Prove me wrong.",
-        "You've said this already. Twice. I'm losing patience — either tell me something NEW or let's wrap this up.",
-        "Look — [sighs] — we've covered this. I heard you the first time. What ELSE have you got?",
-        "Third time on the same topic. I'm going to be blunt: if this is all you have, we should end the call."
-      ]);
+  // === LITERAL REPETITION (same message) ===
+  if(state.conversationHistory && state.conversationHistory.length > 2) {
+    var prevDgr = state.conversationHistory.filter(function(h) { return h.role === 'dgr'; });
+    if(prevDgr.length > 1) {
+      var lastMsg = prevDgr[prevDgr.length - 2];
+      if(lastMsg && lastMsg.text && lastMsg.text.toLowerCase().trim() === lower) {
+        state.patience -= 10;
+        return pick([
+          "You literally just said that. Word for word. Are you reading from a script?",
+          "Mate — that\'s the exact same thing you said 30 seconds ago.",
+          "Did you just... repeat yourself? I\'m not deaf. I heard it the first time.",
+          "Copy-paste? [laughs awkwardly] Yeah we\'re done here."
+        ]);
+      }
     }
-    else if(repeatCount === 2) {
-      // Second time — notices and pushes back
+  }
+  
+  // === MAIN RESPONSE ENGINE ===
+  var resp = null;
+  var pri = randPriority();
+  var pain = firstOf(s(company.painPoints));
+  var tech = firstOf(s(company.techStack), ',');
+  var compName = s(company.name, 'our company');
+  
+  // --- TURN 1: GREETING ---
+  if(turn <= 1 || isGreeting) {
+    if(isGreeting && isGeneric) {
+      resp = pick([
+        "Right. Skip the intro — what do you actually want?",
+        "Yeah yeah. AWS, cloud, whatever. What\'s the pitch? I\'ve got 2 minutes.",
+        "Heard it before. Get to the point — what\'s different about THIS call?",
+        "Okay. You\'re from AWS. I\'ve had 3 of these calls this month. Why should I stay on?"
+      ]);
+    } else if(isGreeting) {
+      resp = pick([
+        "Yeah? Go on then. What\'s this about?",
+        "Alright. You\'ve got my attention for about 90 seconds. Make it count.",
+        "Okay. I\'m between meetings. What do you need?",
+        "Speaking. What\'s this regarding?",
+        "Hi. I\'ll be honest — I don\'t take sales calls usually. You caught me at a good time. Quick though."
+      ]);
+      mem.lastCustomerQuestion = 'why are you calling';
+      mem.customerAskedFor = 'reason for call';
+    }
+  }
+  
+  // --- DGR WAS TOO VAGUE/GENERIC ---
+  else if(isGeneric && !isSpecific) {
+    state.patience -= 3;
+    if(mem.consecutiveGeneric >= 3) {
       state.patience -= 5;
-      var topicName = repeatedTopics[0];
-      return pickFrom([
-        "Didn't you already ask me about " + topicName + "? I told you — " + (topicName === 'cost' ? "budget is tight" : topicName === 'AI' ? "we're exploring" : topicName === 'meeting' ? "I'll think about it" : topicName === 'challenges' ? "I mentioned our issues" : "we covered that") + ". What's changed?",
-        "Wait — we talked about this already. Are you reading from a script? Come on.",
-        "You mentioned " + topicName + " before. I get it. Move on to something new.",
-        "Déjà vu. [laughs] We literally just discussed this. What's your NEXT question?",
-        "Same topic again? Okay... is there something specific you didn't understand from my earlier answer?",
-        "I feel like you're circling. We covered " + topicName + ". Is there a reason you're coming back to it?",
-        "Mate, you asked me that already. Were you not listening or...?",
-        "Hold on — am I on a loop? You said the same thing 2 minutes ago. New topic, please."
+      resp = pick([
+        "Okay stop. You\'ve been talking for a minute and haven\'t said anything concrete. Give me ONE specific thing.",
+        "I\'m going to be blunt — this sounds like a script. Talk to me like a human. What\'s the actual point?",
+        "You could be selling me anything right now. Cloud, AI, insurance... I need SPECIFICS or I\'m hanging up.",
+        "Look — \'help you grow\', \'transform your business\' — these are just words. What ACTUALLY changes for " + compName + "?"
       ]);
-    }
-  }
-  
-  // Also detect if DGR literally sends the same/very similar message
-  if(history && history.length > 2) {
-    var prevMessages = history.filter(function(h) { return h.role === 'dgr'; }).map(function(h) { return h.text.toLowerCase(); });
-    var similarity = prevMessages.some(function(prev) {
-      if(!prev) return false;
-      // Check if >60% of words match
-      var prevWords = prev.split(/\s+/);
-      var currWords = lower.split(/\s+/);
-      var matches = currWords.filter(function(w) { return prevWords.indexOf(w) >= 0; });
-      return matches.length / Math.max(currWords.length, 1) > 0.6 && currWords.length > 4;
-    });
-    
-    if(similarity) {
-      state.patience -= 8;
-      return pickFrom([
-        "You literally just said that. Word for word. Are you okay?",
-        "I swear you said this exact thing 2 minutes ago. Am I losing it or are you repeating yourself?",
-        "Copy-paste much? [laughs] Mate, you said the same thing earlier. Try a different angle.",
-        "Okay this is the same pitch again. I'm not going to respond differently just because you repeat it.",
-        "Wait... did you just say the same thing twice? Look — I heard you. I need NEW information.",
-        "You're repeating yourself. That's... not a great sign. Either you're nervous or you've run out of things to say."
+    } else if(mem.consecutiveGeneric === 2) {
+      resp = pick([
+        "That\'s still pretty vague. What does that look like concretely for a " + firstOf(s(company.size), ',') + " company?",
+        "Okay but SPECIFICALLY — what would change for us? Give me an example.",
+        "I\'ve heard that pitch before from 5 vendors. What\'s different when YOU say it?",
+        "Sure, but what does that MEAN? For us, right now, " + (pri ? "working on " + pri.toLowerCase() : "with what we\'re dealing with") + "?"
       ]);
-    }
-  }
-
-  try {
-    } catch(repErr) {
-    // Repetition detection failed — skip it
-    if(typeof console !== 'undefined') console.error('Repetition detection error:', repErr.message);
-  }
-  
-// ===== CONVERSATION FLOW ENGINE — Human-style contextual interactions =====
-  // Tracks conversation arc and generates responses that feel like a real human thinking in real-time
-  
-  var flow = state.flow || {phase:'intro',topicsDiscussed:[],topicDepth:{},customerQuestions:[],dgrPromises:[],customerConcernsRaised:[],customerInterests:[],emotionalArc:['neutral'],lastTopic:null,rapport:0,conversationStyle:'formal',interruptions:0,silences:0,dgrTalkRatio:0,topicTransitions:[],unfinishedThreads:[]};
-  var turnNum = state.turn;
-  var history = state.conversationHistory;
-  
-  // --- UPDATE FLOW STATE ---
-  
-  // Detect current conversation phase
-  if(turnNum <= 1) flow.phase = 'intro';
-  else if(turnNum <= 3 && lower.match(/what.*do|tell.*about|challenge|priority|problem|pain/)) flow.phase = 'discovery';
-  else if(lower.match(/solution|product|service|platform|offer|bedrock|aws|feature|capability/)) flow.phase = 'pitch';
-  else if(lower.match(/meeting|calendar|schedule|next step|follow.?up|demo/)) flow.phase = 'close';
-  else if(state.patience < 40) flow.phase = 'exit';
-  
-  // Track topics from DGR's message
-  var detectedTopics = [];
-  if(lower.match(/ai|ml|machine learn|model|agent/)) detectedTopics.push('AI/ML');
-  if(lower.match(/cost|price|save|roi|budget|spend/)) detectedTopics.push('cost');
-  if(lower.match(/secur|compli|govern|risk|audit/)) detectedTopics.push('security');
-  if(lower.match(/migrat|modern|transform|move|switch/)) detectedTopics.push('migration');
-  if(lower.match(/scale|grow|expand|performance|speed/)) detectedTopics.push('scale');
-  if(lower.match(/compet|market|azure|gcp|google|microsoft/)) detectedTopics.push('competition');
-  if(lower.match(/team|resource|hire|talent|engineer/)) detectedTopics.push('team');
-  if(lower.match(/customer|user|revenue|growth|sales/)) detectedTopics.push('business');
-  if(lower.match(/data|analytics|insight|dashboard|report/)) detectedTopics.push('data');
-  if(lower.match(/partner|marketplace|co.?sell|ecosystem/)) detectedTopics.push('partnership');
-  
-  // Track topic transitions
-  if(detectedTopics.length > 0) {
-    var newTopic = detectedTopics[0];
-    if(flow.lastTopic && newTopic !== flow.lastTopic) {
-      flow.topicTransitions.push({from: flow.lastTopic, to: newTopic, turn: turnNum});
-      // Detect FORCED topic change (DGR ignored what customer was talking about)
-      if(flow.topicDepth[flow.lastTopic] === 'shallow') {
-        flow.unfinishedThreads.push(flow.lastTopic);
-      }
-    }
-    flow.lastTopic = newTopic;
-    if(!flow.topicsDiscussed.includes(newTopic)) flow.topicsDiscussed.push(newTopic);
-    flow.topicDepth[newTopic] = flow.topicDepth[newTopic] === 'shallow' ? 'medium' : (flow.topicDepth[newTopic] === 'medium' ? 'deep' : 'shallow');
-  }
-  
-  // Track DGR promises
-  if(lower.match(/i'll send|i will send|i can send|var me send|i'll email|i'll share|i'll follow/)) {
-    flow.dgrPromises.push({what: text.substring(text.toLowerCase().indexOf("i'll"), text.toLowerCase().indexOf("i'll") + 60), turn: turnNum});
-  }
-  
-  // Update emotional arc
-  var currentMood = state.patience > 65 ? 'warming' : (state.patience > 40 ? 'neutral' : (state.patience > 25 ? 'cooling' : 'hostile'));
-  flow.emotionalArc.push(currentMood);
-  
-  // Update rapport level
-  if(state.consecutiveGood >= 2) flow.rapport = Math.min(10, flow.rapport + 1);
-  if(state.patience < 40 && flow.rapport > -5) flow.rapport--;
-  
-  // Update conversation style based on rapport
-  if(flow.rapport >= 4) flow.conversationStyle = 'casual';
-  else if(flow.rapport >= 2) flow.conversationStyle = 'friendly';
-  else if(flow.rapport <= -3) flow.conversationStyle = 'cold';
-  
-  // --- GENERATE FLOW-BASED RESPONSES ---
-  
-  // === HUMAN FILLER / THINKING PATTERNS (adds realism to start of responses) ===
-  var fillerPrefix = '';
-  if(turnNum >= 2 && Math.random() < 0.4) {
-    var fillers = flow.conversationStyle === 'casual' ? 
-      ['Yeah so... ', 'Hmm, ', 'Right — ', 'Okay so ', 'I mean... ', 'Look — ', 'Well... ', 'Honestly? ', 'Ha — '] :
-      ['Mm. ', 'Right. ', 'Okay — ', 'Well — ', 'Hmm. ', 'So. ', 'Look — ', '[pause] '];
-    fillerPrefix = pickFrom(fillers);
-  }
-  
-  // === CALLBACK TO EARLIER TOPICS (human memory — references previous discussion) ===
-  if(turnNum >= 4 && flow.topicsDiscussed.length >= 2 && Math.random() < 0.25) {
-    var earlierTopic = flow.topicsDiscussed[Math.floor(Math.random() * (flow.topicsDiscussed.length - 1))];
-    if(earlierTopic !== flow.lastTopic) {
-      var callbacks = [
-        fillerPrefix + "Actually — going back to what you said about " + earlierTopic + " earlier. I've been thinking about that. How does this connect?",
-        fillerPrefix + "Wait — you mentioned " + earlierTopic + " before. Let me ask about that. What specifically would change for us there?",
-        fillerPrefix + "You know what, I keep coming back to the " + earlierTopic + " point. That's actually what matters most to me. Expand on that.",
-        fillerPrefix + "Circling back to " + earlierTopic + " — because that's the one that's going to get my boss's attention. What's the concrete impact?",
-        fillerPrefix + "Hold on — the " + earlierTopic + " thing you said earlier. That stuck with me. Can you be more specific about that?"
-      ];
-      return pickFrom(callbacks);
-    }
-  }
-  
-  // === FORCED TOPIC CHANGE DETECTION — Customer calls it out ===
-  if(flow.topicTransitions.length > 0 && turnNum >= 3) {
-    var lastTransition = flow.topicTransitions[flow.topicTransitions.length - 1];
-    if(lastTransition.turn === turnNum && flow.topicDepth[lastTransition.from] === 'shallow' && Math.random() < 0.4) {
-      return pickFrom([
-        fillerPrefix + "Hold on — we were just talking about " + lastTransition.from + " and you jumped to " + lastTransition.to + ". Can we finish one thought? What were you saying about " + lastTransition.from + "?",
-        fillerPrefix + "Wait — you just switched topics on me. We were on " + lastTransition.from + ". I actually had a follow-up on that. Can we go back?",
-        fillerPrefix + "I notice you moved on from " + lastTransition.from + " pretty quickly. Was there something there you didn't want to dig into? Because I'm curious.",
-        fillerPrefix + "[laughs] You're covering a lot of ground. Let's slow down — what's the ONE thing you want me to take away from this call?"
-      ]);
-    }
-  }
-  
-  // === UNFINISHED THREADS — Customer brings back abandoned topics ===
-  if(flow.unfinishedThreads.length > 0 && turnNum >= 5 && Math.random() < 0.2) {
-    var thread = flow.unfinishedThreads.shift(); // Remove from queue
-    return pickFrom([
-      fillerPrefix + "Actually you know what — we never finished talking about " + thread + ". I still have questions there. What were you going to say?",
-      fillerPrefix + "Something's bugging me. Earlier you mentioned " + thread + " but we moved on. What was the point you were making?",
-      fillerPrefix + "Before we go further — you brought up " + thread + " and then dropped it. Is that relevant here or not?"
-    ]);
-  }
-  
-  // === DGR PROMISE TRACKING — Customer remembers what was offered ===
-  if(flow.dgrPromises.length > 0 && turnNum >= 5 && Math.random() < 0.15) {
-    var promise = flow.dgrPromises[0];
-    return pickFrom([
-      fillerPrefix + "By the way — you said " + promise.what.trim() + ". Are you actually going to do that or is it just a sales line?",
-      fillerPrefix + "You mentioned earlier you'd " + promise.what.trim().replace(/i'll |i will /i, '') + ". I'll hold you to that. Now — what else?",
-      fillerPrefix + "Okay — so you said " + promise.what.trim() + ". Write that down because I WILL remember. [laughs] Go on."
-    ]);
-  }
-  
-  // === MOOD-BASED CONVERSATION STYLE ===
-  
-  // WARMING mood — customer becomes more open, shares more
-  if(currentMood === 'warming' && flow.rapport >= 3 && turnNum >= 3 && Math.random() < 0.2) {
-    var company = cfg.company;
-    var warmResponses = company ? [
-      fillerPrefix + "You know what — since we're having a good conversation... var me tell you what's actually going on. " + company.painPoints.split('.')[0] + ". That's the real picture.",
-      fillerPrefix + "Okay I'm going to be more candid than I usually am with vendors. " + company.painPoints.split('.')[1] + ". There. That's the honest truth.",
-      fillerPrefix + "I don't normally share this on a first call but... " + company.futurePlans.split('.')[0] + ". If you can help with that, I'm genuinely interested.",
-      fillerPrefix + "Alright — you've earned some honesty. Between you and me: " + company.recentDecisions.split('.')[0] + ". And I'm already questioning that decision.",
-      fillerPrefix + "Since we're vibing — here's what I haven't told you. " + company.priorities[company.priorities.length-1] + ". That's the one nobody's solving for us."
-    ] : [
-      fillerPrefix + "Okay you know what — you're easy to talk to. Let me be more open about what's actually happening here...",
-      fillerPrefix + "I don't usually share this with cold callers but since we're having a real conversation...",
-      fillerPrefix + "Alright — I'll level with you. The real challenge isn't what I said before. It's actually..."
-    ];
-    return pickFrom(warmResponses);
-  }
-  
-  // COOLING mood — shorter responses, less engagement
-  if(currentMood === 'cooling' && turnNum >= 3 && Math.random() < 0.3) {
-    return pickFrom([
-      "Mm-hmm.",
-      "Right.",
-      "Okay.",
-      "Sure.",
-      "And?",
-      "Mm.",
-      "Go on.",
-      "I'm listening. Barely.",
-      "Yep. What else.",
-      "Okay — and the point is...?"
-    ]);
-  }
-  
-  // === NATURAL INTERRUPTIONS — Customer cuts in mid-thought ===
-  if(text.length > 180 && turnNum >= 2 && Math.random() < 0.2) {
-    // Simulate customer interrupting a long DGR message
-    var interruptPoint = text.substring(0, 80).split(' ').slice(-3).join(' ');
-    return pickFrom([
-      "Wait wait wait — " + interruptPoint + " — what do you mean by that? Explain.",
-      "Hold on — stop. You said '" + interruptPoint + "'. That's interesting. Expand on just THAT part.",
-      "Sorry to interrupt but — '" + interruptPoint + "' — that's the thing. Tell me more about specifically that.",
-      "Okay stop — I want to drill into '" + interruptPoint + "'. What does that actually mean in practice?",
-      "Pause. '" + interruptPoint + "'. Say more about that and less about everything else."
-    ]);
-  }
-  
-  // === CONVERSATION PHASE-BASED RESPONSES ===
-  
-  // INTRO phase — customer is sizing up the caller
-  if(flow.phase === 'intro' && turnNum === 1) {
-    // This is handled by greetings, skip
-  }
-  
-  // DISCOVERY phase — customer expects questions, gets impatient with pitching
-  if(flow.phase === 'discovery' && turnNum >= 2 && !lower.match(/\?/) && text.length > 100 && Math.random() < 0.35) {
-    return pickFrom([
-      fillerPrefix + "You're telling, not asking. I thought this was supposed to be a conversation? What do you actually want to KNOW about us?",
-      fillerPrefix + "That's a lot of talking. I was hoping you'd ask me something. What do you want to understand about our situation?",
-      fillerPrefix + "I feel like I'm being presented to rather than talked with. Do you want to know what our actual problem is or...?"
-    ]);
-  }
-  
-  // PITCH phase — customer challenges claims
-  if(flow.phase === 'pitch' && turnNum >= 3 && Math.random() < 0.25) {
-    return pickFrom([
-      fillerPrefix + "Okay but that sounds like marketing. Give me the real version. What does this look like on a Tuesday afternoon when things break?",
-      fillerPrefix + "Every vendor says that. Literally every single one. What makes your version different from the last 3 people who called me?",
-      fillerPrefix + "Proof. I need proof. Not claims — evidence. Who's actually using this and what did they get out of it? Names. Numbers.",
-      fillerPrefix + "That's the theoretical benefit. What's the REALISTIC benefit for a company our size in our industry? Be specific.",
-      fillerPrefix + "I've heard this pitch before — from Azure, from GCP, from [competitor]. You all say the same thing. What's genuinely unique?"
-    ]);
-  }
-  
-  // === ACTIVE LISTENING DETECTION — Customer notices if DGR is listening ===
-  if(turnNum >= 3 && history.length >= 4) {
-    // Check if DGR referenced something customer said in previous turns
-    var prevCustomerMsgs = history.filter(function(m){return m.role==='customer';}).slice(-2);
-    var customerTopics = prevCustomerMsgs.map(function(m){return m.text.toLowerCase();}).join(' ');
-    var customerKeywords = customerTopics.split(/\s+/).filter(function(w){return w.length > 5;});
-    var dgrReferencedPast = customerKeywords.filter(function(w){return lower.indexOf(w) >= 0;}).length;
-    
-    // DGR is clearly NOT listening (no references to what customer said)
-    if(dgrReferencedPast === 0 && Math.random() < 0.2 && text.length > 80) {
-      return pickFrom([
-        fillerPrefix + "Did you hear what I just said? Because your response doesn't seem related to what I told you.",
-        fillerPrefix + "I feel like you're reading from a script. I just told you something specific. Can you address THAT?",
-        fillerPrefix + "Are you listening to me or just waiting for your turn to talk? Because I said something important just now.",
-        fillerPrefix + "That's... not what I asked about. Let me be clearer: I need you to respond to what I actually said, not your prepared pitch."
-      ]);
-    }
-    
-    // DGR IS listening (references past) — customer acknowledges
-    if(dgrReferencedPast >= 2 && Math.random() < 0.15) {
-      state.patience += 5; // Small patience boost
-      flow.rapport++;
-      return pickFrom([
-        fillerPrefix + "Okay — I appreciate that you actually listened to what I said. That's rare. Keep going.",
-        fillerPrefix + "Good — you picked up on what I mentioned. Most people just talk AT me. What else do you want to know?",
-        fillerPrefix + "Right — you're connecting the dots. I like that. Tell me more about how that applies to us specifically."
-      ]);
-    }
-  }
-  
-  // === DEEPENING QUESTIONS — Customer pushes for specifics on shallow topics ===
-  if(turnNum >= 3 && flow.topicsDiscussed.length > 0 && Math.random() < 0.15) {
-    var shallowTopics = Object.keys(flow.topicDepth).filter(function(t){return flow.topicDepth[t] === 'shallow';});
-    if(shallowTopics.length > 0) {
-      var topic = shallowTopics[Math.floor(Math.random() * shallowTopics.length)];
-      return pickFrom([
-        fillerPrefix + "You mentioned " + topic + " but didn't go deep. I need specifics. What does that actually look like?",
-        fillerPrefix + "The " + topic + " point — you glossed over it. But that's actually the one I care about. Tell me MORE.",
-        fillerPrefix + "You barely touched on " + topic + ". Is there substance there or were you just name-dropping?"
-      ]);
-    }
-  }
-  
-  // ===== END CONVERSATION FLOW ENGINE =====
-
-
-  // ===== GRADUAL DISENGAGEMENT — REALISTIC "LOSING INTEREST" PATTERNS =====
-  // Mimics how real customers disengage: subtle → direct → exit attempt → hang up
-  
-  var patienceLevel = state.patience;
-  var turnNum = state.turn;
-  
-  // === LEVEL 1: DISTRACTED (patience 55-45) — Customer starts giving shorter attention ===
-  if(patienceLevel <= 55 && patienceLevel > 45 && turnNum >= 3 && Math.random() < 0.45) {
-    var persona = state.persona;
-    
-    if(persona === 'cto') {
-      return pickFrom([
-        "Mm-hmm... sorry, I'm getting pinged on Slack. What were you saying? The... thing about — ?",
-        "Hold on — [typing sounds] — sorry, production alert. You were saying? Actually — can you just get to the point?",
-        "Yeah... look, I've got a standup in 5. Can you get to the 'why should I care' part?",
-        "Sorry — I'm half-listening, half-reading a PR review. Not being rude, just being honest. What's the headline?",
-        "[pause] Right. So... what's the ask? I need to context-switch to something else soon."
-      ]);
-    }
-    if(persona === 'cfo') {
-      return pickFrom([
-        "Mm-hmm. I'm looking at my calendar and I've got back-to-backs all afternoon. Where is this going?",
-        "Right... I appreciate that but I'm not sure I'm the right person for this level of detail. Is there a summary?",
-        "Okay — I need to be direct. I've got a board prep session in a few minutes. What's the bottom line?",
-        "[pause] Sorry I was checking something. What's the financial impact again? In one sentence.",
-        "How much longer do you need? Because I've got maybe 2 more minutes and then I need to go."
-      ]);
-    }
-    if(persona === 'ceo') {
-      return pickFrom([
-        "Mm. My EA is waving at me — I've got someone waiting. Can you wrap up the key point?",
-        "[checking phone] Sorry — that's my board chair. Look, what's the one thing you want me to remember from this call?",
-        "I need to jump soon. Give me the 30-second version of why this matters for us.",
-        "Right — I appreciate the call but I'm running behind. What would you need from me to move this forward?",
-        "Okay I'm hearing you but honestly my mind is on something else. Not your fault — just bad timing."
-      ]);
-    }
-    if(persona === 'cio') {
-      return pickFrom([
-        "Sorry — I was multitasking. Can you repeat the last part? Actually, just the key point.",
-        "Mm-hmm. Look, I've got a change advisory board meeting in 5 minutes. What are we concluding here?",
-        "I'm not sure this is within our current evaluation window. We're locked in on priorities until Q3.",
-        "Right... I'm going to be honest — this isn't ringing the urgency bell for me right now. Why now specifically?",
-        "[pause] Sorry, I was reading something. What were we saying?"
-      ]);
-    }
-    if(persona === 'aiml') {
-      return pickFrom([
-        "Yeah... I'm going to be real with you — I've heard this pitch from 4 vendors this month. What's new?",
-        "Hmm. Look, my team is heads-down on a deadline. I don't have cycles for evaluations right now.",
-        "Sorry, I was looking at our Jira board. Where were we? Actually — is there a technical whitepaper you can just send?",
-        "[pause] Right. I'm not trying to be rude but this feels like a generic pitch. What's specific to our stack?",
-        "Mm-hmm. I mean... we could probably build this ourselves in a sprint. Why would I buy instead?"
-      ]);
-    }
-    
-    // Generic distracted responses
-    return pickFrom([
-      "Sorry — what was that? I was looking at something else. Can you repeat the main point?",
-      "Mm-hmm... [pause] ...right. Look, I need to be somewhere in about 5 minutes. What's the ask?",
-      "Yeah... I'm not sure where this is going. Can you be more direct about what you need from me?",
-      "Right. Look — I appreciate the call. I'm just not sure this is relevant for us right now."
-    ]);
-  }
-  
-  // === LEVEL 2: PULLING AWAY (patience 45-35) — Customer signals they want to end ===
-  if(patienceLevel <= 45 && patienceLevel > 35 && turnNum >= 3 && Math.random() < 0.55) {
-    return pickFrom([
-      "Look — I really need to go. Can you just send me an email with the key points? I'll read it when I have time.",
-      "I'm going to be honest — I don't think this is the right time for us. Maybe in 6 months? Try me then.",
-      "Okay I need to cut you short. I've got another meeting. Just email me something and I'll look at it. No promises.",
-      "I appreciate the call but I'm going to have to go. We're not evaluating anything new this quarter.",
-      "Right — look, my plate is full. I can't take on another conversation right now. Send me something and I'll get to it when I can.",
-      "I don't want to waste your time either — this isn't a priority for us right now. Maybe follow up in Q3?",
-      "Can we just... pause this? Send me a 1-page summary by email. If it's relevant I'll get back to you. But I need to go now.",
-      "I need to be somewhere. Tell you what — find my email on our website and send me something. If it resonates I'll reply. Fair?",
-      "Look, between you and me — even if I was interested, I couldn't push anything new through internally right now. The timing's off.",
-      "Mm-hmm. Listen, it's not personal but I've got 4 vendors calling me this week and I just can't do another evaluation right now.",
-      "Okay here's what's going to happen — I'm going to go now. If this is really as good as you say, send me a one-pager. I'll read it. That's the best I can offer.",
-      "Right. I'm going to be direct because I respect your time too — we're locked into [competitor] for this year. It's contractual. Check back next year.",
-      "I've got back-to-backs until 6pm. I literally cannot give this more time today. Email is the move here."
-    ]);
-  }
-  
-  // === LEVEL 3: ACTIVELY EXITING (patience 35-25) — Customer is done, firm rejection ===
-  if(patienceLevel <= 35 && patienceLevel > 25 && turnNum >= 3 && Math.random() < 0.7) {
-    return pickFrom([
-      "Okay — I've been polite but I need to end this call now. I'm not interested at this time. All the best.",
-      "Right, I need to go. NOW. Not in a minute — now. Send whatever you want by email but don't expect a reply. Bye.",
-      "Look — I'm going to be blunt. You've been talking for [a while] and I haven't heard anything that moves the needle for us. I need to go.",
-      "No meeting. No follow-up call. Email only. And honestly? I probably won't read it. But that's the offer. I need to go.",
-      "I'm hanging up in about 10 seconds. If there's a final thing you want to say, say it now. Otherwise — it was nice talking.",
-      "[sigh] Okay. This isn't working. You're a nice person but this isn't the right conversation for me right now. I've got to go.",
-      "Stop. I appreciate the hustle but the answer is no. Not now. Maybe not ever. I'll reach out if that changes. Please don't call again.",
-      "You know what — just email me. Here: [first.last]@[company].com. I'll look at it when I'm less slammed. Okay I really have to go. Bye.",
-      "Right — we're done. Not being rude, just being honest. This isn't going to happen this quarter. Or next, probably. Take care.",
-      "Okay I'm walking into a meeting right now. Literally walking. You need to var me go. Send an email if you want. Cheers — bye.",
-      "I've got to jump — my next call is already waiting. Look, no hard feelings. The timing's just not right. Send me something written and MAYBE in a few months. That's realistic. Okay — bye.",
-      "Can I be real with you? If we were going to do this, I'd know by now. And I don't. It's not clicking for me. No hard feelings — take care.",
-      "Look I like that you're passionate about this but I've made my decision. Not right now. Respect that and maybe there's a conversation in the future. Gotta go."
-    ]);
-  }
-  
-  // === LEVEL 4: PRE-HANGUP (patience <= 25) — Last chance before triggerGoodbye ===
-  if(patienceLevel <= 25 && turnNum >= 3) {
-    // This fires BEFORE the existing triggerGoodbye logic — gives one final warning
-    if(Math.random() < 0.8) {
-      return pickFrom([
-        "I'm hanging up now. Goodbye.",
-        "We're done. Take care. [click]",
-        "Okay bye. [silence]",
-        "Right — all the best. Bye now.",
-        "Nope. Bye. [click]",
-        "I said I need to go. Goodbye."
-      ]);
-    }
-  }
-  
-  // === INTERRUPTION PATTERNS — Random "I need to go" triggered by external events ===
-  // 12% chance after turn 4 when patience is declining (below 60)
-  if(patienceLevel < 60 && patienceLevel > 35 && turnNum >= 4 && Math.random() < 0.12 && !state.interruptionFired) {
-    state.interruptionFired = true;
-    return pickFrom([
-      "Oh — sorry, my other line is ringing. I actually need to take this. Can you — just email me? Sorry. Got to go.",
-      "Wait — [muffled talking] — sorry, someone just walked into my office. I need to deal with this. Send me an email? Bye.",
-      "Hold on — [pause] — I've just been pinged about something urgent. I really need to go handle this. Sorry — email me?",
-      "Oh damn, I just realized I'm late for something. I need to run. Literally. Email me the details? Sorry about this — bye!",
-      "My assistant is flagging me — apparently I have someone waiting. I need to wrap up. Just send the info to my email.",
-      "[loud background noise] Sorry — things are kicking off here. I need to go. Genuinely need to go. Email is best. Bye!",
-      "Oh — I just got an urgent message. Apologies — I'm going to have to cut this short. Send me something by email and I'll get to it."
-    ]);
-  }
-  
-  // ===== END GRADUAL DISENGAGEMENT =====
-
-  // === RE-ENGAGEMENT: Customer softens when DGR respects their exit ===
-  // If DGR handled disengagement gracefully (scored positive last turn), customer may give more time
-  if(patienceLevel >= 35 && patienceLevel <= 55 && turnNum >= 4 && state.consecutiveGood >= 1) {
-    var lastDgrMsg = '';
-    for(var ri = state.conversationHistory.length - 1; ri >= 0; ri--) {
-      if(state.conversationHistory[ri].role === 'dgr') {
-        lastDgrMsg = state.conversationHistory[ri].text.toLowerCase();
-        break;
-      }
-    }
-    // If DGR was respectful/graceful in their last message
-    if(lastDgrMsg.match(/understand|respect|appreciate|no worries|your time|thank|fair enough/) && Math.random() < 0.35) {
-      state.patience += 15; // Give back some patience
-      return pickFrom([
-        "You know what — I appreciate that you're not being pushy about it. Actually... tell me one more thing. What's the [main benefit] in one sentence?",
-        "Hmm. Okay — you're actually respectful about this, which is rare. Fine — you've got 30 more seconds. Make them count.",
-        "Wait — actually. Before I go. [pause] You mentioned [topic]. What did you mean by that? I'm curious despite myself.",
-        "Alright — look. I DO need to go. But... [pause] ...okay, one more minute. But that's it. What's the single most important thing?",
-        "[pause] ...you know, most people would have just kept pushing. The fact that you didn't makes me trust you more. Quick — what's the elevator pitch?",
-        "Okay wait. [sigh] I'm probably going to regret this but... fine. You've got my attention for one more minute. Don't waste it.",
-        "Actually — hold on. You handled that well. Most callers would have just steamrolled through my 'no'. Okay — what's the ONE thing you'd want me to look at?",
-        "Hmm. Alright. I respect that you backed off. [pause] ...tell me this though — if you had to describe what you do in one sentence to my board, what would it be?"
-      ]);
-    }
-  }
-
-
-
-  // === REAL DATA INJECTION: 25% chance to use actual customer language from AWSentral/SIFT ===
-  if(Math.random() < 0.25 && state.turn >= 2) {
-    // Pick from real data based on context
-    if(contexts.includes('mentionsCost') && REAL_CUSTOMER_RESPONSES.costSensitivity.length) {
-      return pickFrom(REAL_CUSTOMER_RESPONSES.costSensitivity);
-    }
-    if(contexts.includes('mentionsCompetitor') && REAL_CUSTOMER_RESPONSES.microsoftEcosystem.length) {
-      // 50% chance to use cross-cloud security objection (from SIFT - $500K Network International loss)
-      if(Math.random() < 0.5 && REAL_CUSTOMER_RESPONSES.crossCloudSecurity) {
-        return pickFrom(REAL_CUSTOMER_RESPONSES.crossCloudSecurity);
-      }
-      return pickFrom(REAL_CUSTOMER_RESPONSES.microsoftEcosystem);
-    }
-    if(contexts.includes('mentionsAI') && REAL_CUSTOMER_RESPONSES.aiReadiness.length) {
-      // 30% chance to use "direct to provider" objection (from SIFT - Minderest, ISPD, Stream Hatchet)
-      if(Math.random() < 0.3 && REAL_CUSTOMER_RESPONSES.directToProvider) {
-        return pickFrom(REAL_CUSTOMER_RESPONSES.directToProvider);
-      }
-      return pickFrom(REAL_CUSTOMER_RESPONSES.aiReadiness);
-    }
-    if(contexts.includes('mentionsMarketplace') && REAL_CUSTOMER_RESPONSES.marketplaceFunding) {
-      return pickFrom(REAL_CUSTOMER_RESPONSES.marketplaceFunding);
-    }
-    if(contexts.includes('mentionsAWS') && REAL_CUSTOMER_RESPONSES.operationalBlockers) {
-      if(Math.random() < 0.3) {
-        return pickFrom(REAL_CUSTOMER_RESPONSES.operationalBlockers);
-      }
-    }
-  }
-
-  // === REAL CUSTOMER MODE: Use account-specific concerns ===
-  if(state.realCustomer && state.turn >= 2 && Math.random() < 0.3) {
-    var concern = state.realCustomer.knownConcerns[Math.floor(Math.random() * state.realCustomer.knownConcerns.length)];
-    var customerSpecificResponses = [
-      "Look — our main challenge right now is " + concern + ". Unless you can specifically address that, I\'m not sure there\'s a fit.",
-      "The thing keeping me up at night is " + concern + ". If AWS has a specific answer to that, you have my attention. Otherwise...",
-      "We\'ve been dealing with " + concern + " for months. Every vendor says they can help. What specifically would you do?",
-      concern.charAt(0).toUpperCase() + concern.slice(1) + " is priority number one for us. If this call isn\'t about that, we should probably wrap up."
-    ];
-    return pickFrom(customerSpecificResponses);
-  }
-  
-  // === TRY DEEP CONTEXTUAL REPLY FIRST ===
-  var deepReply = buildContextualReply(dgrText, contexts, d);
-  if(deepReply) return deepReply;
-  // === FAST-TRACK: DGR offers specific date/time when customer is engaged ===
-  if(state.patience > 60 && state.turn >= 3 && !state.meetingAccepted) {
-    var hasSpecificTime = lower.match(/(monday|tuesday|wednesday|thursday|friday|next week|tomorrow)\s*(at|around)?\s*(\d{1,2}(am|pm|:\d{2})|morning|afternoon|evening)?/) ||
-                          lower.match(/(\d{1,2}(am|pm|:\d{2}))\s*(on\s*)?(monday|tuesday|wednesday|thursday|friday)/) ||
-                          lower.match(/how about (monday|tuesday|wednesday|thursday|friday|next week)/);
-    if(hasSpecificTime && lower.match(/meet|call|chat|catch up|connect|talk|15 min|20 min|30 min|quick/)) {
-      state.meetingAccepted = true;
-      state.meetingTimeProposed = true;
-      state.scores.closing += 12;
-      addFeedback('good', "You proposed a specific day AND time — this is how top performers close. No ambiguity.");
-      showTyping();
-      setTimeout(function(){
-        var directAccept = [
-          "You know what — yeah, let's do it. " + (lower.match(/tuesday/) ? "Tuesday" : lower.match(/wednesday/) ? "Wednesday" : lower.match(/thursday/) ? "Thursday" : "That day") + " works for me. Send the invite.",
-          "Sure. I can make that work. Keep it tight — 15-20 minutes max. And come with specifics about " + pickConcern() + ".",
-          "[checking calendar] Yeah I'm free then. Let's do it. Send me the invite and include a brief agenda.",
-          "Alright — I'll take the meeting. You've earned it. Send the invite over and I'll confirm.",
-          "Fine — you got me. " + (lower.match(/tuesday/) ? "Tuesday" : lower.match(/wednesday/) ? "Wednesday" : "Next week") + " it is. Don't waste my time though — bring something real.",
-          "Okay. [pause] Yeah. Let's do it. But promise me it's not going to be a product demo. I want a conversation about " + pickConcern() + "."
-        ];
-        var resp = pickFrom(directAccept);
-        state.conversationHistory.push({role:'customer', text:resp});
-    generateCoachTip(resp);
-        addMsg('customer', resp);
-        // DGR gets one more turn to confirm, then natural end
-        state.meetingConfirmed = false;
-      }, 800 + Math.random()*500);
-      return;
-    }
-  }
-
-  
-  // Track topics for variety
-  contexts.forEach(function(c) { state.topicsMentioned.add(c); });
-  
-  // === ABOUT TO HANG UP: low patience ===
-  if(state.patience <= 20 && state.turn > 2) {
-    return pickFrom(CONTEXT_REACTIONS.aboutToHangUp);
-  }
-  
-  // === HUMAN BEHAVIOR INTERRUPTION: random chance, once per call ===
-  if(!state.humanBehaviorUsed && state.turn >= 4 && Math.random() < 0.08) {
-    state.humanBehaviorUsed = true;
-    var behavior = pickFrom(CONTEXT_REACTIONS.humanBehaviors);
-    // Sometimes after interruption, inject a real "don't call" response on hard mode
-    if(d === 'hard' && Math.random() < 0.3) {
-      return behavior + " Actually — look, can you just email me instead? I don't do vendor calls. Send something to my inbox and if it's relevant I'll look at it.";
-    }
-    if(d === 'medium' && Math.random() < 0.2) {
-      return behavior + " Sorry — where were we? Actually, this might be better over email. Can you send me a one-pager?";
-    }
-    // 50% chance to just be the interruption, 50% to add context after
-    if(Math.random() < 0.5) return behavior;
-    // Add a short follow-up after interruption
-    var follow = contexts.includes('asksGoodQuestion') 
-      ? " Anyway — what was the question?" 
-      : " Anyway — where were we? Can you repeat that last bit?";
-    return behavior + follow;
-  }
-  
-  // === EMPATHY DETECTED: warm up ===
-  if(contexts.includes('showsEmpathy') && state.turn > 1) {
-    state.lastCustomerMood = 'warming';
-    var resp = pickFromCategory('showsEmpathy', d);
-    return resp.replace(/{recentEvent}/g, cfg.backstory.recentEvent)
-              .replace(/{concern}/g, pickConcern());
-  }
-  
-  // === GOOD QUESTION: respond substantively ===
-  if(contexts.includes('asksGoodQuestion') && scoreResult > 3) {
-    state.lastCustomerMood = 'warming';
-    var resp = pickFromCategory('asksGoodQuestion', d);
-    return resp.replace(/{concern}/g, pickConcern());
-  }
-  
-  // === HIGH PATIENCE + GOOD RAPPORT: customer is warming up ===
-  if(state.patience > 70 && state.turn >= 3 && state.consecutiveGood >= 2) {
-    state.lastCustomerMood = 'warming';
-    
-    // If DGR is ASKING for the meeting and patience is very high — ACCEPT
-    if(state.patience > 65 && state.turn >= 3 && lower.match(/meet|calendar|schedul|15 min|20 min|next week|book|time.*talk|would it (be worth|make sense)|catch up|tuesday|wednesday|thursday|friday|monday|2pm|3pm|10am|morning|afternoon/)) {
-      // Customer agrees! 
-      var acceptResponses = [
-        "Alright — fine. You've earned it. Send me a calendar invite. 15 minutes, Tuesday or Wednesday works.",
-        "Okay look — you've convinced me. Let's do a quick call next week. But come prepared — I'll have questions about " + pickConcern() + ".",
-        "Sure. I'll give you 20 minutes. Send me an invite and include a one-pager on what we'd cover. No generic decks.",
-        "You know what — yeah. Let's do it. Thursday afternoon works. Bring someone technical who can talk about " + pickConcern() + ".",
-        "Fine. You're good. [laughs] Send me a time and I'll make it work. But if it turns into a product demo I'm hanging up.",
-        "Alright — I'm in. But here's the deal: make it specific to us. If you show me a generic slide deck, we're done.",
-        "[pause] Okay. Yeah. Next Tuesday works. Send me an invite. And — actually, CC my " + (state.cfg.title === 'CTO' ? 'VP of Engineering' : 'Head of Technology') + " too. They should hear this."
-      ];
-      setTimeout(function(){
-        var resp = pickFrom(acceptResponses);
-        state.conversationHistory.push({role:'customer', text:resp});
-    generateCoachTip(resp);
-        addMsg('customer', resp);
-        // Give DGR one more turn to confirm, then end successfully
-        state.meetingAccepted = true;
-      }, 800 + Math.random()*500);
-      return;
-    }
-    
-    var warmResponses = [
-      "Okay... I'm intrigued. What would a next step actually look like?",
-      "You've earned some credibility. I can do 15 minutes next week — but come prepared for questions about " + pickConcern() + ".",
-      "Alright look — I'm not saying yes. But I'm not saying no either. What specifically would we cover?",
-      "Fine. You're not annoying me, which is more than I can say for most cold calls. What's the format?",
-      "I'll give you credit — you actually seem to know our space. Let me check my calendar... what were you thinking?",
-      "Hm. Okay. I'll bite. Send me a calendar invite. But 15 minutes MAX and bring specifics about " + pickConcern() + "."
-    ];
-    return pickFrom(warmResponses);
-  }
-  
-  // === MEETING MENTIONED: if customer is engaged, accept instead of pushing back ===
-  if(contexts.includes('mentionsMeeting')) {
-    // If patience is high enough, don't push back — var the acceptance logic handle it
-    if(state.patience > 65 && state.turn >= 3) {
-      // Fall through to the warm/acceptance responses below
     } else {
-      return pickFromCategory('mentionsMeeting', d);
+      resp = pick([
+        "Mm-hmm. Can you be more specific? What exactly are we talking about here?",
+        "Okay... and how does that apply to " + (s(company.industry) ? s(company.industry).split('—')[0] : "our space") + " specifically?",
+        "Right. Sounds interesting in theory. What does it look like in practice?",
+        "Generic pitch detected. [laughs] No offence — just give me the specific \'why us\' part."
+      ]);
+    }
+    mem.lastCustomerQuestion = 'specifics';
+    mem.customerAskedFor = 'concrete example';
+  }
+  
+  // --- DGR WAS SPECIFIC / MENTIONED A PRODUCT ---
+  else if(isSpecific || mentionsProduct) {
+    state.patience += 2;
+    mem.customerInterestLevel = 'warm';
+    
+    if(mentionsProduct && !mentionsCost) {
+      var product = (lower.match(/bedrock|sagemaker|lambda|marketplace|graviton|eks|ecs|dynamodb|aurora|connect|kendra/) || ['that'])[0];
+      resp = pick([
+        "Okay, " + product + " — I\'ve heard of it. " + (tech ? "We use " + tech + " currently." : "") + " How does it compare to what we have?",
+        product.charAt(0).toUpperCase() + product.slice(1) + ". Right. What\'s the learning curve? My team\'s already stretched.",
+        "Interesting. " + product + ". " + (pain ? "Would that help with " + pain.toLowerCase() + "?" : "What problem does it solve for us?"),
+        product.charAt(0).toUpperCase() + product.slice(1) + " — okay. What does a realistic implementation timeline look like? Not the sales brochure version."
+      ]);
+      mem.lastCustomerQuestion = product + ' specifics';
+    }
+    else if(isSpecific) {
+      resp = pick([
+        "Now you\'re talking. " + (pri ? "How does that connect to " + pri.toLowerCase() + "?" : "Tell me more about that."),
+        "Okay that\'s actually concrete. I appreciate that. " + (pain ? "Our challenge is " + pain.toLowerCase() + " — does this help?" : "How quickly could we see results?"),
+        "Good — real numbers. " + (mem.dgrClaimed.length > 0 ? "You said \'" + mem.dgrClaimed[mem.dgrClaimed.length-1] + "\'. Can you prove it?" : "Who else in our industry has done this?"),
+        "Alright, you have my attention. " + (pri ? "We\'re trying to " + pri.toLowerCase() + "." : "") + " Keep going."
+      ]);
+      mem.lastCustomerQuestion = 'more detail';
     }
   }
   
-  // === PRIMARY CONTEXT: respond to what they actually talked about ===
-  // Prioritize the most specific context
-  var priority = ['mentionsCompetitor','mentionsAI','mentionsCost','mentionsMarketplace','mentionsAWS','mentionsData','generic'];
-  for(var i=0; i<priority.length; i++) {
-    if(contexts.includes(priority[i])) {
-      var resp = pickFromCategory(priority[i], d);
-      // Inject industry and backstory references
-      resp = resp.replace(/\[industry\]/g, state.industry)
-                 .replace(/{concern}/g, pickConcern())
-                 .replace(/{recentEvent}/g, cfg.backstory.recentEvent);
-      
-      // === CONTEXTUAL FOLLOW-UPS based on conversation history ===
-      // If DGR repeated themselves (mentioned same topic twice), call it out
-      if(state.topicsMentioned.size < state.turn && state.turn > 3 && Math.random() < 0.4) {
-        resp += " Actually — didn't you already mention that? What's the new information?";
-      }
-      
-      return resp;
+  // --- DGR ASKED A QUESTION ---
+  else if(hasQuestion && !isClosing) {
+    // Customer ANSWERS the question — this is where real conversation happens
+    state.patience += 3;
+    
+    if(lower.match(/challenge|problem|pain|struggle|what.*(keep|up at night|worry|concern|blocker)/)) {
+      resp = pick([
+        (pain ? pain : "Honestly, we\'re trying to do more with less") + ". That\'s the big one right now.",
+        (pri ? "We\'re focused on " + pri.toLowerCase() + ". Everything else is noise." : "Scaling without burning the team out. That\'s the real challenge."),
+        "Where do I start? " + (pain ? pain : "Too many tools, not enough integration") + ". And the board wants results yesterday.",
+        (pain ? pain.split('.').slice(0,2).join('. ') : "Honestly — speed. We can\'t ship fast enough") + ". That\'s what keeps me up."
+      ]);
+      mem.lastCustomerQuestion = null; // customer answered, not asking
+    }
+    else if(lower.match(/what.*(use|stack|platform|tool|current|today|running)/)) {
+      resp = pick([
+        (tech ? "Mostly " + tech + "." : "Mix of things.") + " It\'s... not perfect. But it works. Mostly.",
+        (tech ? tech + ". Plus some legacy stuff nobody wants to touch." : "Bit of everything honestly. Some on-prem, some cloud."),
+        (tech ? "We\'re on " + tech + " for the main stuff." : "Standard enterprise stack.") + " Why do you ask?",
+        (s(company.techStack) ? "Our stack is " + s(company.techStack).substring(0, 80) + "." : "Multi-cloud mess, honestly.") + " It grew organically."
+      ]);
+    }
+    else if(lower.match(/who.*(decision|approve|sign|stakeholder|involved|buy)/)) {
+      resp = pick([
+        "I can greenlight exploratory conversations. Anything with budget needs my " + (state.persona === 'cto' ? "CEO" : state.persona === 'cfo' ? "board" : "leadership team") + ".",
+        "Depends on the size. Under £50K I can decide. Above that — it\'s a committee thing.",
+        "I\'m the one who says yes or no to meetings. Beyond that, depends on scope.",
+        "Me for the initial eval. Then finance and legal if it gets serious. Standard stuff."
+      ]);
+    }
+    else if(lower.match(/when|timeline|plan|quarter|this year|next year|roadmap/)) {
+      resp = pick([
+        (s(company.futurePlans) ? firstOf(s(company.futurePlans)) + "." : "We\'re planning for next quarter.") + " Timing is... complicated.",
+        "Honestly? We\'re already behind on our roadmap. Adding something new would need to show immediate value.",
+        (pri ? "We\'re trying to get " + pri.toLowerCase() + " done by end of year." : "End of year is our horizon.") + " Where would this fit?",
+        "Short answer: we have budget cycles. Next one is " + (Math.random() > 0.5 ? "Q3" : "January") + ". Anything before that needs to be compelling."
+      ]);
+    }
+    else if(lower.match(/team|how many|size|engineer|developer|staff/)) {
+      resp = pick([
+        (s(company.size) ? "We\'re " + firstOf(s(company.size), ',') + "." : "Mid-size team.") + " Everyone\'s at capacity though.",
+        "Small but mighty. " + (s(company.size) ? firstOf(s(company.size), ',') + "." : "About 50 people that matter.") + " Why?",
+        "Engineering team? " + (cfg.backstory && cfg.backstory.team ? cfg.backstory.team + "." : "Handful of good people.") + " We can\'t waste their time on experiments."
+      ]);
+    }
+    else {
+      // Generic question — answer broadly but honestly
+      resp = pick([
+        "Hmm. " + (pri ? pri : "Growth") + " is the priority. Everything else is secondary.",
+        "Good question. " + (pain ? "The honest answer is " + pain.toLowerCase().split('.')[0] : "We\'re trying to figure that out ourselves") + ".",
+        "Let me think... " + (s(company.futurePlans) ? firstOf(s(company.futurePlans)) : "We\'re at a turning point") + ". Does that answer it?",
+        "Fair question. " + (firstOf(s(company.recentDecisions)) || "We\'re in transition") + ". That\'s where our heads are at."
+      ]);
     }
   }
   
-    } catch(complexErr) {
-    // Complex system failed — fall through to simpleResponse below
-    if(typeof console !== 'undefined') console.error('Complex response system error:', complexErr.message);
+  // --- DGR IS TRYING TO CLOSE (meeting request) ---
+  else if(isClosing) {
+    if(patience > 60 && turn >= 3 && mem.dgrWasSpecific > 0) {
+      resp = pick([
+        "Alright. " + (pri ? "But it needs to be about " + pri.toLowerCase() + ". Not a generic demo." : "Make it specific to us.") + " 15 minutes max.",
+        "Tentatively yes. Send me a calendar invite. If something specific comes up I\'ll push it but... let\'s try.",
+        "Okay — you\'ve earned it. " + (mem.dgrWasSpecific > 2 ? "You actually said something useful which is rare." : "Let\'s see if there\'s something there.") + " Next week?",
+        "Fine. " + (pri ? "Focus on " + pri.toLowerCase() + " and " : "") + "keep it short. I\'ll give you 20 minutes."
+      ]);
+      state.meetingAccepted = true;
+    }
+    else if(patience > 45 && mem.dgrWasSpecific > 0) {
+      resp = pick([
+        "Maybe. " + (mem.customerAskedFor ? "You still haven\'t really answered my question about " + mem.customerAskedFor + " though." : "I\'m not fully convinced yet."),
+        "Send me something first. A one-pager. If it\'s relevant, I\'ll book time.",
+        "Not yet. You\'re getting warmer but I need more. " + (pain ? "Specifically around " + pain.toLowerCase().split('.')[0] : "Something concrete") + ".",
+        "Let me think about it. Can you email me a summary? If it makes sense I\'ll reply."
+      ]);
+    }
+    else {
+      state.patience -= 5;
+      resp = pick([
+        "Meeting? No. You haven\'t said anything that warrants more of my time yet.",
+        "Slow down. You\'re asking for a meeting but I don\'t even know what the value is.",
+        "That\'s a no right now. " + (mem.dgrWasVague > 2 ? "You\'ve been pretty vague this whole call." : "Give me a reason to care first."),
+        "Not happening. If you can tell me ONE thing that\'s relevant to " + compName + ", I\'ll reconsider."
+      ]);
+    }
   }
   
-  // Simple response is our guaranteed answer
-  return simpleResponse || "Mm-hmm. Tell me more about how that applies to us.";
+  // --- COMPETITOR MENTION ---
+  else if(mentionsCompetitor) {
+    var comp = (lower.match(/azure|google cloud|gcp|microsoft|oracle|openai|anthropic/) || ['the other guys'])[0];
+    resp = pick([
+      "We know " + comp + ". " + (cfg.backstory && cfg.backstory.vendor ? "We use " + cfg.backstory.vendor + " for some things." : "Everyone does.") + " What makes you better? Honestly.",
+      comp.charAt(0).toUpperCase() + comp.slice(1) + " — yeah they called last week too. [laughs] Don\'t trash-talk them, just tell me YOUR strength.",
+      "Comparing to " + comp + " is fine. But I want YOUR story, not why THEY\'re bad. What do you DO well?",
+      (tech ? "We\'re on " + tech + " and some " + comp + " stuff. " : "") + "Convince me consolidation is worth the disruption."
+    ]);
+    mem.lastCustomerQuestion = 'why not ' + comp;
+  }
+  
+  // --- AI / GENAI TOPIC ---
+  else if(mentionsAI && !isGeneric) {
+    resp = pick([
+      "AI — okay. " + (pain ? "Can it help with " + pain.toLowerCase().split('.')[0] + "? Because that\'s what I care about." : "What\'s the practical use case for us?"),
+      "Everyone\'s selling AI. " + (pri ? "We\'re trying to " + pri.toLowerCase() + ". Where does AI fit?" : "What\'s the use case that isn\'t just hype?"),
+      "We\'ve looked at this. " + (s(company.futurePlans).match(/ai|ml|model|agent/i) ? "It\'s in our roadmap actually: " + firstOf(s(company.futurePlans)) + "." : "Haven\'t pulled the trigger. What makes NOW the right time?"),
+      "Alright, AI. I have two questions: what\'s it cost, and how long to see value? Not theoretical value — real value."
+    ]);
+    mem.lastCustomerQuestion = 'AI practical value';
+  }
+  
+  // --- COST / ROI TOPIC ---
+  else if(mentionsCost && !isGeneric) {
+    resp = pick([
+      (s(company.budget) ? firstOf(s(company.budget)) + ". " : "Budget\'s allocated. ") + "What kind of savings are we ACTUALLY talking?",
+      "Numbers. I like numbers. But they need to be for a company like ours — " + (s(company.size) ? firstOf(s(company.size), ',') : "our size") + ". Not some Fortune 500 case study.",
+      "ROI — okay. Over what timeframe? Because short-term hits to productivity while we migrate... that\'s real.",
+      "Break it down for me. What am I spending today? What would I spend with you? What\'s the delta? Simple."
+    ]);
+    mem.lastCustomerQuestion = 'ROI specifics';
+  }
+  
+  // --- DGR ANSWERED CUSTOMER'S PREVIOUS QUESTION ---
+  else if(mem.customerAskedFor && !isGeneric && inputLength > 10) {
+    state.patience += 2;
+    resp = pick([
+      "Okay. That\'s a decent answer. " + (pri ? "How does it tie to " + pri.toLowerCase() + " though?" : "What\'s the next step look like?"),
+      "Alright, I follow. " + (pain ? "And specifically for our " + pain.toLowerCase().split('.')[0] + " problem?" : "Tell me about implementation."),
+      "Fair enough. " + (mem.dgrClaimed.length > 1 ? "Earlier you said \'" + mem.dgrClaimed[0].substring(0, 40) + "\' — how does this connect?" : "Keep going. I\'m listening."),
+      "Okay that makes more sense. " + (s(company.futurePlans) ? "We\'re planning to " + firstOf(s(company.futurePlans)).toLowerCase() + ". Related?" : "What would the first 30 days look like?")
+    ]);
+    mem.customerAskedFor = null;
+  }
+  
+  // --- DGR SAID SOMETHING SHORT / LOW EFFORT ---
+  else if(isShort && turn > 1) {
+    state.patience -= 3;
+    resp = pick([
+      "That\'s... it? Give me more than that. I\'m giving you my time here.",
+      "Short and vague. Not a great combo. What are you actually trying to say?",
+      "Okay...? And? There\'s got to be more to it than that.",
+      "You called ME. Put some effort in. What\'s the point you\'re making?"
+    ]);
+  }
+  
+  // --- DGR MONOLOGUE (too long) ---
+  else if(isLong) {
+    state.patience -= 2;
+    resp = pick([
+      "Okay — I\'m going to stop you there. What\'s the ONE takeaway from all of that?",
+      "That\'s a lot. Let me summarize what I heard: " + (mem.dgrClaimed.length > 0 ? "\'" + mem.dgrClaimed[mem.dgrClaimed.length-1] + "\'." : "...actually I\'m not sure.") + " Am I close?",
+      "Right. I got about 60% of that. The important bit was...?",
+      "Whoa. Information overload. Top 3 points. Go.",
+      "I appreciate the detail but my eyes glazed over halfway. Bullet points version?"
+    ]);
+    mem.lastCustomerQuestion = 'summary';
+  }
+  
+  // --- CATCH-ALL: Contextual response based on interest level ---
+  if(!resp) {
+    if(mem.customerInterestLevel === 'warm' || patience > 65) {
+      resp = pick([
+        "Okay, interesting. " + (pri ? "And how does this help us " + pri.toLowerCase() + "?" : "Keep going — I\'m listening."),
+        "Mm-hmm. " + (pain ? "Our main pain is " + pain.toLowerCase().split('.')[0] + ". Relevant?" : "How does this apply to a company like ours?"),
+        "Right. " + (mem.dgrWasSpecific > 0 ? "You\'ve made some good points." : "Still waiting for the \'aha\' moment.") + " What else?",
+        "Continue. " + (s(company.futurePlans) ? "We\'re headed towards " + firstOf(s(company.futurePlans)).toLowerCase() + ". Does this fit?" : "I want to see where this is going.")
+      ]);
+    }
+    else if(mem.customerInterestLevel === 'cold' || patience < 40) {
+      resp = pick([
+        "Look — I\'m going to level with you. This isn\'t landing. Either pivot or let\'s wrap up.",
+        "I\'m losing interest here. What\'s the ONE thing that should make me care?",
+        "We\'re running out of time. If you have a killer point, now\'s the moment.",
+        "I\'m going to be honest — nothing you\'ve said so far is making me want to continue this call."
+      ]);
+    }
+    else {
+      resp = pick([
+        "Okay. " + (pain ? "Look, our real issue is " + pain.toLowerCase().split('.')[0] + ". If you can solve that — talk." : "What\'s the actual value for us?"),
+        "Mm-hmm. " + (turn > 3 ? "I\'m still not sure what you\'re offering specifically." : "Go on."),
+        "Right. " + (pri ? "How does this help with " + pri.toLowerCase() + "?" : "And how does this apply to us?"),
+        "That\'s interesting in theory. " + (s(company.size) ? "For a " + firstOf(s(company.size), ',').toLowerCase() + " company" : "For us") + " — what does it look like?",
+        (s(company.futurePlans) ? "We\'re trying to " + firstOf(s(company.futurePlans)).toLowerCase() + ". " : "") + "Where does this fit in?"
+      ]);
+    }
+  }
+  
+  // === FINAL ENRICHMENT: Add personality touches ===
+  // Occasionally interrupt with human behavior
+  if(turn > 2 && Math.random() < 0.12) {
+    var interrupts = [
+      "[phone buzzes] Sorry — one sec... okay, go on.",
+      "[typing sounds] Mm-hmm, I\'m listening. Just multitasking.",
+      "[muffled voice] Sorry — someone walked in. You were saying?",
+      "Hold on — [to someone else] I\'ll be 2 minutes. [back] Yeah, continue."
+    ];
+    resp = interrupts[Math.floor(Math.random() * interrupts.length)] + " " + resp;
+  }
+  
+  // Track last customer question for next turn
+  if(resp && resp.indexOf('?') >= 0) {
+    var q = resp.match(/[^.!]*\?/);
+    mem.lastCustomerQuestion = q ? q[0].trim() : null;
+    mem.customerAskedFor = mem.lastCustomerQuestion;
+  }
+  
+  return resp || "Mm-hmm. Tell me more about how that applies to us.";
 }
 
 function pickFromCategory(category, difficulty) {
