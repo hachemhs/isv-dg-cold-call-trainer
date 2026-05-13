@@ -1989,36 +1989,14 @@ function renderResults(objections, script, questions, company, industry, persona
       </div>
     </div>
     
-    <!-- Outreach Email -->
-    <div class="result-card">
-      <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1"><i class="fa-solid fa-envelope"></i></span> Cold Outreach Email</h3>
-      <button class="copy-btn" onclick="copyEmail()"><i class="fa-solid fa-copy"></i> Copy Email</button>
-      <div id="emailContent" style="background:var(--color-bg-elevated);border-radius:12px;padding:20px;border:1px solid var(--color-border)">
-        <div style="margin-bottom:16px">
-          <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:0.5px">Subject Line</span>
-          <div style="font-weight:600;font-size:15px;margin-top:4px;color:var(--color-text-primary)" id="emailSubject">\${email.subject}</div>
-        </div>
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:12px 0">
-        <div style="font-size:14px;line-height:1.7;color:var(--color-text-primary);white-space:pre-line" id="emailBody">Hi [First Name],
-
-\${email.opening}
-
-\${email.value}
-
-\${email.cta}
-
-Best,
-[Your Name]
-AWS — ISV Team, EMEA
-
-\${email.ps}</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button onclick="regenerateEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-rotate"></i> Regenerate</button>
-        <button onclick="shortenEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-compress"></i> Shorter Version</button>
-        <button onclick="makeFollowUp()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-reply"></i> Follow-up Version</button>
-      </div>
+    <!-- Outreach Email (on-demand) -->
+    <div id="emailPlaceholder" style="text-align:center;padding:20px">
+      <button onclick="showOutreachEmail()" style="padding:14px 28px;background:linear-gradient(135deg,#5E35B1,#7C4DFF);color:white;border:none;border-radius:12px;cursor:pointer;font-size:14px;font-weight:700;box-shadow:0 4px 15px rgba(94,53,177,0.3);transition:all 0.2s">
+        <i class="fa-solid fa-envelope" style="margin-right:8px"></i> Generate Outreach Email from Talking Points
+      </button>
+      <p style="font-size:12px;color:var(--color-text-muted);margin-top:8px">Translate your call script into a cold email</p>
     </div>
+    <div id="emailSection" style="display:none"></div>
 
 
     
@@ -2162,6 +2140,53 @@ function copyEmail() {
     if(btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Email'; }, 2000); }
   });
 }
+
+function showOutreachEmail() {
+  const email = generateOutreachEmail(
+    lastEmailParams.company, lastEmailParams.industry, lastEmailParams.persona,
+    lastEmailParams.objective, lastEmailParams.maturity, lastEmailParams.context
+  );
+  
+  const section = document.getElementById('emailSection');
+  const placeholder = document.getElementById('emailPlaceholder');
+  
+  section.style.display = 'block';
+  placeholder.style.display = 'none';
+  
+  section.innerHTML = `
+    <div class="result-card" style="border:2px solid #7C4DFF;animation:fadeIn 0.3s ease">
+      <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1"><i class="fa-solid fa-envelope"></i></span> Cold Outreach Email</h3>
+      <button class="copy-btn" onclick="copyEmail()"><i class="fa-solid fa-copy"></i> Copy Email</button>
+      <div id="emailContent" style="background:var(--color-bg-elevated);border-radius:12px;padding:20px;border:1px solid var(--color-border)">
+        <div style="margin-bottom:16px">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:0.5px">Subject Line</span>
+          <div style="font-weight:600;font-size:15px;margin-top:4px;color:var(--color-text-primary)" id="emailSubject">${email.subject}</div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:12px 0">
+        <div style="font-size:14px;line-height:1.7;color:var(--color-text-primary);white-space:pre-line" id="emailBody">Hi [First Name],
+
+${email.opening}
+
+${email.value}
+
+${email.cta}
+
+Best,
+[Your Name]
+AWS — ISV Team, EMEA
+
+${email.ps}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button onclick="regenerateEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-rotate"></i> Regenerate</button>
+        <button onclick="shortenEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-compress"></i> Shorter Version</button>
+        <button onclick="makeFollowUp()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-reply"></i> Follow-up Version</button>
+      </div>
+    </div>`;
+  
+  section.scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
 
 // Store last email params for regeneration
 var lastEmailParams = {};
