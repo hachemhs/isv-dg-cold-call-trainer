@@ -1215,6 +1215,313 @@ function buildContextualReply(dgrText, contexts, d) {
     }
   }
   
+  
+  // ===== PERSONA-SPECIFIC CONVERSATION TREES =====
+  // Each persona has unique voice, interests, and reaction patterns
+  
+  var persona = state.persona;
+  var turn = state.turn;
+  var patience = state.patience;
+  
+  // === CTO (Alex Chen) — Technical, direct, time-poor, respects intelligence ===
+  if(persona === 'cto') {
+    if(lower.match(/architect|infrastructure|stack|microservices|kubernetes|container|docker/)) {
+      return pickFrom([
+        "Okay now you're speaking my language. We're mid-migration to a microservices architecture. What specifically can you help with there?",
+        "Architecture is where it gets interesting for me. We're dealing with technical debt from our monolith. What's your approach?",
+        "We run Kubernetes across three clusters. If you can simplify our orchestration without adding complexity, I'm listening.",
+        "Our infra team is stretched thin. We're managing 40+ services. What would change with what you're proposing?"
+      ]);
+    }
+    if(lower.match(/developer|dev experience|devops|ci.?cd|deploy|ship/)) {
+      return pickFrom([
+        "Dev experience is actually a hot topic internally. Our deploy pipeline takes 45 minutes and it's killing velocity. What can you do?",
+        "My devs are spending too much time on ops and not enough shipping features. Is this something that directly addresses that?",
+        "We just moved to GitHub Actions. It's fine. What would AWS add that we're not already getting?",
+        "Look — my team evaluates tools fast. If you can show me a 10-minute demo that proves value, I'll watch. But no hour-long overviews."
+      ]);
+    }
+    if(lower.match(/performance|latency|throughput|speed|optimize|bottleneck/)) {
+      return pickFrom([
+        "Performance is always a conversation for us. Where specifically? API latency? Database queries? Compute throughput?",
+        "We're hitting p99 latency issues on our main API. If you have something that addresses that specifically, talk to me.",
+        "Throughput isn't our issue right now — it's cold starts and connection pooling. Is that what you're talking about?",
+        "What benchmarks are you seeing? Because our current setup does [X] ms and I need to know if you can beat that."
+      ]);
+    }
+    if(lower.match(/team|engineer|hire|talent|resource|bandwidth/)) {
+      return pickFrom([
+        "Yeah, we're a team of " + cfg.backstory.team + ". Always under-resourced for what we're trying to do. What's the play?",
+        "I can't hire fast enough and every new tool means ramp-up time. What's the learning curve on this?",
+        "My senior engineers are skeptical of vendor lock-in. They'd rather build it themselves. How do you counter that?",
+        "Resource constraints are real. I've got 3 open headcount I can't fill. If this saves engineering time, quantify it for me."
+      ]);
+    }
+    if(lower.match(/open.?source|vendor.?lock|lock.?in|proprietary|portabl/)) {
+      return pickFrom([
+        "Lock-in is a real concern for my team. Everything we build needs to be portable. What's the exit story?",
+        "We use open-source wherever possible specifically to avoid lock-in. How does this fit with that philosophy?",
+        "My VP of Engineering will veto anything that creates a single point of dependency. What's your answer to that?",
+        "I've been burned before by proprietary platforms. We migrated off one last year and it took 6 months. Convince me this is different."
+      ]);
+    }
+    // CTO conversational flow — follow-ups based on turn
+    if(turn >= 4 && patience > 55 && !lower.match(/meet|calendar|schedul/)) {
+      return pickFrom([
+        "Okay this is interesting but... what does this actually look like in practice? For a company our size?",
+        "I'm tracking. But let me push back — what happens when things go wrong? What's the support model?",
+        "Fair enough. One more question — how does this compare to what [competitor] offers? Be honest.",
+        "Hmm. I'd need to see this working. Do you have a sandbox or POC environment I could play with?",
+        "Alright you've got my attention. But I'm not the only voice here — how do I sell this internally to my team?"
+      ]);
+    }
+  }
+  
+  // === CFO (Sarah Mitchell) — Numbers-driven, ROI-focused, skeptical of tech-speak ===
+  if(persona === 'cfo') {
+    if(lower.match(/cost|price|spend|bill|invoice|budget|saving|roi|payback/)) {
+      return pickFrom([
+        "Okay — let's talk numbers. What's the total cost of ownership over 3 years? And don't give me a range. Give me a number.",
+        "ROI is the only conversation I'm interested in. What's the payback period? Under 12 months or over?",
+        "We spend $[X]K monthly on cloud. What percentage reduction are we talking? And what's the implementation cost?",
+        "I've heard 'cost savings' from every vendor. Show me a customer like us — same size, same industry — and what they actually saved.",
+        "What's the pricing model? Per-seat? Usage-based? Committed? I need predictability in my forecasts.",
+        "If I greenlight this, what does month-one invoice look like? And month-twelve? I need to model this."
+      ]);
+    }
+    if(lower.match(/risk|compliance|audit|regulation|governance|control/)) {
+      return pickFrom([
+        "Risk is my primary lens. What are the financial risks of implementation? And what happens if we need to exit?",
+        "We're publicly traded. Every cloud decision goes through audit. What's the compliance story?",
+        "Our board asks about vendor concentration risk. Adding another vendor is actually a conversation I need to have. How does this help?",
+        "What's the contractual commitment? I don't do multi-year lock-ins without a termination clause."
+      ]);
+    }
+    if(lower.match(/technical|architect|engineer|dev|code|api|integrate/)) {
+      return pickFrom([
+        "I'm going to stop you there — I'm not a technical decision maker. Translate this into business impact for me.",
+        "Look, I don't need to understand the architecture. I need to understand: does this save money, reduce risk, or grow revenue?",
+        "You're losing me with the tech talk. Give me the three bullet points my CFO-brain cares about.",
+        "I'll loop in our CTO for technical validation. But from a commercial standpoint — what's the business case?"
+      ]);
+    }
+    if(lower.match(/contract|term|commit|license|annual|monthly|payment/)) {
+      return pickFrom([
+        "What are the contract terms? I want flexibility. Monthly preferred. No auto-renewal traps.",
+        "Is this a consumption model or fixed fee? We've been burned by unpredictable usage-based pricing before.",
+        "What discounts are available if we commit annually? And what's the cancellation process?",
+        "I need to understand the payment terms. Net-30? Net-60? Do you offer invoicing in GBP/EUR?"
+      ]);
+    }
+    // CFO follow-up pattern
+    if(turn >= 4 && patience > 50) {
+      return pickFrom([
+        "Alright. Send me a proposal with clear numbers. Total cost, expected savings, timeline to value. One page.",
+        "This is interesting but I need to model it. Can you send me a pricing calculator or estimate?",
+        "I'd want to involve our Head of Procurement. Would you be open to a call with both of us?",
+        "Who else in our industry has done this? I want a reference call with someone at our scale."
+      ]);
+    }
+  }
+  
+  // === CEO (James Park) — Vision-driven, time-poor, competitive, wants strategic fit ===
+  if(persona === 'ceo') {
+    if(lower.match(/compet|market|growth|revenue|customers|win|leader|ahead/)) {
+      return pickFrom([
+        "Competition is everything right now. Who in our space is already doing this? And are they winning because of it?",
+        "We need to grow 3x in 18 months. If this doesn't directly accelerate that, I'm not interested. Does it?",
+        "Revenue impact. That's what I care about. How does this help us win more customers faster?",
+        "Our competitors are moving fast. If this gives us even a 3-month head start on something, I'll listen.",
+        "Market positioning is top of mind. Does this help us differentiate or just keep up?"
+      ]);
+    }
+    if(lower.match(/strateg|vision|long.?term|roadmap|transform|future/)) {
+      return pickFrom([
+        "What's the 3-year story here? I'm not interested in quick fixes. Where does this take us?",
+        "How does this fit into a broader transformation? We're not doing point solutions anymore.",
+        "If I make this bet, where does it put us in 2 years relative to the market? Paint me a picture.",
+        "Every decision I make needs to compound. How does this create long-term strategic advantage?"
+      ]);
+    }
+    if(lower.match(/investor|board|fundrais|valuation|series|round/)) {
+      return pickFrom([
+        "We're in the middle of raising. How does this story play with investors? Does it improve our narrative?",
+        "My board cares about unit economics and scalability. How does this move those metrics?",
+        "Investors ask about our infrastructure scalability every call. Would this give me a better answer?"
+      ]);
+    }
+    if(lower.match(/partner|ecosystem|alliance|marketplace|channel/)) {
+      return pickFrom([
+        "Partnerships matter to us strategically. What does the ecosystem look like? Who else would we connect with?",
+        "Is there a partner play here? We're looking to expand our channel and co-sell motions.",
+        "If we go with AWS, does that unlock partner introductions? That might be more valuable than the tech itself."
+      ]);
+    }
+    // CEO follow-up pattern
+    if(turn >= 3 && patience > 55) {
+      return pickFrom([
+        "Okay — I'll be direct. What's the one thing that makes you different from Azure and GCP? Give me the elevator pitch.",
+        "If I give you 15 minutes with my CTO, what would you show them? What's the 'aha moment'?",
+        "This is interesting strategically but I need to understand timing. Why now and not in 6 months?",
+        "Who runs your partnership with companies like ours? I want to know this isn't a one-off sales call.",
+        "I like what I'm hearing. But I've heard this from 3 vendors this month. What makes you the right bet?"
+      ]);
+    }
+  }
+  
+  // === CIO (Maria Santos) — Governance, security, process, risk-averse ===
+  if(persona === 'cio') {
+    if(lower.match(/secur|encrypt|access|identity|iam|zero.?trust|authentica/)) {
+      return pickFrom([
+        "Security is non-negotiable. Walk me through the shared responsibility model. What's mine vs yours?",
+        "We're implementing zero-trust. How does this integrate with our existing identity provider?",
+        "What certifications do you hold? SOC 2, ISO 27001, CSA STAR? Our security team will ask immediately.",
+        "Data encryption — at rest and in transit. What algorithms? Customer-managed keys or yours?",
+        "We had an incident last year. Our tolerance for security gaps is zero. What's your incident response SLA?"
+      ]);
+    }
+    if(lower.match(/govern|policy|control|framework|standard|process/)) {
+      return pickFrom([
+        "Governance frameworks are critical for us. How does this integrate with our existing ITSM processes?",
+        "We run ITIL v4 across the organization. I need to know this doesn't create shadow IT.",
+        "Who has access to what? I need clear RBAC, audit trails, and approval workflows. Is that built in?",
+        "How do we enforce policies at scale? We manage 200+ applications. Manual isn't an option."
+      ]);
+    }
+    if(lower.match(/data|gdpr|privacy|residency|sovereign|region|transfer/)) {
+      return pickFrom([
+        "Data residency is critical. Where exactly does our data sit? And can we guarantee it stays in EU?",
+        "GDPR compliance — what's your DPA look like? And do you support data subject access requests?",
+        "Our DPO will want to review the data flow. Can you provide a data architecture diagram?",
+        "Cross-border data transfer is a red flag for us post-Schrems II. What's your legal basis?"
+      ]);
+    }
+    if(lower.match(/incident|disaster|backup|recover|resilien|availability|uptime/)) {
+      return pickFrom([
+        "What's the SLA? And I mean actual measured uptime, not theoretical. What was last quarter's availability?",
+        "Disaster recovery is a board-level concern. What's the RPO and RTO for this service?",
+        "We need multi-region active-active. Is that possible? What does it cost?",
+        "What happens when things break? Walk me through your escalation process for P1 incidents."
+      ]);
+    }
+    // CIO follow-up pattern
+    if(turn >= 4 && patience > 50) {
+      return pickFrom([
+        "I'd need our security team to do a proper assessment. Can you accommodate a security questionnaire?",
+        "This would need to go through our architectural review board. What documentation can you provide?",
+        "Interesting. But before I commit time — have you worked with other companies in our regulatory environment?",
+        "I'd want a technical deep-dive with my infrastructure team. Not a sales call — an actual architecture session.",
+        "Send me your compliance documentation package and I'll have my team review. If it passes, we'll talk."
+      ]);
+    }
+  }
+  
+  // === AI/ML Lead (Priya Kapoor) — Technical, skeptical, builds vs buys, open-source advocate ===
+  if(persona === 'aiml') {
+    if(lower.match(/bedrock|foundation.?model|anthropic|claude|openai|gpt|llama|mistral/)) {
+      return pickFrom([
+        "Which models specifically? Because our team tested Claude on Bedrock vs direct API and the latency was noticeably worse on Bedrock.",
+        "We're model-agnostic by design. We swap between Llama, Mistral, and Claude depending on the task. Does Bedrock support hot-swapping?",
+        "Fine-tuning support is crucial. Can I bring my own LoRA adapters? Or am I stuck with your fine-tuning pipeline?",
+        "What about model versioning? When Anthropic ships Claude 4, how quickly is it available on Bedrock vs direct?",
+        "Inference cost per token — what's the actual rate? Because at our volume the managed service margin adds up fast.",
+        "We're running open-source models on our own GPUs. Bedrock would need to be cheaper AND faster to justify the switch."
+      ]);
+    }
+    if(lower.match(/agent|agentic|orchestrat|multi.?agent|langchain|langgraph|autogen|crew.?ai/)) {
+      return pickFrom([
+        "We're already building agents with LangGraph. What does AgentCore give us that we can't do in open-source frameworks?",
+        "Agent orchestration at scale is our actual problem. We have hundreds of specialized agents. How does AWS handle routing at that volume?",
+        "Tool calling reliability is the killer. Our agents fail 15% of the time on complex tool chains. What's your success rate?",
+        "Multi-agent collaboration is what we need. Not a single agent — a swarm. Does your platform handle agent-to-agent communication?",
+        "We've looked at every framework — LangChain, CrewAI, Autogen. All have limitations at scale. What makes yours different?"
+      ]);
+    }
+    if(lower.match(/train|fine.?tun|data|dataset|annotate|label|mlops|pipeline/)) {
+      return pickFrom([
+        "Our training pipeline is custom-built on SageMaker actually. What's new that would make me change it?",
+        "Data pipeline is the real bottleneck for us. Not model training — data preparation. 80% of our time goes there.",
+        "We have petabytes of proprietary data. Governance and access control for training data is a nightmare. How do you solve that?",
+        "MLOps is where we struggle most. Model versioning, A/B testing, gradual rollouts. What's your story there?"
+      ]);
+    }
+    if(lower.match(/gpu|compute|instance|chip|graviton|inferentia|trainium/)) {
+      return pickFrom([
+        "GPU availability is killing us. We have to book capacity months in advance. Is that better on AWS?",
+        "Inferentia — we tested it. Throughput was good but the compilation step is painful. Has that improved?",
+        "Trainium vs H100s — give me the honest comparison. Not marketing numbers. What are actual customers seeing?",
+        "We're spending $50K/month on inference alone. If you can meaningfully cut that without sacrificing latency, I'll talk."
+      ]);
+    }
+    if(lower.match(/rag|retrieval|vector|embed|search|knowledge/)) {
+      return pickFrom([
+        "RAG is 60% of our AI product. We run Pinecone + OpenAI embeddings. What's the AWS alternative look like?",
+        "Vector search latency matters for us — sub-50ms. What can OpenSearch or Aurora pgvector deliver?",
+        "Our RAG pipeline retrieves from 10M+ documents. Chunking strategy is everything. What's your recommendation?",
+        "We've tuned our retrieval system for months. Switching would need to be seamless. Can you match our recall metrics?"
+      ]);
+    }
+    // AI/ML follow-up pattern
+    if(turn >= 3 && patience > 50) {
+      return pickFrom([
+        "Alright — here's what would convince me: a hands-on workshop where my team can benchmark against our current setup. Can you do that?",
+        "I don't need another slide deck. Can I get access to a sandbox with real compute to run my own tests?",
+        "This is technically interesting but I need to know: who's the SA that would work with us? Are they ML-native?",
+        "Send me technical documentation — not marketing materials. Architecture diagrams, benchmarks, limitations. Be honest about the gaps.",
+        "I want to talk to an AI/ML specialist, not a generalist account manager. Can you set that up?"
+      ]);
+    }
+  }
+  
+  // ===== UNIVERSAL CONVERSATION PATTERNS (any persona) =====
+  
+  // When DGR talks too much (long message without asking)
+  if(text.length > 200 && text.indexOf('?') < 0 && turn > 2) {
+    return pickFrom([
+      "Okay — that's a lot. Can you boil it down? What's the one thing you want me to take away from that?",
+      "I appreciate the detail but you lost me halfway through. What's the bottom line?",
+      "Hold on — you've been talking for a while. Let me ask you a direct question: why should I care about this specifically?",
+      "That was... comprehensive. But what's the actionable takeaway? What do you want me to do with this information?"
+    ]);
+  }
+  
+  // When DGR repeats themselves (same topic twice)
+  if(state.turn >= 4) {
+    var dgrMsgs = state.conversationHistory.filter(function(m){return m.role==='dgr';});
+    if(dgrMsgs.length >= 3) {
+      var prevMsgs = dgrMsgs.slice(-3).map(function(m){return m.text.toLowerCase();}).join(' ');
+      var repeatedWords = words.filter(function(w) { return w.length > 5 && prevMsgs.split(w).length > 2; });
+      if(repeatedWords.length >= 2) {
+        return pickFrom([
+          "You've mentioned that already. What's the new information? I feel like we're going in circles.",
+          "Didn't you just say that? Give me something new or let's wrap this up.",
+          "I think we've covered that ground. Is there something else, or are we done here?"
+        ]);
+      }
+    }
+  }
+  
+  // When DGR gives a short/lazy response (< 30 chars)
+  if(text.length < 30 && turn > 2 && text.indexOf('?') < 0) {
+    return pickFrom([
+      "That's it? You're going to need to give me more than that if you want my time.",
+      "Okay... and? I'm waiting for the substance here.",
+      "One-liners don't work on me. Explain why this matters for our specific situation."
+    ]);
+  }
+  
+  // Conversational softeners when rapport is building (patience increasing)
+  if(patience > 70 && state.consecutiveGood >= 2 && turn >= 3 && Math.random() < 0.3) {
+    return pickFrom([
+      "Hmm — you actually know what you're talking about. That's refreshing. Keep going.",
+      "Okay I'm more interested now than I was 2 minutes ago. What else should I know?",
+      "Fair point. I hadn't thought about it that way. What would the first step look like?",
+      "You're making a decent argument. My resistance is dropping. [laughs] What's the ask?",
+      "Alright — I'll admit you've got me curious. How do we explore this without committing to anything?"
+    ]);
+  }
+
+
   return null; // No deep match — fall through to category-based responses
 }
 
