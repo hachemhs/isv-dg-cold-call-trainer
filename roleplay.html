@@ -1103,9 +1103,9 @@ function startSim() {
 }
 
 function addMsg(type, text) {
-  // Remove typing indicator if exists
-  var existing = document.querySelector('.typing-indicator');
-  if(existing) existing.remove();
+  // Remove typing indicator wrapper if exists
+  var existingWrapper = document.querySelector('.typing-indicator-wrapper');
+  if(existingWrapper) existingWrapper.remove();
   
   var el = document.getElementById('messages');
   var wrapper = document.createElement('div');
@@ -1306,8 +1306,9 @@ function sendMsg() {
     }
   }
   
-  var scoreResult = scoreResponse(text);
-  updatePatience();
+  var scoreResult = 0;
+  try { scoreResult = scoreResponse(text); } catch(e) {}
+  try { updatePatience(); } catch(e) {}
 
   if(state.patience<=0) {
     setTimeout(function(){ triggerGoodbye('lost'); },700);
@@ -1336,11 +1337,20 @@ function sendMsg() {
   if(text.length > 200) delay += 200;
   
   setTimeout(function(){
+    try {
       var resp = generateContextualResponse(text, scoreResult);
+      if(!resp) resp = "Mm-hmm. Go on.";
       state.conversationHistory.push({role:'customer', text:resp});
-      generateCoachTip(resp);
+      if(typeof generateCoachTip === 'function') generateCoachTip(resp);
       addMsg('customer', resp);
       document.getElementById('userInput').focus();
+    } catch(e) {
+      // Fallback response if anything crashes
+      var fallback = "Sorry — can you repeat that? I missed something.";
+      state.conversationHistory.push({role:'customer', text:fallback});
+      addMsg('customer', fallback);
+      document.getElementById('userInput').focus();
+    }
     }, delay);
 }
 
