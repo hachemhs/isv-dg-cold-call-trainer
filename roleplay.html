@@ -765,6 +765,7 @@ function startSim() {
     jargonCount: 0,
     topicsMentioned: new Set(),
     humanBehaviorUsed: false,
+    meetingAccepted: false,
     realCustomer: realCustomerData,
     lastCustomerMood: 'neutral' // neutral, warming, hostile
   };
@@ -819,6 +820,20 @@ function sendMsg() {
   state.turn++;
   state.conversationHistory.push({role:'dgr', text:text});
   
+  // If meeting was accepted last turn, this is the confirmation — end with success!
+  if(state.meetingAccepted) {
+    var lower2 = text.toLowerCase();
+    if(lower2.match(/send|calendar|invite|perfect|great|awesome|looking forward|see you|confirm|tuesday|wednesday|thursday|friday|next week/)) {
+      state.scores.closing += 15;
+      addFeedback('good', "Meeting booked! You confirmed the next step with a specific time — elite closing technique.");
+      setTimeout(function(){ 
+        addMsg('system', '🎉 Meeting booked! Call complete.');
+        endSim('booked'); 
+      }, 500);
+      return;
+    }
+  }
+  
   var scoreResult = scoreResponse(text);
   updatePatience();
 
@@ -827,8 +842,20 @@ function sendMsg() {
     return;
   }
   if(state.turn >= state.maxTurns) {
-    setTimeout(function(){ endSim(state.patience>60?'booked': state.patience>30?'partial':'lost'); },700);
-    return;
+    if(state.patience > 60) {
+      // Customer is interested — extend the call! Don't end yet.
+      state.maxTurns += 3;
+      estimatedCallDuration += 45;
+      setTimeout(function(){
+        addMsg('system', '✨ Customer is engaged — call extended. Book the meeting!');
+      }, 300);
+    } else if(state.patience > 30) {
+      setTimeout(function(){ endSim('partial'); },700);
+      return;
+    } else {
+      setTimeout(function(){ endSim('lost'); },700);
+      return;
+    }
   }
   
   // Show typing indicator with variable delay (simulates human thinking)
@@ -965,6 +992,29 @@ function generateContextualResponse(dgrText, scoreResult) {
   // === HIGH PATIENCE + GOOD RAPPORT: customer is warming up ===
   if(state.patience > 70 && state.turn >= 3 && state.consecutiveGood >= 2) {
     state.lastCustomerMood = 'warming';
+    
+    // If DGR is ASKING for the meeting and patience is very high — ACCEPT
+    if(state.patience > 85 && state.turn >= state.maxTurns - 2 && lower.match(/meet|calendar|schedul|15 min|20 min|next week|book|time.*talk|would it (be worth|make sense)|catch up/)) {
+      // Customer agrees! 
+      var acceptResponses = [
+        "Alright — fine. You've earned it. Send me a calendar invite. 15 minutes, Tuesday or Wednesday works.",
+        "Okay look — you've convinced me. Let's do a quick call next week. But come prepared — I'll have questions about " + pickConcern() + ".",
+        "Sure. I'll give you 20 minutes. Send me an invite and include a one-pager on what we'd cover. No generic decks.",
+        "You know what — yeah. Let's do it. Thursday afternoon works. Bring someone technical who can talk about " + pickConcern() + ".",
+        "Fine. You're good. [laughs] Send me a time and I'll make it work. But if it turns into a product demo I'm hanging up.",
+        "Alright — I'm in. But here's the deal: make it specific to us. If you show me a generic slide deck, we're done.",
+        "[pause] Okay. Yeah. Next Tuesday works. Send me an invite. And — actually, CC my " + (state.cfg.title === 'CTO' ? 'VP of Engineering' : 'Head of Technology') + " too. They should hear this."
+      ];
+      setTimeout(function(){
+        var resp = pickFrom(acceptResponses);
+        state.conversationHistory.push({role:'customer', text:resp});
+        addMsg('customer', resp);
+        // Give DGR one more turn to confirm, then end successfully
+        state.meetingAccepted = true;
+      }, 800 + Math.random()*500);
+      return;
+    }
+    
     var warmResponses = [
       "Okay... I'm intrigued. What would a next step actually look like?",
       "You've earned some credibility. I can do 15 minutes next week — but come prepared for questions about " + pickConcern() + ".",
