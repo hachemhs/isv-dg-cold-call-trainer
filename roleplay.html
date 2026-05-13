@@ -1987,8 +1987,9 @@ function generateContextualResponse(dgrText, scoreResult) {
   var d = state.difficulty;
   var turn = state.turn || 0;
   var patience = state.patience || 50;
+  var persona = state.persona || 'cto';
   
-  // === SAFE HELPERS ===
+  // === HELPERS ===
   function pick(arr) {
     if(!arr || !arr.length) return "Mm-hmm. Go on.";
     var available = arr.filter(function(r) { return !state.usedResponses.has(r); });
@@ -1997,7 +1998,7 @@ function generateContextualResponse(dgrText, scoreResult) {
     state.usedResponses.add(p);
     return p;
   }
-  function s(val, fallback) { return (val && typeof val === 'string') ? val : (fallback || ''); }
+  function s(val, fb) { return (val && typeof val === 'string') ? val : (fb || ''); }
   function firstOf(val, sep) { return s(val).split(sep || '.')[0].trim(); }
   function randPriority() {
     if(company.priorities && Array.isArray(company.priorities) && company.priorities.length > 0) {
@@ -2005,63 +2006,90 @@ function generateContextualResponse(dgrText, scoreResult) {
     }
     return '';
   }
+  // Extract a specific noun/phrase from DGR's message to reference back
+  function extractTopic(text) {
+    var match = text.match(/(?:about|with|using|through|via|called|like|such as)\s+([A-Za-z][A-Za-z0-9 ]{2,25})/i);
+    return match ? match[1].trim() : null;
+  }
+  // Get persona-appropriate language
+  function personaFlavor(cto, cfo, ceo, cio, other) {
+    var map = {cto: cto, cfo: cfo, ceo: ceo, cio: cio, aiml: other || cto, vp_eng: cto, head_it: cio, head_digital: ceo};
+    return map[persona] || other || cto;
+  }
   
   // === CONVERSATION MEMORY ===
   if(!state.convMemory) state.convMemory = {
     lastCustomerQuestion: null,
-    customerAskedFor: null, // what info they requested
-    dgrClaimed: [],  // claims DGR made
+    customerAskedFor: null,
+    dgrClaimed: [],
     topicsRaised: [],
     unansweredQuestions: [],
     dgrWasVague: 0,
     dgrWasSpecific: 0,
-    customerInterestLevel: 'neutral', // cold, neutral, warm, hot
+    customerInterestLevel: 'neutral',
     lastDgrMessage: '',
-    consecutiveGeneric: 0
+    consecutiveGeneric: 0,
+    customerMood: 'guarded',
+    lastResponseType: '',
+    turnsSinceQuestion: 0
   };
   var mem = state.convMemory;
   
-  // === ANALYZE DGR INPUT ===
-  var inputLength = dgrText.split(/\s+/).length;
+  // === ANALYZE INPUT ===
+  var words = dgrText.split(/\s+/);
+  var inputLength = words.length;
   var isShort = inputLength < 5;
   var isLong = inputLength > 40;
   var hasQuestion = dgrText.indexOf('?') >= 0;
-  var isGreeting = /^(hi|hello|hey|good|morning|afternoon|this is|my name|i'm calling|calling from)/i.test(lower);
-  var isGeneric = /help you|grow your business|save you|transform|optimize|leverage|synergy|solution|empower|enable|accelerate your/i.test(lower);
-  var isSpecific = /\d+%|\$\d|£\d|\d+ (customer|user|company|employee|hour|day|week)|(case study|for example|specifically|in your case|for .+ industry)/i.test(lower);
-  var mentionsProduct = /bedrock|sagemaker|lambda|s3|ec2|marketplace|graviton|eks|ecs|dynamodb|aurora|connect|kendra|lex/i.test(lower);
-  var isClosing = /meeting|calendar|schedule|15 min|demo|follow.?up|next step|catch up|slot|book/i.test(lower);
-  var answersQuestion = mem.lastCustomerQuestion && (hasQuestion === false) && inputLength > 8;
-  var mentionsCompetitor = /azure|google|gcp|microsoft|oracle|openai|anthropic/i.test(lower);
-  var mentionsAI = /ai|genai|machine learn|bedrock|agent|model|llm|gpt|claude/i.test(lower);
-  var mentionsCost = /cost|price|save|roi|budget|spend|cheaper|investment|tcl|tco/i.test(lower);
+  var isGreeting = turn <= 1 && /^(hi|hello|hey|good|morning|afternoon|this is|my name|i.m calling|calling from)/i.test(lower);
+  var isGeneric = /help you|grow your business|save you money|transform|optimize your|leverage|synergy|solutions? for|empower|enable your|accelerate your|take .* to the next level/i.test(lower);
+  var isSpecific = /\d+%|\$[\d,]+|£[\d,]+|€[\d,]+|\d+ (customer|user|company|employee|hour|day|week|month)|saved .* \d|reduced .* by|(case study|for example|specifically|in your case|such as|like .+ who)/i.test(lower);
+  var mentionsProduct = /bedrock|sagemaker|lambda|s3|ec2|marketplace|graviton|eks|ecs|dynamodb|aurora|connect|kendra|lex|fargate|cloudfront|quicksight/i.test(lower);
+  var isClosing = /meeting|calendar|schedule|15 min|demo|follow.?up|next step|catch up|slot|book|diary/i.test(lower);
+  var mentionsCompetitor = /azure|google|gcp|microsoft|oracle|openai|anthropic|databricks|snowflake/i.test(lower);
+  var mentionsAI = /\bai\b|genai|gen ai|machine learn|bedrock|agent[s]?|\bllm|\bgpt|claude|artificial intell|deep learn/i.test(lower);
+  var mentionsCost = /cost|price|sav(e|ing)|\broi\b|budget|spend|cheaper|investment|\btco\b|bill|invoice|discount/i.test(lower);
+  var mentionsSecurity = /secur|compliance|gdpr|data protect|encrypt|regulat|govern|audit|iso|soc2|hipaa|pci/i.test(lower);
+  var dgrAskedQuestion = hasQuestion && !isClosing;
+  var dgrMadeClaim = /we (can|help|offer|provide|have|do|build|enable|support|deliver)|our (platform|solution|service|team|customers)/i.test(lower);
+  var dgrReferenced = lower.match(/you (said|mentioned|told|asked)|earlier you|going back to|as we discussed/i);
+  var extractedTopic = extractTopic(dgrText);
   
-  // Track what DGR said
-  if(isGeneric) { mem.dgrWasVague++; mem.consecutiveGeneric++; }
+  // === UPDATE MEMORY ===
+  if(isGeneric && !isSpecific) { mem.dgrWasVague++; mem.consecutiveGeneric++; }
   else if(isSpecific || mentionsProduct) { mem.dgrWasSpecific++; mem.consecutiveGeneric = 0; }
-  else { mem.consecutiveGeneric = 0; }
+  else { if(mem.consecutiveGeneric < 3) mem.consecutiveGeneric = 0; }
   
-  // Detect if DGR made a claim
-  if(lower.match(/we (can|help|offer|provide|have|do|build|enable)/)) {
-    var claim = dgrText.match(/we (can|help|offer|provide|have|do|build|enable)[^.?!]*/i);
-    if(claim) mem.dgrClaimed.push(claim[0].substring(0, 60));
+  if(dgrMadeClaim) {
+    var claim = dgrText.match(/(?:we|our)\s[^.?!]{5,60}/i);
+    if(claim) mem.dgrClaimed.push(claim[0].trim());
   }
   
-  // Update interest level based on conversation quality
-  if(isSpecific && hasQuestion) mem.customerInterestLevel = 'warm';
-  else if(mem.consecutiveGeneric >= 3) mem.customerInterestLevel = 'cold';
-  else if(patience > 70 && mem.dgrWasSpecific > mem.dgrWasVague) mem.customerInterestLevel = 'warm';
-  else if(patience < 40) mem.customerInterestLevel = 'cold';
+  mem.turnsSinceQuestion++;
+  if(patience > 70 && mem.dgrWasSpecific > mem.dgrWasVague) mem.customerMood = 'engaged';
+  else if(patience < 35) mem.customerMood = 'exiting';
+  else if(patience < 50) mem.customerMood = 'impatient';
+  else mem.customerMood = 'guarded';
   
   mem.lastDgrMessage = dgrText;
   
-  // === REPETITION DETECTION ===
+  // Company context shortcuts
+  var pri = randPriority();
+  var pain = firstOf(s(company.painPoints));
+  var tech = firstOf(s(company.techStack), ',');
+  var compName = s(company.name, 'our company');
+  var compSize = firstOf(s(company.size), ',');
+  var compFuture = firstOf(s(company.futurePlans));
+  var compBudget = firstOf(s(company.budget));
+  var compRecent = firstOf(s(company.recentDecisions));
+  
+  // === REPETITION CHECK ===
   var currentTopics = [];
   if(mentionsAI) currentTopics.push('AI');
   if(mentionsCost) currentTopics.push('cost');
   if(isClosing) currentTopics.push('meeting');
   if(/cloud|migrat|infra/i.test(lower)) currentTopics.push('cloud');
-  if(/security|compliance|gdpr/i.test(lower)) currentTopics.push('security');
+  if(mentionsSecurity) currentTopics.push('security');
   if(mentionsCompetitor) currentTopics.push('competitors');
   
   var repeated = currentTopics.filter(function(t) {
@@ -2072,320 +2100,590 @@ function generateContextualResponse(dgrText, scoreResult) {
   if(repeated.length > 0 && turn > 3) {
     state.patience -= 8;
     return pick([
-      "You\'ve mentioned " + repeated[0] + " three times now. I heard you. What ELSE?",
-      "We keep circling back to " + repeated[0] + ". Either move forward or let\'s end here.",
-      "Didn\'t we cover " + repeated[0] + " already? Tell me something new.",
-      "Same topic again. Look — I got it. " + repeated[0] + ". Next?"
+      "You\'ve mentioned " + repeated[0] + " three times now. I heard you the first time.",
+      "We keep coming back to " + repeated[0] + ". Move forward or let\'s end here.",
+      "[sighs] " + repeated[0] + " again. Give me something NEW.",
+      "Okay — " + repeated[0] + ", " + repeated[0] + ", " + repeated[0] + ". Got it. What ELSE?",
+      "You\'re stuck on " + repeated[0] + ". I need a different angle or I\'m done.",
+      "We\'ve covered " + repeated[0] + ". Thoroughly. Three times. Next topic please."
     ]);
   }
   
-  // === LITERAL REPETITION (same message) ===
+  // === LITERAL REPETITION ===
   if(state.conversationHistory && state.conversationHistory.length > 2) {
     var prevDgr = state.conversationHistory.filter(function(h) { return h.role === 'dgr'; });
     if(prevDgr.length > 1) {
       var lastMsg = prevDgr[prevDgr.length - 2];
       if(lastMsg && lastMsg.text && lastMsg.text.toLowerCase().trim() === lower) {
-        state.patience -= 10;
+        state.patience -= 12;
         return pick([
-          "You literally just said that. Word for word. Are you reading from a script?",
-          "Mate — that\'s the exact same thing you said 30 seconds ago.",
-          "Did you just... repeat yourself? I\'m not deaf. I heard it the first time.",
-          "Copy-paste? [laughs awkwardly] Yeah we\'re done here."
+          "You just said that. Word for word. Are you reading from a script?",
+          "...that\'s the same thing you said 30 seconds ago. Seriously?",
+          "[long pause] Did you just repeat yourself? I\'m not deaf.",
+          "Okay, we\'re going in circles. Either say something new or goodbye.",
+          "I heard you the first time. Saying it twice doesn\'t make it more convincing."
         ]);
       }
     }
   }
-  
-  // === MAIN RESPONSE ENGINE ===
+
   var resp = null;
-  var pri = randPriority();
-  var pain = firstOf(s(company.painPoints));
-  var tech = firstOf(s(company.techStack), ',');
-  var compName = s(company.name, 'our company');
   
-  // --- TURN 1: GREETING ---
-  if(turn <= 1 || isGreeting) {
-    if(isGreeting && isGeneric) {
+  // === TURN-BASED FLOW ===
+  
+  // --- GREETING (Turn 1) ---
+  if(isGreeting) {
+    if(isGeneric) {
       resp = pick([
         "Right. Skip the intro — what do you actually want?",
-        "Yeah yeah. AWS, cloud, whatever. What\'s the pitch? I\'ve got 2 minutes.",
-        "Heard it before. Get to the point — what\'s different about THIS call?",
-        "Okay. You\'re from AWS. I\'ve had 3 of these calls this month. Why should I stay on?"
-      ]);
-    } else if(isGreeting) {
-      resp = pick([
-        "Yeah? Go on then. What\'s this about?",
-        "Alright. You\'ve got my attention for about 90 seconds. Make it count.",
-        "Okay. I\'m between meetings. What do you need?",
-        "Speaking. What\'s this regarding?",
-        "Hi. I\'ll be honest — I don\'t take sales calls usually. You caught me at a good time. Quick though."
-      ]);
-      mem.lastCustomerQuestion = 'why are you calling';
-      mem.customerAskedFor = 'reason for call';
-    }
-  }
-  
-  // --- DGR WAS TOO VAGUE/GENERIC ---
-  else if(isGeneric && !isSpecific) {
-    state.patience -= 3;
-    if(mem.consecutiveGeneric >= 3) {
-      state.patience -= 5;
-      resp = pick([
-        "Okay stop. You\'ve been talking for a minute and haven\'t said anything concrete. Give me ONE specific thing.",
-        "I\'m going to be blunt — this sounds like a script. Talk to me like a human. What\'s the actual point?",
-        "You could be selling me anything right now. Cloud, AI, insurance... I need SPECIFICS or I\'m hanging up.",
-        "Look — \'help you grow\', \'transform your business\' — these are just words. What ACTUALLY changes for " + compName + "?"
-      ]);
-    } else if(mem.consecutiveGeneric === 2) {
-      resp = pick([
-        "That\'s still pretty vague. What does that look like concretely for a " + firstOf(s(company.size), ',') + " company?",
-        "Okay but SPECIFICALLY — what would change for us? Give me an example.",
-        "I\'ve heard that pitch before from 5 vendors. What\'s different when YOU say it?",
-        "Sure, but what does that MEAN? For us, right now, " + (pri ? "working on " + pri.toLowerCase() : "with what we\'re dealing with") + "?"
+        "Yeah yeah. I can tell this is a sales call. What\'s the pitch? 2 minutes.",
+        "Heard it before. Get to the point — why THIS call, why NOW?",
+        "Okay. You\'re from AWS. Third call this month. What\'s different about yours?",
+        "Mm-hmm. [distracted] Sorry — what is it? I\'ve got a thing in 5 minutes.",
+        "Another vendor call. Okay — impress me. Quickly.",
+        personaFlavor(
+          "Sure. But if this is a generic cloud pitch, save us both the time.",
+          "Alright. But I need to know the commercial angle in the first 30 seconds or I\'m out.",
+          "Go. But I\'ve heard every pitch in the book. Surprise me.",
+          "Speaking. I hope this isn\'t another \'let\'s discuss your security posture\' call."
+        )
       ]);
     } else {
       resp = pick([
-        "Mm-hmm. Can you be more specific? What exactly are we talking about here?",
-        "Okay... and how does that apply to " + (s(company.industry) ? s(company.industry).split('—')[0] : "our space") + " specifically?",
-        "Right. Sounds interesting in theory. What does it look like in practice?",
-        "Generic pitch detected. [laughs] No offence — just give me the specific \'why us\' part."
+        "Yeah? Go on then.",
+        "Alright. You\'ve got my attention. Briefly though.",
+        "Okay. I\'m between things. What do you need?",
+        "Speaking. What\'s this about?",
+        "Hi. I don\'t usually take these calls but you caught me. Quick.",
+        personaFlavor(
+          "Yeah, " + (cfg.name || "").split(" ")[0] + " here. What\'s up?",
+          s(cfg.name, "").split(" ")[0] + " speaking. Is this sales? I\'ve got about a minute.",
+          "Yep. Talk to me. What\'s the opportunity?",
+          s(cfg.name, "").split(" ")[0] + " here. Go ahead."
+        )
       ]);
     }
-    mem.lastCustomerQuestion = 'specifics';
-    mem.customerAskedFor = 'concrete example';
+    mem.lastCustomerQuestion = 'why are you calling';
+    mem.customerAskedFor = 'reason for call';
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'greeting';
+    return resp;
   }
   
-  // --- DGR WAS SPECIFIC / MENTIONED A PRODUCT ---
-  else if(isSpecific || mentionsProduct) {
-    state.patience += 2;
-    mem.customerInterestLevel = 'warm';
-    
-    if(mentionsProduct && !mentionsCost) {
-      var product = (lower.match(/bedrock|sagemaker|lambda|marketplace|graviton|eks|ecs|dynamodb|aurora|connect|kendra/) || ['that'])[0];
-      resp = pick([
-        "Okay, " + product + " — I\'ve heard of it. " + (tech ? "We use " + tech + " currently." : "") + " How does it compare to what we have?",
-        product.charAt(0).toUpperCase() + product.slice(1) + ". Right. What\'s the learning curve? My team\'s already stretched.",
-        "Interesting. " + product + ". " + (pain ? "Would that help with " + pain.toLowerCase() + "?" : "What problem does it solve for us?"),
-        product.charAt(0).toUpperCase() + product.slice(1) + " — okay. What does a realistic implementation timeline look like? Not the sales brochure version."
-      ]);
-      mem.lastCustomerQuestion = product + ' specifics';
-    }
-    else if(isSpecific) {
-      resp = pick([
-        "Now you\'re talking. " + (pri ? "How does that connect to " + pri.toLowerCase() + "?" : "Tell me more about that."),
-        "Okay that\'s actually concrete. I appreciate that. " + (pain ? "Our challenge is " + pain.toLowerCase() + " — does this help?" : "How quickly could we see results?"),
-        "Good — real numbers. " + (mem.dgrClaimed.length > 0 ? "You said \'" + mem.dgrClaimed[mem.dgrClaimed.length-1] + "\'. Can you prove it?" : "Who else in our industry has done this?"),
-        "Alright, you have my attention. " + (pri ? "We\'re trying to " + pri.toLowerCase() + "." : "") + " Keep going."
-      ]);
-      mem.lastCustomerQuestion = 'more detail';
-    }
+  // --- DGR DIDN'T ANSWER CUSTOMER'S QUESTION ---
+  if(mem.customerAskedFor && !dgrAskedQuestion && isGeneric && turn > 1) {
+    state.patience -= 4;
+    resp = pick([
+      "You didn\'t answer my question. I asked about " + mem.customerAskedFor + ". What\'s the answer?",
+      "Hold on — I asked you something and you pivoted. " + mem.customerAskedFor + "?",
+      "That\'s not what I asked. I said: " + mem.customerAskedFor + ". Try again.",
+      "You\'re dodging. I asked a direct question. " + (mem.lastCustomerQuestion || "Answer it."),
+      "[interrupts] Stop. You didn\'t address what I asked. Let me repeat: " + (mem.lastCustomerQuestion || mem.customerAskedFor) + "?"
+    ]);
+    mem.lastResponseType = 'pushed_back';
+    return resp;
   }
   
-  // --- DGR ASKED A QUESTION ---
-  else if(hasQuestion && !isClosing) {
-    // Customer ANSWERS the question — this is where real conversation happens
-    state.patience += 3;
+  // --- VAGUE/GENERIC INPUT ---
+  if(isGeneric && !isSpecific && !isClosing && turn > 1) {
+    state.patience -= 3;
     
-    if(lower.match(/challenge|problem|pain|struggle|what.*(keep|up at night|worry|concern|blocker)/)) {
+    if(mem.consecutiveGeneric >= 3) {
+      state.patience -= 7;
       resp = pick([
-        (pain ? pain : "Honestly, we\'re trying to do more with less") + ". That\'s the big one right now.",
-        (pri ? "We\'re focused on " + pri.toLowerCase() + ". Everything else is noise." : "Scaling without burning the team out. That\'s the real challenge."),
-        "Where do I start? " + (pain ? pain : "Too many tools, not enough integration") + ". And the board wants results yesterday.",
-        (pain ? pain.split('.').slice(0,2).join('. ') : "Honestly — speed. We can\'t ship fast enough") + ". That\'s what keeps me up."
-      ]);
-      mem.lastCustomerQuestion = null; // customer answered, not asking
-    }
-    else if(lower.match(/what.*(use|stack|platform|tool|current|today|running)/)) {
-      resp = pick([
-        (tech ? "Mostly " + tech + "." : "Mix of things.") + " It\'s... not perfect. But it works. Mostly.",
-        (tech ? tech + ". Plus some legacy stuff nobody wants to touch." : "Bit of everything honestly. Some on-prem, some cloud."),
-        (tech ? "We\'re on " + tech + " for the main stuff." : "Standard enterprise stack.") + " Why do you ask?",
-        (s(company.techStack) ? "Our stack is " + s(company.techStack).substring(0, 80) + "." : "Multi-cloud mess, honestly.") + " It grew organically."
-      ]);
-    }
-    else if(lower.match(/who.*(decision|approve|sign|stakeholder|involved|buy)/)) {
-      resp = pick([
-        "I can greenlight exploratory conversations. Anything with budget needs my " + (state.persona === 'cto' ? "CEO" : state.persona === 'cfo' ? "board" : "leadership team") + ".",
-        "Depends on the size. Under £50K I can decide. Above that — it\'s a committee thing.",
-        "I\'m the one who says yes or no to meetings. Beyond that, depends on scope.",
-        "Me for the initial eval. Then finance and legal if it gets serious. Standard stuff."
+        "Okay stop. You\'ve been talking and haven\'t said anything concrete. ONE specific thing. Go.",
+        "I\'m going to be blunt — this sounds scripted. Talk to me like a person. What\'s the POINT?",
+        "You could be selling anything right now. Cloud, AI, insurance. Give me SPECIFICS or I\'m done.",
+        "Look — \'help you grow\', \'transform your business\' — these are just words. What ACTUALLY changes for " + compName + "?",
+        "I\'ve given you " + turn + " turns and still don\'t know what you\'re offering. That\'s a problem.",
+        "Okay I\'m going to give you 10 more seconds to say something real or I\'m hanging up. Go.",
+        personaFlavor(
+          "You haven\'t mentioned a single technology. WHAT are you proposing? Architecture? Migration? A new service?",
+          "Zero numbers in anything you\'ve said. Give me a cost, a percentage, ANYTHING quantifiable.",
+          "I\'ve heard this exact pitch from 4 other vendors. What\'s your UNIQUE value prop?",
+          "No specifics on compliance, security, or data governance. Those are the only things I care about."
+        )
       ]);
     }
-    else if(lower.match(/when|timeline|plan|quarter|this year|next year|roadmap/)) {
+    else if(mem.consecutiveGeneric === 2) {
       resp = pick([
-        (s(company.futurePlans) ? firstOf(s(company.futurePlans)) + "." : "We\'re planning for next quarter.") + " Timing is... complicated.",
-        "Honestly? We\'re already behind on our roadmap. Adding something new would need to show immediate value.",
-        (pri ? "We\'re trying to get " + pri.toLowerCase() + " done by end of year." : "End of year is our horizon.") + " Where would this fit?",
-        "Short answer: we have budget cycles. Next one is " + (Math.random() > 0.5 ? "Q3" : "January") + ". Anything before that needs to be compelling."
-      ]);
-    }
-    else if(lower.match(/team|how many|size|engineer|developer|staff/)) {
-      resp = pick([
-        (s(company.size) ? "We\'re " + firstOf(s(company.size), ',') + "." : "Mid-size team.") + " Everyone\'s at capacity though.",
-        "Small but mighty. " + (s(company.size) ? firstOf(s(company.size), ',') + "." : "About 50 people that matter.") + " Why?",
-        "Engineering team? " + (cfg.backstory && cfg.backstory.team ? cfg.backstory.team + "." : "Handful of good people.") + " We can\'t waste their time on experiments."
+        "Still vague. What does that look like concretely for a " + (compSize || "company our size") + "?",
+        "Okay but SPECIFICALLY — what would change for us? Give me an example.",
+        "I\'ve heard that pitch from 5 vendors. What\'s different when YOU say it?",
+        "Sure, but what does that MEAN? " + (pri ? "For us, right now, working on " + pri.toLowerCase() + "?" : "For a real company with real problems?"),
+        "Buzzword count is high. Substance count is low. Fix that.",
+        "[yawns] Sorry — I need more than platitudes. What\'s the actual use case?",
+        "That\'s marketing copy. Give me engineering reality. What would DAY ONE look like?"
       ]);
     }
     else {
-      // Generic question — answer broadly but honestly
       resp = pick([
-        "Hmm. " + (pri ? pri : "Growth") + " is the priority. Everything else is secondary.",
-        "Good question. " + (pain ? "The honest answer is " + pain.toLowerCase().split('.')[0] : "We\'re trying to figure that out ourselves") + ".",
-        "Let me think... " + (s(company.futurePlans) ? firstOf(s(company.futurePlans)) : "We\'re at a turning point") + ". Does that answer it?",
-        "Fair question. " + (firstOf(s(company.recentDecisions)) || "We\'re in transition") + ". That\'s where our heads are at."
+        "Mm-hmm. Can you be more specific though? What exactly are we talking about?",
+        "Okay... and how does that apply to " + (s(company.industry) ? s(company.industry).split('\u2014')[0] : "our space") + " specifically?",
+        "Sounds interesting in theory. What does it look like in practice? For us?",
+        "Right. [pause] I\'m going to need more than that. Give me the \'why us, why now\' part.",
+        "Mm. Okay. But what does that MEAN for " + compName + " specifically?",
+        personaFlavor(
+          "What\'s the technical implementation? Give me architecture-level detail.",
+          "Numbers. Give me numbers. Cost, timeline, ROI. That\'s what I need.",
+          "How does this move the needle on revenue or market share? That\'s my question.",
+          "And from a governance perspective? How does this fit our compliance framework?"
+        )
       ]);
     }
+    mem.lastCustomerQuestion = 'specifics';
+    mem.customerAskedFor = 'concrete example for ' + compName;
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'pushed_back_vague';
+    return resp;
   }
   
-  // --- DGR IS TRYING TO CLOSE (meeting request) ---
-  else if(isClosing) {
-    if(patience > 60 && turn >= 3 && mem.dgrWasSpecific > 0) {
+  // --- SPECIFIC / PRODUCT MENTION ---
+  if((isSpecific || mentionsProduct) && !isClosing) {
+    state.patience += 3;
+    mem.customerMood = 'engaged';
+    
+    if(mentionsProduct) {
+      var product = (lower.match(/bedrock|sagemaker|lambda|marketplace|graviton|eks|ecs|dynamodb|aurora|connect|kendra|fargate|quicksight/) || ['that'])[0];
       resp = pick([
-        "Alright. " + (pri ? "But it needs to be about " + pri.toLowerCase() + ". Not a generic demo." : "Make it specific to us.") + " 15 minutes max.",
-        "Tentatively yes. Send me a calendar invite. If something specific comes up I\'ll push it but... let\'s try.",
-        "Okay — you\'ve earned it. " + (mem.dgrWasSpecific > 2 ? "You actually said something useful which is rare." : "Let\'s see if there\'s something there.") + " Next week?",
-        "Fine. " + (pri ? "Focus on " + pri.toLowerCase() + " and " : "") + "keep it short. I\'ll give you 20 minutes."
+        "Okay, " + product + ". " + (tech ? "We use " + tech + " currently. " : "") + "How does it fit with what we have?",
+        product.charAt(0).toUpperCase() + product.slice(1) + ". What\'s the learning curve? My team\'s stretched.",
+        "Interesting. " + product + ". " + (pain ? "Would that help with " + pain.toLowerCase() + "?" : "What problem does it solve?"),
+        product.charAt(0).toUpperCase() + product.slice(1) + " — okay. Realistic implementation timeline? Not the brochure version.",
+        "I\'ve actually heard of " + product + ". " + personaFlavor(
+          "What\'s the developer experience like? My engineers hate bad tooling.",
+          "What\'s the pricing model? Pay-per-use or committed?",
+          "Who else in our space is using it? Competitors?",
+          "What\'s the compliance story? SOC2? ISO 27001?"
+        ),
+        (turn > 3 ? "Okay NOW you\'re talking about something concrete. " : "Right. ") + product + ". Tell me more about how that works.",
+        "Wait — " + product + ". " + (extractedTopic ? "You mentioned " + extractedTopic + " earlier. How do these connect?" : "Is that the main thing you\'re proposing or one piece?"),
+        "Hmm. " + product + ". " + (compRecent ? "We just " + compRecent.toLowerCase() + ". Would this have helped with that?" : "Interesting. Keep going.")
       ]);
+    } else {
+      // Specific numbers/claims
+      var number = dgrText.match(/(\d+%|\$[\d,]+|£[\d,]+|€[\d,]+|\d+ (?:customer|user|compan|employee|hour|day|week|month)[a-z]*)/i);
+      var numStr = number ? number[0] : "those numbers";
+      resp = pick([
+        "Now you\'re talking. " + numStr + " — " + (pri ? "how does that connect to " + pri.toLowerCase() + "?" : "tell me more."),
+        "Okay that\'s concrete. " + numStr + ". " + (pain ? "Our problem is " + pain.toLowerCase() + " — does that apply?" : "Similar companies to ours?"),
+        numStr + ". " + personaFlavor(
+          "What\'s the catch? Nothing\'s free. What\'s the migration effort?",
+          "Over what timeframe? And what\'s the investment to get there?",
+          "Impressive if true. Who else has achieved that? Anyone I know?",
+          "And the risk profile? What could go wrong?"
+        ),
+        "Good — real data. " + (mem.dgrClaimed.length > 1 ? "You said \'" + mem.dgrClaimed[0].substring(0,40) + "\' before. This backs that up?" : "Can you prove it? Case study? Reference customer?"),
+        "[leans forward] Okay, you have my attention. " + numStr + ". Keep going.",
+        "Hmm. " + numStr + ". That\'s..." + (patience > 60 ? " actually compelling." : " interesting but I need more context.") + (pri ? " Specifically for " + pri.toLowerCase() + "." : ""),
+        (turn > 4 ? "Finally — specifics! " : "") + numStr + ". Now THAT\'S the kind of thing I need to hear. " + (compSize ? "For a " + compSize.toLowerCase() + " company though — still hold up?" : "")
+      ]);
+    }
+    mem.lastResponseType = 'engaged';
+    mem.customerAskedFor = null;
+    // 30% chance customer asks own follow-up question
+    if(Math.random() < 0.3 && resp) {
+      var followUps = [
+        " Actually — who on your side would run this? An SA?",
+        " Quick question though: what\'s the minimum commitment?",
+        " And if we start and it doesn\'t work out — what\'s the exit?",
+        " One thing though — " + (pri ? "does this work alongside " + pri.toLowerCase() + " or replace it?" : "is this additive to what we have or a replacement?"),
+        " But here\'s my worry: my team\'s capacity. Who does the work?",
+        personaFlavor(
+          " How does this integrate with our CI/CD pipeline though?",
+          " What does year-2 pricing look like? Everyone\'s cheap in year-1.",
+          " Which of our competitors are already doing this?",
+          " And the data residency question — where does data sit physically?"
+        )
+      ];
+      resp += pick(followUps);
+      mem.turnsSinceQuestion = 0;
+    }
+    return resp;
+  }
+  
+  // --- DGR ASKED A QUESTION ---
+  if(dgrAskedQuestion) {
+    state.patience += 2;
+    mem.turnsSinceQuestion = 0;
+    
+    // Detect what type of question
+    if(lower.match(/challenge|problem|pain|struggle|what.*(keep|up at night|worry|concern|blocker|frustrat)/)) {
+      resp = pick([
+        (pain || "Honestly — too many things") + ". That\'s the big one.",
+        (pri ? "We\'re focused on " + pri.toLowerCase() + ". Everything else is noise right now." : "Scaling without burning the team out."),
+        "Where do I start? " + (pain || "Too many tools, not enough integration") + ". Board wants results yesterday.",
+        (pain ? pain.split('.').slice(0,2).join('. ') : "Speed. We can\'t ship fast enough") + ". That\'s what keeps me up.",
+        personaFlavor(
+          (pain || "Technical debt") + ". My engineers spend " + (Math.floor(Math.random()*30)+20) + "% of their time on undifferentiated work.",
+          (compBudget ? compBudget + ". " : "") + "Plus we\'re trying to do more with the same headcount. Classic.",
+          "Competition. " + (s(company.competitors) ? company.competitors.split(',')[0] + " is breathing down our neck." : "Everyone\'s moving fast and we need to stay ahead."),
+          "Compliance keeps getting more complex. " + (pain || "We\'re juggling too many frameworks manually") + "."
+        ),
+        "[thinks] " + (pain || "Honestly? Execution speed") + ". And probably " + (pri ? pri.toLowerCase() : "hiring") + ". Those are my two.",
+        "Good question. " + (pain || "We\'re in transition") + ". " + (compRecent ? "We recently " + compRecent.toLowerCase() + " and it\'s... still settling." : "It\'s a pivotal moment for us.")
+      ]);
+    }
+    else if(lower.match(/what.*(use|stack|platform|tool|current|today|running|built on)/)) {
+      resp = pick([
+        (tech ? "Mostly " + tech + "." : "Mix of things.") + " It\'s... not perfect but it works. Mostly.",
+        (tech ? tech + ". Plus legacy stuff nobody wants to touch." : "Bit of everything. Some on-prem, some cloud. It grew organically."),
+        (s(company.techStack) ? "Stack is " + s(company.techStack).substring(0,80) + "." : "Multi-cloud. It\'s messy.") + " Why do you ask?",
+        personaFlavor(
+          (tech ? tech : "Standard stuff") + ". We\'re running " + (s(company.techStack) || "a mix of services") + ". Some of it\'s great, some... less so.",
+          "I don\'t get into the technical details. " + (tech ? "I\'m told we use " + tech + "." : "Ask my CTO.") + " What matters to me is cost and reliability.",
+          "I couldn\'t name every tool. But I know we spend " + (compBudget || "too much") + " on infrastructure.",
+          (s(company.techStack) || "Standard enterprise stack") + ". All audited and certified. What\'s the relevance?"
+        )
+      ]);
+    }
+    else if(lower.match(/who.*(decision|approve|sign|stakeholder|involved|buy)|decision.*(maker|process)/)) {
+      resp = pick([
+        "I can greenlight exploratory conversations. Anything with budget needs " + personaFlavor("my CEO", "the board", "my leadership team", "security review plus finance") + ".",
+        "Depends on size. Under " + (Math.random() > 0.5 ? "£50K" : "€30K") + " I can decide. Above that — committee.",
+        "Me for the initial eval. Beyond that..." + personaFlavor(" my VP and CEO.", " board approval.", " depends on scope.", " security team sign-off."),
+        "Why? [suspicious] Are you qualifying me? [laughs] Fair enough. I\'m " + personaFlavor("the technical decision maker", "the one who signs cheques", "the final call", "the governance gatekeeper") + ". For this area at least.",
+        "[directly] I\'m the one who says no. Getting to yes involves " + personaFlavor("my CTO peer review", "a business case for the board", "my exec team", "a security assessment") + ". Standard stuff."
+      ]);
+    }
+    else if(lower.match(/when|timeline|plan|this year|next year|roadmap|quarter|fiscal|fy/)) {
+      resp = pick([
+        (compFuture ? compFuture + "." : "We\'re planning for next quarter.") + " Timing is... complicated though.",
+        "We\'re behind on our roadmap already. Adding anything new needs to show immediate value.",
+        (pri ? "Trying to get " + pri.toLowerCase() + " done by " + (Math.random() > 0.5 ? "Q3" : "year-end") + "." : "End of year is our horizon.") + " Where would this fit?",
+        "Budget cycles. Next one is " + (Math.random() > 0.5 ? "Q3" : "January") + ". Anything before that — you\'d need to make a strong case.",
+        "[thinks] Realistically? " + (Math.random() > 0.5 ? "We could look at something in 6 weeks" : "Not before next quarter") + ". " + (compRecent ? "We just " + compRecent.toLowerCase() + " so timing is tight." : "Priorities are already locked in."),
+        personaFlavor(
+          "We\'re mid-sprint on " + (pri || "a platform rewrite") + ". Anything new is Q3 at earliest.",
+          "FY planning is done. Anything unbudgeted needs a compelling ROI to reopen.",
+          "I move fast when I see opportunity. If you convince me today — we can talk next week.",
+          "Compliance audit in " + (Math.random() > 0.5 ? "6 weeks" : "Q3") + ". Nothing disruptive before that."
+        )
+      ]);
+    }
+    else if(lower.match(/team|how many|size|engineer|developer|staff|people|headcount/)) {
+      resp = pick([
+        (compSize ? "We\'re " + compSize + "." : "Mid-size team.") + " Everyone\'s at capacity.",
+        (cfg.backstory && cfg.backstory.team ? cfg.backstory.team + "." : "Handful of good people.") + " We can\'t afford experiments that waste their time.",
+        personaFlavor(
+          (cfg.backstory && cfg.backstory.team ? cfg.backstory.team : "About 15 engineers") + ". They\'re good but stretched. Another platform means another thing to learn.",
+          "Headcount is " + (compSize || "lean") + ". Every hour matters. What\'s the time investment?",
+          (compSize || "Growing team") + ". We\'re hiring but it\'s competitive. Can\'t waste anyone\'s time.",
+          "IT team handles everything. " + (compSize || "Small team") + ". Maintenance burden is a real concern."
+        )
+      ]);
+    }
+    else if(lower.match(/interest|priority|focus|care about|matter|important to you/)) {
+      resp = pick([
+        (pri ? pri : "Growth") + ". That\'s number one. " + (pain ? "And fixing " + pain.toLowerCase().split('.')[0] + "." : ""),
+        personaFlavor(
+          (pri || "Platform stability and developer velocity") + ". In that order.",
+          "Bottom line? " + (compBudget || "Reducing costs while growing") + ". Classic CFO answer but it\'s true.",
+          "Market share. " + (s(company.competitors) ? "Beating " + company.competitors.split(',')[0].trim() + "." : "Staying ahead.") + " Everything else is in service of that.",
+          "Risk reduction and compliance. " + (pain || "We can\'t afford security incidents") + "."
+        ),
+        (pain ? pain.split('.')[0] : "Moving faster") + ". And " + (pri || "scaling without adding headcount") + ". Those two.",
+        "Honestly? " + (compFuture ? compFuture + ". That\'s where all my energy goes." : "Just executing on what we\'ve already committed to. New stuff is hard to justify right now.")
+      ]);
+    }
+    else {
+      // Generic question — give a real answer
+      resp = pick([
+        "Hmm. " + (pri ? pri : "Growth") + " is the priority. Everything else is secondary.",
+        "Good question. " + (pain ? "Honest answer: " + pain.toLowerCase().split('.')[0] : "We\'re trying to figure that out ourselves") + ".",
+        "Let me think... " + (compFuture ? compFuture : "We\'re at a turning point") + ". Does that answer it?",
+        "Fair question. " + (compRecent || "We\'re in transition") + ". That\'s where our heads are at.",
+        "[pauses] " + personaFlavor(
+          "From a tech perspective? " + (tech ? "We need to modernise " + tech + ". It\'s showing its age." : "Modernisation. That\'s the one word."),
+          "From a commercial standpoint? " + (compBudget || "Do more with less") + ". Every quarter.",
+          "Big picture? " + (compFuture || "Growth. International expansion.") + " That\'s the North Star.",
+          "Security and continuity. Everything else is secondary for me."
+        )
+      ]);
+    }
+    mem.lastResponseType = 'answered_question';
+    mem.customerAskedFor = null;
+    mem.lastCustomerQuestion = null;
+    return resp;
+  }
+  
+  // --- CLOSING ATTEMPT ---
+  if(isClosing) {
+    if(patience > 60 && turn >= 3 && mem.dgrWasSpecific > 0) {
       state.meetingAccepted = true;
+      resp = pick([
+        "Alright. " + (pri ? "Focus it on " + pri.toLowerCase() + ". Not a generic overview." : "Make it specific to us.") + " 15 minutes max.",
+        "Tentatively yes. Send a calendar invite. I might reschedule but... let\'s try.",
+        "Okay — you\'ve earned it. " + (mem.dgrWasSpecific > 2 ? "You actually said something useful." : "Let\'s see.") + " Next week?",
+        "Fine. " + personaFlavor(
+          "Bring an SA who knows " + (tech || "our stack") + ". No generic slides.",
+          "Show me the numbers. A mini business case for " + compName + ". Then I\'ll decide.",
+          "15 minutes. Bring your best person. If it\'s compelling I\'ll bring my " + (Math.random() > 0.5 ? "CTO" : "VP Eng") + ".",
+          "Loop in security. If they\'re comfortable, I\'m comfortable."
+        ),
+        "Alright. But I\'m warning you — if you show me a generic deck I\'m dropping after 3 minutes. Deal?",
+        "[thinks] ...yeah, okay. " + (Math.random() > 0.5 ? "Tuesday or Thursday" : "Early next week") + " works. Keep it tight though."
+      ]);
     }
     else if(patience > 45 && mem.dgrWasSpecific > 0) {
       resp = pick([
-        "Maybe. " + (mem.customerAskedFor ? "You still haven\'t really answered my question about " + mem.customerAskedFor + " though." : "I\'m not fully convinced yet."),
-        "Send me something first. A one-pager. If it\'s relevant, I\'ll book time.",
+        "Maybe. " + (mem.customerAskedFor ? "You still haven\'t answered my question about " + mem.customerAskedFor + " though." : "Send me something first."),
+        "Send me a one-pager. If it\'s relevant I\'ll book time. No promises.",
         "Not yet. You\'re getting warmer but I need more. " + (pain ? "Specifically around " + pain.toLowerCase().split('.')[0] : "Something concrete") + ".",
-        "Let me think about it. Can you email me a summary? If it makes sense I\'ll reply."
+        "Let me think about it. Email me a summary. If it makes sense I\'ll reply.",
+        "[hesitates] Maybe. What exactly would the agenda be? I won\'t sit through a pitch deck.",
+        "I\'m 60% there. " + personaFlavor("Tell me one more technical thing that\'s relevant.", "One more number and I\'m in.", "Who else in my space has done this?", "Address the security angle and I\'ll consider it."),
+        "If — IF — I gave you 15 minutes, what specifically would you show me that I can\'t read in an email?"
       ]);
     }
     else {
       state.patience -= 5;
       resp = pick([
-        "Meeting? No. You haven\'t said anything that warrants more of my time yet.",
-        "Slow down. You\'re asking for a meeting but I don\'t even know what the value is.",
-        "That\'s a no right now. " + (mem.dgrWasVague > 2 ? "You\'ve been pretty vague this whole call." : "Give me a reason to care first."),
-        "Not happening. If you can tell me ONE thing that\'s relevant to " + compName + ", I\'ll reconsider."
+        "Meeting? No. You haven\'t earned my time yet.",
+        "Slow down. I don\'t even know what the value is for US.",
+        "That\'s a no. " + (mem.dgrWasVague > 2 ? "You\'ve been vague this entire call." : "Give me a reason first."),
+        "Not happening. Tell me ONE thing relevant to " + compName + " and I\'ll reconsider.",
+        "You\'re jumping to close without building any value. That\'s not how this works.",
+        "[laughs] Nice try. No. Talk to me first. Actually TALK to me — don\'t pitch AT me.",
+        "I\'ve got 40 meetings next week already. You need to give me a REASON to add another one.",
+        personaFlavor(
+          "A meeting about what? You haven\'t told me a single thing about your tech.",
+          "What\'s the cost of my time vs. what you\'d show me? Right now that equation doesn\'t work.",
+          "Meetings cost me money. Literally. Make the case in 20 seconds why this one\'s worth it.",
+          "I don\'t take meetings with vendors until I\'ve seen a security assessment. Send that first."
+        )
       ]);
     }
+    mem.lastResponseType = 'closing_response';
+    return resp;
   }
   
   // --- COMPETITOR MENTION ---
-  else if(mentionsCompetitor) {
-    var comp = (lower.match(/azure|google cloud|gcp|microsoft|oracle|openai|anthropic/) || ['the other guys'])[0];
+  if(mentionsCompetitor) {
+    var comp = (lower.match(/azure|google cloud|gcp|microsoft|oracle|openai|anthropic|databricks|snowflake/) || ['them'])[0];
     resp = pick([
       "We know " + comp + ". " + (cfg.backstory && cfg.backstory.vendor ? "We use " + cfg.backstory.vendor + " for some things." : "Everyone does.") + " What makes you better? Honestly.",
-      comp.charAt(0).toUpperCase() + comp.slice(1) + " — yeah they called last week too. [laughs] Don\'t trash-talk them, just tell me YOUR strength.",
-      "Comparing to " + comp + " is fine. But I want YOUR story, not why THEY\'re bad. What do you DO well?",
-      (tech ? "We\'re on " + tech + " and some " + comp + " stuff. " : "") + "Convince me consolidation is worth the disruption."
+      comp.charAt(0).toUpperCase() + comp.slice(1) + " called last week too. [laughs] Don\'t trash-talk them — just tell me YOUR strength.",
+      "Comparing to " + comp + " is fine. But I want YOUR story, not why they\'re bad.",
+      (tech ? "We\'re on " + tech + " and some " + comp + " stuff. " : "") + "Convince me consolidation is worth the pain.",
+      "[directly] " + comp + " offered us " + (Math.random() > 0.5 ? "credits" : "a dedicated account team") + ". What are you offering?",
+      personaFlavor(
+        comp.charAt(0).toUpperCase() + comp.slice(1) + " has " + (comp === 'azure' ? "good CI/CD tooling" : comp === 'gcp' ? "strong data analytics" : "their strengths") + ". Where do you genuinely win?",
+        "They gave us a " + (Math.random() > 0.5 ? "proposal" : "competitive deal") + ". Can you beat it?",
+        "My board knows " + comp + ". They\'ll ask why not them. Give me the answer.",
+        comp.charAt(0).toUpperCase() + comp.slice(1) + " compliance tools are decent. What\'s your edge on governance?"
+      )
     ]);
     mem.lastCustomerQuestion = 'why not ' + comp;
+    mem.customerAskedFor = 'differentiation vs ' + comp;
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'competitor';
+    return resp;
   }
   
-  // --- AI / GENAI TOPIC ---
-  else if(mentionsAI && !isGeneric) {
+  // --- AI TOPIC (non-generic) ---
+  if(mentionsAI && !isGeneric) {
     resp = pick([
-      "AI — okay. " + (pain ? "Can it help with " + pain.toLowerCase().split('.')[0] + "? Because that\'s what I care about." : "What\'s the practical use case for us?"),
-      "Everyone\'s selling AI. " + (pri ? "We\'re trying to " + pri.toLowerCase() + ". Where does AI fit?" : "What\'s the use case that isn\'t just hype?"),
-      "We\'ve looked at this. " + (s(company.futurePlans).match(/ai|ml|model|agent/i) ? "It\'s in our roadmap actually: " + firstOf(s(company.futurePlans)) + "." : "Haven\'t pulled the trigger. What makes NOW the right time?"),
-      "Alright, AI. I have two questions: what\'s it cost, and how long to see value? Not theoretical value — real value."
+      "AI — okay. " + (pain ? "Can it help with " + pain.toLowerCase().split('.')[0] + "? That\'s what I care about." : "What\'s the use case for US?"),
+      "Everyone\'s selling AI. " + (pri ? "We\'re trying to " + pri.toLowerCase() + ". Where does AI fit?" : "What\'s the use case beyond hype?"),
+      "We\'ve looked at this. " + (s(company.futurePlans).match(/ai|ml|model|agent/i) ? "It\'s in our roadmap: " + compFuture + "." : "Haven\'t pulled the trigger. Why NOW?"),
+      "Two questions: what\'s it cost, and how long to see value? Real value, not POC value.",
+      personaFlavor(
+        "Which model? What\'s the latency? How do I fine-tune for our domain? These are my questions.",
+        "AI. Okay. What\'s the line item look like? Because these costs can spiral.",
+        "AI is great for the press release. What\'s it do for our revenue in 12 months?",
+        "AI with our data — how do you handle access controls and audit trails?"
+      ),
+      (extractedTopic ? "You mentioned " + extractedTopic + ". " : "") + "Okay. But every AI conversation starts exciting and ends in \'it\'s complicated.\' Convince me this is different.",
+      "[leans back] AI. Right. We\'ve had " + (Math.floor(Math.random()*5)+2) + " of these conversations. What\'s yours add?"
     ]);
-    mem.lastCustomerQuestion = 'AI practical value';
+    mem.lastCustomerQuestion = 'AI value';
+    mem.customerAskedFor = 'practical AI use case';
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'ai_topic';
+    return resp;
   }
   
-  // --- COST / ROI TOPIC ---
-  else if(mentionsCost && !isGeneric) {
+  // --- COST TOPIC (non-generic) ---
+  if(mentionsCost && !isGeneric) {
     resp = pick([
-      (s(company.budget) ? firstOf(s(company.budget)) + ". " : "Budget\'s allocated. ") + "What kind of savings are we ACTUALLY talking?",
-      "Numbers. I like numbers. But they need to be for a company like ours — " + (s(company.size) ? firstOf(s(company.size), ',') : "our size") + ". Not some Fortune 500 case study.",
-      "ROI — okay. Over what timeframe? Because short-term hits to productivity while we migrate... that\'s real.",
-      "Break it down for me. What am I spending today? What would I spend with you? What\'s the delta? Simple."
+      (compBudget ? compBudget + ". " : "Budget\'s tight. ") + "What kind of savings ACTUALLY?",
+      "Numbers. Good. But for a " + (compSize || "company our size") + ". Not a Fortune 500 case study.",
+      "ROI over what timeframe? Short-term productivity hit during migration — that\'s real cost.",
+      "Break it down. What am I spending today? What with you? What\'s the delta?",
+      personaFlavor(
+        "Saving money by spending engineering hours on migration? Do the FULL math.",
+        "Show me a 3-year TCO model. Include hidden costs — training, integration, downtime risk.",
+        "Cost is table stakes. I care about revenue uplift. Cost savings are defensive. Growth is offensive.",
+        "Procurement wants 3 competing quotes regardless. What\'s your best commercial position?"
+      ),
+      "Everyone promises savings. " + (compRecent ? "We " + compRecent.toLowerCase() + " and were told the same thing. Results were... mixed." : "I\'m skeptical by default. Prove it."),
+      "[directly] What\'s the minimum spend to get started? Not the big deal — the minimum."
     ]);
     mem.lastCustomerQuestion = 'ROI specifics';
+    mem.customerAskedFor = 'specific cost breakdown';
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'cost_topic';
+    return resp;
   }
   
-  // --- DGR ANSWERED CUSTOMER'S PREVIOUS QUESTION ---
-  else if(mem.customerAskedFor && !isGeneric && inputLength > 10) {
+  // --- SECURITY TOPIC ---
+  if(mentionsSecurity && !isGeneric) {
+    resp = pick([
+      "Security is non-negotiable. What certifications do you have?",
+      "GDPR — how do you handle data residency in Europe specifically?",
+      personaFlavor(
+        "Our CISO needs to sign off. What\'s the security posture look like for " + (extractedTopic || "this") + "?",
+        "Compliance is a cost centre I can\'t ignore. How do you simplify it?",
+        "Board asks about data risk every quarter. Give me the 30-second answer.",
+        "This is my domain. " + (pain ? pain : "Governance complexity") + " is the challenge. What specifically do you offer?"
+      ),
+      "Before we go further — where does data physically sit? Who has access? Answer those two.",
+      "We\'re [regulated industry]. " + (s(company.industry) ? "In " + s(company.industry).split('—')[0] + " that means " : "") + "compliance isn\'t optional. It\'s existential."
+    ]);
+    mem.lastResponseType = 'security';
+    return resp;
+  }
+  
+  // --- DGR ANSWERED PREVIOUS QUESTION ---
+  if(mem.customerAskedFor && !isGeneric && inputLength > 10 && turn > 2) {
     state.patience += 2;
     resp = pick([
-      "Okay. That\'s a decent answer. " + (pri ? "How does it tie to " + pri.toLowerCase() + " though?" : "What\'s the next step look like?"),
-      "Alright, I follow. " + (pain ? "And specifically for our " + pain.toLowerCase().split('.')[0] + " problem?" : "Tell me about implementation."),
-      "Fair enough. " + (mem.dgrClaimed.length > 1 ? "Earlier you said \'" + mem.dgrClaimed[0].substring(0, 40) + "\' — how does this connect?" : "Keep going. I\'m listening."),
-      "Okay that makes more sense. " + (s(company.futurePlans) ? "We\'re planning to " + firstOf(s(company.futurePlans)).toLowerCase() + ". Related?" : "What would the first 30 days look like?")
+      "Okay. Decent answer. " + (pri ? "How does it tie to " + pri.toLowerCase() + "?" : "What\'s next?"),
+      "Alright, I follow. " + (pain ? "For our " + pain.toLowerCase().split('.')[0] + " problem specifically?" : "Tell me about implementation."),
+      "Fair enough. " + (mem.dgrClaimed.length > 1 ? "Earlier you said \'" + mem.dgrClaimed[0].substring(0,40) + "\'. Connected?" : "Keep going."),
+      "Okay that makes sense. " + (compFuture ? "We\'re planning " + compFuture.toLowerCase() + ". Related?" : "What\'s day one look like?"),
+      (dgrReferenced ? "Good — you actually listened to what I said. " : "") + "Okay. " + personaFlavor(
+        "Technical follow-up: " + (extractedTopic ? "how does " + extractedTopic + " handle scale?" : "what happens at 10x our current load?"),
+        "Commercial question: what\'s the break-even point?",
+        "Strategy question: where does this put us vs. competition in 18 months?",
+        "Governance question: who owns this operationally once it\'s in?"
+      ),
+      "[nods] Alright. That\'s better than what most people say. " + (Math.random() > 0.5 ? "Continue." : "What else?")
     ]);
     mem.customerAskedFor = null;
+    mem.lastResponseType = 'acknowledged_answer';
+    return resp;
   }
   
-  // --- DGR SAID SOMETHING SHORT / LOW EFFORT ---
-  else if(isShort && turn > 1) {
+  // --- SHORT/LAZY INPUT ---
+  if(isShort && turn > 1) {
+    state.patience -= 4;
+    resp = pick([
+      "That\'s it? You called ME. Put some effort in.",
+      "Short and vague. Not a great combo.",
+      "...and? There\'s got to be more to it.",
+      "Give me more than that. I\'m giving you my time.",
+      "[silence] ...are you still there? That was... brief.",
+      "Okay? I need a complete thought here. What\'s the point?"
+    ]);
+    mem.lastResponseType = 'short_pushback';
+    return resp;
+  }
+  
+  // --- LONG MONOLOGUE ---
+  if(isLong) {
     state.patience -= 3;
     resp = pick([
-      "That\'s... it? Give me more than that. I\'m giving you my time here.",
-      "Short and vague. Not a great combo. What are you actually trying to say?",
-      "Okay...? And? There\'s got to be more to it than that.",
-      "You called ME. Put some effort in. What\'s the point you\'re making?"
-    ]);
-  }
-  
-  // --- DGR MONOLOGUE (too long) ---
-  else if(isLong) {
-    state.patience -= 2;
-    resp = pick([
-      "Okay — I\'m going to stop you there. What\'s the ONE takeaway from all of that?",
-      "That\'s a lot. Let me summarize what I heard: " + (mem.dgrClaimed.length > 0 ? "\'" + mem.dgrClaimed[mem.dgrClaimed.length-1] + "\'." : "...actually I\'m not sure.") + " Am I close?",
-      "Right. I got about 60% of that. The important bit was...?",
-      "Whoa. Information overload. Top 3 points. Go.",
-      "I appreciate the detail but my eyes glazed over halfway. Bullet points version?"
+      "Okay — stopping you. What\'s the ONE takeaway from all that?",
+      "That\'s a lot. " + (mem.dgrClaimed.length > 0 ? "I caught \'" + mem.dgrClaimed[mem.dgrClaimed.length-1] + "\'. Am I close?" : "I got lost halfway."),
+      "Right. 60% of that landed. The important bit was...?",
+      "Whoa. Top 3 points. Go.",
+      "I appreciate the detail but... bullet points version?",
+      "[interrupts] Hold on — you\'re monologuing. A conversation has TWO people. Ask me something.",
+      "Information overload. You said a lot. What do you MOST want me to remember from that?",
+      "I\'m going to be honest — I zoned out after the first 15 seconds. What\'s the headline?"
     ]);
     mem.lastCustomerQuestion = 'summary';
+    mem.customerAskedFor = 'concise point';
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'too_long';
+    return resp;
   }
   
-  // --- CATCH-ALL: Contextual response based on interest level ---
-  if(!resp) {
-    if(mem.customerInterestLevel === 'warm' || patience > 65) {
-      resp = pick([
-        "Okay, interesting. " + (pri ? "And how does this help us " + pri.toLowerCase() + "?" : "Keep going — I\'m listening."),
-        "Mm-hmm. " + (pain ? "Our main pain is " + pain.toLowerCase().split('.')[0] + ". Relevant?" : "How does this apply to a company like ours?"),
-        "Right. " + (mem.dgrWasSpecific > 0 ? "You\'ve made some good points." : "Still waiting for the \'aha\' moment.") + " What else?",
-        "Continue. " + (s(company.futurePlans) ? "We\'re headed towards " + firstOf(s(company.futurePlans)).toLowerCase() + ". Does this fit?" : "I want to see where this is going.")
-      ]);
-    }
-    else if(mem.customerInterestLevel === 'cold' || patience < 40) {
-      resp = pick([
-        "Look — I\'m going to level with you. This isn\'t landing. Either pivot or let\'s wrap up.",
-        "I\'m losing interest here. What\'s the ONE thing that should make me care?",
-        "We\'re running out of time. If you have a killer point, now\'s the moment.",
-        "I\'m going to be honest — nothing you\'ve said so far is making me want to continue this call."
-      ]);
-    }
-    else {
-      resp = pick([
-        "Okay. " + (pain ? "Look, our real issue is " + pain.toLowerCase().split('.')[0] + ". If you can solve that — talk." : "What\'s the actual value for us?"),
-        "Mm-hmm. " + (turn > 3 ? "I\'m still not sure what you\'re offering specifically." : "Go on."),
-        "Right. " + (pri ? "How does this help with " + pri.toLowerCase() + "?" : "And how does this apply to us?"),
-        "That\'s interesting in theory. " + (s(company.size) ? "For a " + firstOf(s(company.size), ',').toLowerCase() + " company" : "For us") + " — what does it look like?",
-        (s(company.futurePlans) ? "We\'re trying to " + firstOf(s(company.futurePlans)).toLowerCase() + ". " : "") + "Where does this fit in?"
-      ]);
-    }
-  }
-  
-  // === FINAL ENRICHMENT: Add personality touches ===
-  // Occasionally interrupt with human behavior
-  if(turn > 2 && Math.random() < 0.12) {
-    var interrupts = [
-      "[phone buzzes] Sorry — one sec... okay, go on.",
-      "[typing sounds] Mm-hmm, I\'m listening. Just multitasking.",
-      "[muffled voice] Sorry — someone walked in. You were saying?",
-      "Hold on — [to someone else] I\'ll be 2 minutes. [back] Yeah, continue."
+  // === CATCH-ALL: Context + mood + turn-aware ===
+  // Customer proactively asks a question if they haven't been asked one in a while
+  if(mem.turnsSinceQuestion >= 3 && Math.random() < 0.4) {
+    var proactiveQs = [
+      personaFlavor(
+        "Actually — can I ask you something? What makes this better than just building it ourselves?",
+        "Let me ask YOU something: what would this cost us in year one? Ballpark.",
+        "I have a question for you: if I said yes today, what happens by end of month?",
+        "Actually — quick question. Has this passed a SOC2 audit?"
+      ),
+      "Hold on — I want to ask YOU something. What\'s in this for AWS? I want to understand the incentive.",
+      "Wait — before you continue. Why are you calling ME specifically? Did someone refer you?",
+      "Let me flip this: if you were in my position, what would you need to hear to take this seriously?",
+      "Genuine question — have you spoken to anyone else at " + compName + "? I want to know who else knows about this.",
+      (mem.dgrClaimed.length > 0 ? "You said \'" + mem.dgrClaimed[Math.floor(Math.random()*mem.dgrClaimed.length)].substring(0,40) + "\'. " : "") + "Can you back that up? Reference customer? Proof point?"
     ];
-    resp = interrupts[Math.floor(Math.random() * interrupts.length)] + " " + resp;
+    resp = pick(proactiveQs);
+    mem.turnsSinceQuestion = 0;
+    mem.lastResponseType = 'proactive_question';
+    return resp;
   }
   
-  // Track last customer question for next turn
+  // Default contextual response based on mood
+  if(mem.customerMood === 'engaged' || patience > 65) {
+    resp = pick([
+      "Okay, interesting. " + (pri ? "And how does this help us " + pri.toLowerCase() + "?" : "Keep going."),
+      (pain ? "Our pain is " + pain.toLowerCase().split('.')[0] + ". Relevant?" : "How does this apply to us?"),
+      (mem.dgrWasSpecific > 0 ? "You\'ve made some good points. " : "Still processing. ") + "What else?",
+      "Continue. " + (compFuture ? "We\'re headed towards " + compFuture.toLowerCase() + ". Connect the dots for me." : "Where is this going?"),
+      "[nods] Mm-hmm. " + (extractedTopic ? "This " + extractedTopic + " piece — " : "") + "how does it play out in practice?",
+      "Alright. I\'m tracking. " + personaFlavor("Give me the technical depth.", "Give me the numbers.", "Give me the strategic angle.", "Give me the compliance story.")
+    ]);
+  }
+  else if(mem.customerMood === 'exiting' || patience < 35) {
+    resp = pick([
+      "I\'m going to level with you. This isn\'t landing. Pivot or wrap up.",
+      "Losing interest. ONE thing that should make me care. Go.",
+      "Running out of time. Killer point? Now\'s the moment. Last chance.",
+      "Nothing you\'ve said is making me want to continue. Sorry.",
+      "[checks phone] I really need to go. Last shot — what\'s the headline?",
+      "Look — " + (mem.dgrWasVague > mem.dgrWasSpecific ? "you\'ve been too vague" : "this just isn\'t clicking") + ". Anything else or shall we end here?"
+    ]);
+  }
+  else {
+    resp = pick([
+      "Okay. " + (pain ? "Look, our real issue is " + pain.toLowerCase().split('.')[0] + ". Solve that and I\'ll talk." : "What\'s the value for US specifically?"),
+      "Mm-hmm. " + (turn > 3 ? "I\'m still not entirely sure what you\'re proposing." : "Go on. I\'m listening."),
+      "Right. " + (pri ? "How does this help with " + pri.toLowerCase() + "? That\'s my filter." : "Apply this to us specifically."),
+      "That\'s interesting in theory. " + (compSize ? "For " + compSize.toLowerCase() + " company" : "For us") + " — what does it look like?",
+      (compFuture ? "We\'re trying to " + compFuture.toLowerCase() + ". " : "") + "Where does this fit?",
+      (mem.dgrClaimed.length > 0 ? "You\'ve said a lot. " + mem.dgrClaimed[mem.dgrClaimed.length-1].substring(0,30) + " — is that the core claim?" : "Give me the 10-second version of why I should care."),
+      personaFlavor(
+        "Technical question: what\'s the integration effort? Days? Weeks? Months?",
+        "What does my CFO need to see to approve this? What\'s the 1-pager?",
+        "Who else in " + (s(company.industry) ? s(company.industry).split('—')[0] : "our space") + " has done this? Names.",
+        "What\'s the risk? What can go wrong? Nobody ever tells me that part."
+      )
+    ]);
+  }
+  
+  // Add human filler occasionally (10%)
+  if(resp && Math.random() < 0.10 && turn > 2) {
+    var fillers = [
+      "[phone buzzes] Sorry — sec... okay go on. ",
+      "[typing sounds] Mm-hmm, listening. Just multitasking. ",
+      "[muffled] Sorry — someone popped in. Continue. ",
+      "[drinks coffee] Right. Where were we? Oh yeah — ",
+      "[adjusts headset] Sorry. Go ahead. "
+    ];
+    resp = fillers[Math.floor(Math.random() * fillers.length)] + resp;
+  }
+  
+  mem.lastResponseType = 'default';
+  
+  // Track if response contains a question
   if(resp && resp.indexOf('?') >= 0) {
     var q = resp.match(/[^.!]*\?/);
     mem.lastCustomerQuestion = q ? q[0].trim() : null;
     mem.customerAskedFor = mem.lastCustomerQuestion;
+    mem.turnsSinceQuestion = 0;
   }
   
-  return resp || "Mm-hmm. Tell me more about how that applies to us.";
+  return resp || "Mm-hmm. Keep going.";
 }
 
 function pickFromCategory(category, difficulty) {
