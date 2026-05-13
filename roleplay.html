@@ -1,1 +1,649 @@
-placeholder
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>ISV DG Cold Call Roleplay Simulator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --color-bg: #f8f9fb;
+  --color-bg-secondary: #ffffff;
+  --color-text: #1a1a2e;
+  --color-text-secondary: #44546f;
+  --color-text-muted: #8993a4;
+  --color-border-light: #e8eaed;
+  --color-border: #dfe1e6;
+  --color-primary: #0052CC;
+  --color-primary-light: #deebff;
+  --color-success: #36b37e;
+  --color-success-light: #e3fcef;
+  --color-error: #de350b;
+  --color-error-light: #ffebe6;
+  --color-warning: #ff991f;
+  --color-warning-light: #fff7e6;
+  --color-info: #0065ff;
+  --color-info-light: #e6f0ff;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 100px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --aws-orange: #FF9900;
+  --aws-dark: #232F3E;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); line-height: 1.5; }
+.header { background: var(--aws-dark); color: white; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+.header .logo { color: var(--aws-orange); font-weight: 700; font-size: 18px; }
+.header h1 { font-size: 15px; font-weight: 500; opacity: 0.95; }
+.header .badge { background: #7b2d8b; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); }
+.container { max-width: 620px; margin: 24px auto; padding: 0 20px; }
+
+/* Setup */
+.setup { background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+.setup h2 { font-size: 18px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.setup .subtitle { font-size: 13px; color: var(--color-text-muted); margin-bottom: 20px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.form-row label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-secondary); display: block; margin-bottom: 5px; }
+.form-row select { width: 100%; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-sans); background: var(--color-bg); }
+.info-box { background: var(--color-info-light); padding: 12px; border-radius: var(--radius-md); font-size: 12px; color: var(--color-text-secondary); margin: 16px 0; }
+.start-btn { width: 100%; padding: 13px; background: #7b2d8b; color: white; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.start-btn:hover { background: #5e1a6e; }
+
+/* Chat */
+.chat { display: none; background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.chat-header { background: var(--aws-dark); color: white; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+.avatar { width: 34px; height: 34px; background: var(--aws-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+.chat-header .info { flex: 1; }
+.chat-header .name { font-size: 13px; font-weight: 600; }
+.chat-header .role { font-size: 11px; opacity: 0.7; }
+.patience-bar { width: 90px; height: 7px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; }
+.patience-fill { height: 100%; background: var(--color-success); transition: width 0.5s, background 0.5s; border-radius: 4px; }
+.messages { padding: 16px; min-height: 200px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 82%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+.msg.customer { background: var(--color-bg); border: 1px solid var(--color-border-light); align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg.dgr { background: var(--color-primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg.system { background: var(--color-warning-light); color: #7a4d00; align-self: center; font-size: 11px; font-weight: 600; text-align: center; border-radius: var(--radius-pill); padding: 6px 16px; }
+.input-area { padding: 12px; border-top: 1px solid var(--color-border-light); display: flex; gap: 8px; }
+.input-area input { flex: 1; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 13px; font-family: var(--font-sans); }
+.input-area input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
+.input-area button { padding: 10px 18px; background: var(--color-primary); color: white; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; }
+.input-area button:hover { background: #0747a6; }
+
+/* Scorecard */
+.scorecard { display: none; }
+.score-hero { text-align: center; padding: 28px; background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+.score-number { font-size: 52px; font-weight: 700; }
+.score-label { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.outcome-badge { display: inline-block; padding: 5px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; margin-top: 10px; }
+.breakdown { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.breakdown .item { background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 14px 8px; text-align: center; }
+.breakdown .item .val { font-size: 22px; font-weight: 700; color: var(--color-primary); }
+.breakdown .item .lbl { font-size: 10px; color: var(--color-text-muted); text-transform: uppercase; }
+.feedback h4 { font-size: 13px; font-weight: 600; margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
+.fb-card { padding: 10px 12px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.5; margin-bottom: 6px; }
+.fb-card.good { background: var(--color-success-light); border-left: 3px solid var(--color-success); }
+.fb-card.improve { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); }
+.retry-btn { width: 100%; padding: 13px; background: #7b2d8b; color: white; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+.retry-btn:hover { background: #5e1a6e; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo"><i class="fa-brands fa-aws"></i></div>
+  <h1>Cold Call Roleplay Simulator</h1>
+  <span class="badge">ISV DG EMEA</span>
+</div>
+<div class="container">
+  <div class="setup" id="setup">
+    <h2><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Roleplay Simulator</h2>
+    <p class="subtitle">Practice cold calling against an AI customer. Handle their objections and book a meeting.</p>
+    <div class="form-row">
+      <div><label>Industry</label><select id="rpIndustry"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option><option value="ecommerce">E-Commerce</option><option value="aiml">AI/ML Company</option></select></div>
+      <div><label>Customer Persona</label><select id="rpPersona"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option><option value="aiml">AI/ML Lead — Priya Kapoor</option></select></div>
+    </div>
+    <div class="form-row">
+      <div><label>Difficulty</label><select id="rpDifficulty"><option value="easy">Easy (1-2 mild objections)</option><option value="medium" selected>Medium (3-4 objections)</option><option value="hard">Hard (5+ harsh, tries to hang up)</option></select></div>
+      <div><label>Call Objective</label><select id="rpObjective"><option value="discovery">Discovery Call</option><option value="demo">Demo / Workshop Invite</option><option value="cosell">Co-Sell Introduction</option></select></div>
+    </div>
+    <div class="info-box">
+      <strong>How it works:</strong> The AI plays a resistant customer trying to end the call. You have 6-8 exchanges. Your responses are scored on: rapport building, objection handling, discovery questions, and closing technique. At the end you get a scorecard with coaching tips.<br><br>
+      <strong>💡 Pro tip:</strong> Use the customer's name, acknowledge their situation before pitching, and use permission-based language ("would it be worth…") for best results.
+    </div>
+    <button class="start-btn" onclick="startSim()"><i class="fa-solid fa-phone"></i> Start Simulation</button>
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="chat-header">
+      <div class="avatar" id="avatar">A</div>
+      <div class="info"><div class="name" id="custName">Alex Chen</div><div class="role" id="custRole">CTO · SaaS · Medium</div></div>
+      <div style="text-align:right"><div style="font-size:10px;opacity:0.6;margin-bottom:2px">Patience</div><div class="patience-bar"><div class="patience-fill" id="patienceBar" style="width:100%"></div></div></div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <div class="scorecard" id="scorecard"></div>
+</div>
+
+<script>
+const PERSONAS = {
+  cto: {
+    name:'Alex Chen', title:'CTO', avatar:'A',
+    greetings:[
+      "Yeah? Alex speaking.",
+      "Hello, who's this?",
+      "Alex Chen. Make it quick — I'm in a standup in 5.",
+      "Chen here. Who gave you this number?"
+    ],
+    style:'technical',
+    concerns:['architecture','engineering bandwidth','integration complexity','technical debt','migration risk']
+  },
+  cfo: {
+    name:'Sarah Mitchell', title:'CFO', avatar:'S',
+    greetings:[
+      "Sarah Mitchell's office.",
+      "Yes? Who am I speaking with?",
+      "Mitchell here. I've got a board prep in 10 minutes so be quick.",
+      "This is Sarah. What's this regarding?"
+    ],
+    style:'financial',
+    concerns:['ROI','budget cycle','cost justification','payback period','total cost of ownership']
+  },
+  ceo: {
+    name:'James Park', title:'CEO & Founder', avatar:'J',
+    greetings:[
+      "James here, you have 30 seconds.",
+      "Park speaking. Quick — I'm walking into a meeting.",
+      "Who is this? I'm between investor calls.",
+      "Yeah, James. What is it?"
+    ],
+    style:'executive',
+    concerns:['competitive advantage','time to value','strategic fit','revenue growth','market speed']
+  },
+  cio: {
+    name:'Maria Santos', title:'CIO', avatar:'M',
+    greetings:[
+      "Maria Santos.",
+      "Santos here, who's calling?",
+      "Yes? Make it brief — I'm dealing with an incident.",
+      "Maria speaking. What do you need?"
+    ],
+    style:'governance',
+    concerns:['security posture','compliance','data governance','vendor risk','operational resilience']
+  },
+  aiml: {
+    name:'Priya Kapoor', title:'Head of AI/ML Engineering', avatar:'P',
+    greetings:[
+      "Priya here. Who's this?",
+      "Yeah, speaking. What's up?",
+      "Priya Kapoor, make it quick — I'm in the middle of a deploy.",
+      "Kapoor here. Is this a sales call? Because I can already feel it."
+    ],
+    style:'technical_ai',
+    concerns:['model performance','inference costs','vendor lock-in on models','data privacy','build vs buy']
+  }
+};
+
+// ===== HUMAN-LIKE RESPONSE POOLS =====
+const RESPONSES = {
+  easy: [
+    "Hmm... I mean, we're not actively looking, but I'm not totally closed off. What is it?",
+    "Oh, AWS? Yeah, we use some stuff already. What's this about specifically?",
+    "I've got about 5 minutes before my next call. What do you need?",
+    "Look, I'm not going to lie — I get a lot of these. But go on.",
+    "We might be open to something. Our contracts are up for renewal soon actually.",
+    "Okay... I'm listening. But fair warning, I have a low tolerance for fluff.",
+    "Hmm, you caught me at a decent time actually. What's the quick version?",
+    "We just finished a planning cycle so... maybe. What specifically are we talking about?",
+    "I'm open-minded but skeptical. You've got maybe 3 minutes. Go.",
+    "Alright — I won't pretend I'm not curious. But keep it tight.",
+    "Sure, why not. I'm eating lunch at my desk anyway. What've you got?",
+    "Okay. I'll hear you out. But if this is a generic 'touch base' thing, I'm out."
+  ],
+  medium: [
+    "Right. So I just got out of a board meeting and honestly my head is somewhere else. Can you give me the 30-second version?",
+    "We went through this whole evaluation last year with Azure. I'm not sure I want to open that can of worms again.",
+    "Budget-wise... look, I'll be straight with you. We froze discretionary spend until Q3. Is this something that could wait?",
+    "Hold on — [muffled talking] — sorry about that. Where were we? Actually, can you just email me?",
+    "I've got three vendors calling me this week. What makes you different from the last two?",
+    "Our CTO is pretty firmly in the Azure camp. I'm not sure I can fight that battle right now.",
+    "We just went through a reorg. Honestly, I don't even know who owns this decision anymore.",
+    "I mean... sure, cloud is important. But we've got bigger fires right now. Our Series C just closed and—hold on. [pause] Sorry. What were you saying?",
+    "I was actually just talking to [competitor] yesterday. They offered something similar. Why AWS?",
+    "Okay so here's my problem — every time I take one of these meetings, it turns into a 6-month evaluation. I don't have that bandwidth.",
+    "Look, my team is burned out. We just shipped a major release. I can't pile on another initiative right now.",
+    "Fine, you've got my attention for about 60 more seconds. But I'm not committing to anything today.",
+    "I appreciate the call but honestly — timing is rough. Our CTO left last month and we're still figuring things out.",
+    "We're in the middle of fundraising so... everything that isn't core product is basically frozen. Sorry."
+  ],
+  hard: [
+    "I'm going to stop you. We get calls like this literally every day. I have 45 seconds of patience left.",
+    "Okay here's the thing — I don't know you, I didn't ask for this call, and my calendar is on fire. Give me ONE reason not to hang up.",
+    "We signed a 3-year EA with Microsoft six months ago. There is literally nothing you can say.",
+    "I was burned by a cloud vendor last year who promised the world and delivered nothing. Why should I believe you're different?",
+    "Look mate, I appreciate the hustle but we're a 15-person startup. We don't have bandwidth to evaluate another platform.",
+    "[Sigh] Fine. You have exactly 20 seconds. And if I hear the word 'synergy' I'm hanging up.",
+    "Wait — are you reading from a script? Because it sounds like you're reading from a script.",
+    "I don't take cold calls. Whoever gave you this number is about to get an angry Slack message. What do you want?",
+    "Unless you can tell me in ONE sentence why I should care, this conversation is over. Go.",
+    "We tried AWS two years ago. The migration was a nightmare, support was nonexistent, and we went back to Azure. So no thanks.",
+    "I'm going to be brutally honest with you — I've had four of these calls today. I'm at my limit. You have maybe 10 seconds.",
+    "You know what? I admire the persistence. But the answer is no. It was no last month when your colleague called too.",
+    "Right. So my day: two escalations, a P1 incident, and now a cold call. Can you see why I'm not exactly in a buying mood?",
+    "I literally just hung up on someone selling me the same thing. What makes you think this is going to go differently?",
+    "Hold on — [sound of typing] — sorry I wasn't listening. I have a deploy that's about to break. Can you call back... actually, don't."
+  ],
+  // AI/ML specific objections for Priya persona
+  aiml: [
+    "We're already running fine on Hugging Face plus our own infra. Why would I add another vendor?",
+    "Bedrock? I've looked at it. Honestly the model selection lags behind what we can do ourselves with open weights.",
+    "Every cloud vendor wants to lock us into their AI stack. At least with open-source we own our destiny.",
+    "We trained our own models. The last thing I need is another managed service abstracting away control.",
+    "Look, I've been doing ML for 12 years. I don't need a managed service to tell me how to run inference.",
+    "Our inference costs are already optimized on our own GPU cluster. Why would I pay a premium for Bedrock?",
+    "Data privacy is non-negotiable. I'm not sending our training data through someone else's API.",
+    "I tried SageMaker three years ago. The abstraction layer was infuriating. Has it actually gotten better?",
+    "We're evaluating open-source agent frameworks right now. I don't see where AWS fits into that picture.",
+    "Honestly? The pace of innovation in open-source is faster than anything a cloud vendor can ship. Prove me wrong."
+  ]
+};
+
+// Contextual soft responses when DG handles well
+const SOFT_RESPONSES = [
+  "Okay... you actually asked a good question there. {concern} is something that keeps me up at night.",
+  "Huh. I wasn't expecting you to say that. Tell me more about the {concern} angle.",
+  "Alright, you've earned yourself another 2 minutes. But no promises.",
+  "Fine. I'll be honest — we ARE struggling with {concern}. But I'm not sure AWS is the answer.",
+  "Look, I'll give you this — you're not like the last 5 people who called. What specifically would this meeting cover?",
+  "Okay that's... actually relevant to something we're dealing with. Go on.",
+  "Hmm. You clearly did some homework. I'm still not saying yes to a meeting, but I'm listening.",
+  "That's a fair point. [pause] Okay, what would a next step even look like? Hypothetically.",
+  "I appreciate that you're not just reading a script. What would we actually discuss?",
+  "You know what, that resonates. We've been having that exact debate internally about {concern}."
+];
+
+// Warm closing responses when patience is high
+const WARM_RESPONSES = [
+  "Okay, I'm intrigued. But keep it quick — what's the actual ask?",
+  "I'll give you credit for persistence. What specifically would we discuss?",
+  "Alright. I can do 15 minutes next week. But it better be relevant to what we just talked about.",
+  "Fine. Send me a calendar invite. But if it turns into a pitch deck, I'm leaving.",
+  "You've made a decent case. Let me check my calendar... what works on your end?",
+  "Look, I'll take the meeting. But I'm bringing my {concern} person so come prepared."
+];
+
+let state = null;
+let lastCustomerMsg = '';
+
+function startSim() {
+  var p = document.getElementById('rpPersona').value;
+  var d = document.getElementById('rpDifficulty').value;
+  var ind = document.getElementById('rpIndustry').value;
+  var obj = document.getElementById('rpObjective').value;
+  var cfg = PERSONAS[p];
+
+  state = {
+    active:true, turn:0,
+    maxTurns: d==='easy'?6 : d==='hard'?8 : 7,
+    patience: d==='easy'?100 : d==='hard'?55 : 75,
+    scores:{rapport:0, objection:0, discovery:0, closing:0},
+    feedback:{good:[], improve:[]},
+    difficulty:d, persona:p, industry:ind, objective:obj, cfg:cfg, stage:0,
+    usedResponses: new Set(),
+    consecutiveGood: 0,
+    lastDgrMsg: '',
+    nameUsed: false,
+    empathyShown: false,
+    permissionUsed: false,
+    jargonCount: 0
+  };
+
+  document.getElementById('setup').style.display='none';
+  document.getElementById('scorecard').style.display='none';
+  var chat = document.getElementById('chat');
+  chat.style.display='block';
+  document.getElementById('avatar').textContent = cfg.avatar;
+  document.getElementById('custName').textContent = cfg.name;
+  document.getElementById('custRole').textContent = cfg.title+' · '+ind+' · '+d.toUpperCase();
+  document.getElementById('patienceBar').style.width = state.patience+'%';
+  document.getElementById('patienceBar').style.background = 'var(--color-success)';
+  document.getElementById('messages').innerHTML='';
+  document.getElementById('userInput').value='';
+
+  var g = cfg.greetings[Math.floor(Math.random()*cfg.greetings.length)];
+  lastCustomerMsg = g;
+  addMsg('customer', g);
+  document.getElementById('userInput').focus();
+}
+
+function addMsg(type, text) {
+  var el = document.getElementById('messages');
+  var div = document.createElement('div');
+  div.className = 'msg '+type;
+  div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendMsg() {
+  var input = document.getElementById('userInput');
+  var text = input.value.trim();
+  if(!text || !state || !state.active) return;
+  input.value='';
+  addMsg('dgr', text);
+  state.turn++;
+  state.lastDgrMsg = text;
+  scoreResponse(text);
+  updatePatience();
+
+  if(state.patience<=0) {
+    setTimeout(function(){ addMsg('system','📞 Customer hung up.'); endSim('lost'); },700);
+    return;
+  }
+  if(state.turn >= state.maxTurns) {
+    setTimeout(function(){ endSim(state.patience>60?'booked': state.patience>30?'partial':'lost'); },700);
+    return;
+  }
+  setTimeout(function(){
+    var resp = getCustomerResponse(text);
+    lastCustomerMsg = resp;
+    addMsg('customer', resp);
+    document.getElementById('userInput').focus();
+  }, 600+Math.random()*900);
+}
+
+function scoreResponse(text) {
+  var lower = text.toLowerCase();
+  var d = 0;
+  var cfg = state.cfg;
+  var firstName = cfg.name.split(' ')[0].toLowerCase();
+
+  // === POSITIVE SIGNALS ===
+
+  // Using customer's name (+8)
+  if(lower.indexOf(firstName) >= 0 && !state.nameUsed) {
+    state.scores.rapport += 8;
+    d += 8;
+    state.nameUsed = true;
+    addFeedback('good', "You referenced the customer's specific situation — this builds trust fast");
+  } else if(lower.indexOf(firstName) >= 0) {
+    state.scores.rapport += 3;
+    d += 3;
+  }
+
+  // Permission-based language (+12)
+  if(lower.match(/would it be (crazy|worth|okay|helpful)|is it worth|fair to say|would you be open|mind if i|how would you feel/)) {
+    state.scores.closing += 12;
+    d += 12;
+    state.permissionUsed = true;
+    addFeedback('good', "Good permission-based language ('would it be worth') — removes pressure from the ask");
+  }
+
+  // Empathy about situation (+6)
+  if(lower.match(/sounds (like a |)tough|that's rough|reorgs are|must be (hard|challenging|stressful)|sorry to hear|that's a lot|understand the pressure|appreciate you|respect your time/)) {
+    state.scores.rapport += 6;
+    d += 6;
+    state.empathyShown = true;
+    addFeedback('good', "Showing empathy for their situation builds connection before the ask");
+  }
+
+  // Questions (+5-8)
+  if(text.indexOf('?') >= 0) {
+    state.scores.discovery += 5;
+    d += 8;
+    if(state.turn <= 2) {
+      addFeedback('good', "Smart move asking about their pain before pitching — shows you're listening");
+    }
+  }
+
+  // Acknowledgment / active listening (+5-7)
+  if(lower.match(/understand|fair|makes sense|hear you|get it|appreciate|totally|you mentioned|you said|sounds like/)) {
+    state.scores.rapport += 5;
+    d += 7;
+    addFeedback('good', "Strong acknowledgement before responding — builds trust");
+  }
+
+  // Social proof with specifics (+5-6)
+  if(lower.match(/\d+\s*(%|percent)|customers like|companies (like|similar)|data shows|case study|similar (isv|company)|for example/)) {
+    state.scores.objection += 5;
+    d += 6;
+    addFeedback('good', "Strong social proof with specific metrics — makes it concrete, not abstract");
+  }
+
+  // Low-friction ask (+5-8)
+  if(lower.match(/15 minutes|20 minutes|quick call|brief|short|no commitment|no obligation|low risk|just.*explore|no pressure/)) {
+    state.scores.closing += 5;
+    d += 8;
+    addFeedback('good', "You kept it brief and asked a question — that's how you earn more time");
+  }
+
+  // Business value language (+3-4)
+  if(lower.match(/roi|cost sav|revenue|growth|competitive|market|margin|efficiency/)) {
+    state.scores.objection += 3;
+    d += 4;
+  }
+
+  // Referencing what they just said (+5)
+  var lastWords = lastCustomerMsg.toLowerCase().split(/\s+/);
+  var referencedLast = lastWords.some(function(w) {
+    return w.length > 4 && lower.indexOf(w) >= 0 && !['that','this','have','been','with','about','would'].includes(w);
+  });
+  if(referencedLast && state.turn > 1) {
+    state.scores.rapport += 3;
+    d += 5;
+  }
+
+  // === NEGATIVE SIGNALS ===
+
+  // Too long without a question (-12)
+  if(text.length > 250 && text.indexOf('?') < 0) {
+    state.scores.rapport -= 3;
+    d -= 12;
+    addFeedback('improve', "You talked for 40+ seconds without a question — customers check out after 20");
+  }
+
+  // Pushy language (-15)
+  if(lower.match(/you need to|you should|you must|you have to|you're missing out/)) {
+    state.scores.rapport -= 4;
+    d -= 15;
+    addFeedback('improve', "Avoid pushy language like 'you need to' — guide rather than push");
+  }
+
+  // Too short (-5)
+  if(text.length < 15) {
+    d -= 5;
+    addFeedback('improve', "Response too short — provide value before asking for the meeting");
+  }
+
+  // No question early in call (-5)
+  if(text.indexOf('?') < 0 && state.turn <= 2) {
+    state.scores.discovery -= 2;
+    d -= 5;
+    addFeedback('improve', "Ask a discovery question early in the call to build engagement");
+  }
+
+  // Ignoring what they just said (-8) 
+  if(!referencedLast && state.turn > 2 && text.indexOf('?') < 0) {
+    d -= 8;
+    addFeedback('improve', "Try referencing what they just said before pivoting — shows you're actually listening");
+  }
+
+  // Jargon without context (-5)
+  if(lower.match(/synerg|leverage\s|scalab|holistic|paradigm|disrupt|circle back|touch base|ping|loop in/)) {
+    state.jargonCount++;
+    d -= 5;
+    if(state.jargonCount >= 2) {
+      addFeedback('improve', "Avoid multi-sentence pitches on a cold call — one idea at a time");
+    }
+  }
+
+  // Going straight to features without addressing pain (-6)
+  if(state.turn <= 2 && lower.match(/bedrock|sagemaker|lambda|ec2|marketplace|s3/) && !lower.match(/problem|challenge|struggle|pain|issue/)) {
+    d -= 6;
+    addFeedback('improve', "You went straight to product features — lead with their problem, not your solution");
+  }
+
+  // Meeting ask too early (-5)
+  if(state.turn <= 1 && lower.match(/meeting|calendar|schedule|book|availability/)) {
+    d -= 5;
+    addFeedback('improve', "The ask came too early — build more rapport before proposing a meeting");
+  }
+
+  // Track consecutive good turns
+  if(d > 5) {
+    state.consecutiveGood++;
+  } else {
+    state.consecutiveGood = 0;
+  }
+
+  state.patience = Math.min(100, Math.max(0, state.patience + d));
+}
+
+function addFeedback(type, msg) {
+  var arr = state.feedback[type];
+  if(arr.indexOf(msg) < 0 && arr.length < 6) {
+    arr.push(msg);
+  }
+}
+
+function updatePatience() {
+  var bar = document.getElementById('patienceBar');
+  bar.style.width = Math.max(0,state.patience)+'%';
+  bar.style.background = state.patience>50?'var(--color-success)': state.patience>25?'var(--color-warning)':'var(--color-error)';
+}
+
+function pickUnique(pool) {
+  var available = pool.filter(function(r) { return !state.usedResponses.has(r); });
+  if(available.length === 0) {
+    state.usedResponses.clear();
+    available = pool;
+  }
+  var pick = available[Math.floor(Math.random() * available.length)];
+  state.usedResponses.add(pick);
+  return pick;
+}
+
+function getCustomerResponse(dgrText) {
+  var lower = dgrText.toLowerCase();
+  state.stage++;
+  var hasQ = dgrText.indexOf('?') >= 0;
+  var ack = !!lower.match(/understand|fair|makes sense|hear you|get it|you mentioned|sounds like/);
+  var empathy = !!lower.match(/tough|rough|challenging|stressful|sorry|appreciate|respect/);
+  var usedName = lower.indexOf(state.cfg.name.split(' ')[0].toLowerCase()) >= 0;
+  var permission = !!lower.match(/would it be|is it worth|fair to say|would you be open|mind if/);
+  var s = state.stage;
+  var d = state.difficulty;
+  var cfg = state.cfg;
+
+  // === SOFT RESPONSE: DG did well (asked question + acknowledged/empathy/name) ===
+  if((hasQ && (ack || empathy || usedName)) && s > 2) {
+    var concern = cfg.concerns[Math.floor(Math.random() * cfg.concerns.length)];
+    var soft = SOFT_RESPONSES.map(function(r) { return r.replace(/{concern}/g, concern); });
+    return pickUnique(soft);
+  }
+
+  // === WARM CLOSING: High patience late in convo ===
+  if(state.patience > 70 && s >= 3 && (permission || (hasQ && ack))) {
+    var concern = cfg.concerns[Math.floor(Math.random() * cfg.concerns.length)];
+    var warm = WARM_RESPONSES.map(function(r) { return r.replace(/{concern}/g, concern); });
+    return pickUnique(warm);
+  }
+
+  // === HIGH PATIENCE NATURAL WARM-UP ===
+  if(state.patience > 70 && s >= 4) {
+    var warm = WARM_RESPONSES.map(function(r) { 
+      return r.replace(/{concern}/g, cfg.concerns[Math.floor(Math.random() * cfg.concerns.length)]); 
+    });
+    return pickUnique(warm);
+  }
+
+  // === AI/ML PERSONA SPECIFIC ===
+  if(state.persona === 'aiml') {
+    var aiPool = RESPONSES.aiml.concat(RESPONSES[d]);
+    return pickUnique(aiPool);
+  }
+
+  // === STANDARD POOL ===
+  var pool = RESPONSES[d];
+  return pickUnique(pool);
+}
+
+function endSim(outcome) {
+  state.active = false;
+  document.getElementById('chat').style.display='none';
+
+  // Bonus feedback based on final state
+  if(state.nameUsed && state.empathyShown && state.permissionUsed) {
+    addFeedback('good', "Triple-stack: name + empathy + permission language = advanced technique");
+  }
+  if(state.consecutiveGood >= 3) {
+    addFeedback('good', "You maintained momentum across multiple exchanges — great call control");
+  }
+  if(!state.nameUsed) {
+    addFeedback('improve', "Your opener didn't include a reason for calling specific to THEM — generic openers get hung up on");
+  }
+  if(state.jargonCount >= 2) {
+    addFeedback('improve', "Multiple jargon terms used — customers tune out when they hear 'vendor-speak'");
+  }
+
+  var total = Math.min(100, Math.max(0,
+    state.scores.rapport + state.scores.objection + state.scores.discovery + state.scores.closing + (outcome==='booked'?25 : outcome==='partial'?10 : 0)
+  ));
+
+  var color = total>=70?'var(--color-success)': total>=50?'var(--color-warning)':'var(--color-error)';
+  var badge = outcome==='booked'
+    ? '<span class="outcome-badge" style="background:var(--color-success-light);color:#006644">✅ Meeting Booked!</span>'
+    : outcome==='partial'
+    ? '<span class="outcome-badge" style="background:var(--color-warning-light);color:#7a4d00">⚠️ Partial — "Send me info"</span>'
+    : '<span class="outcome-badge" style="background:var(--color-error-light);color:var(--color-error)">❌ Call Lost</span>';
+
+  var goods = state.feedback.good.slice(0,5);
+  var imps = state.feedback.improve.slice(0,5);
+  if(!goods.length) goods.push('You made the call — that puts you ahead of most reps who avoid the phone.');
+  if(!imps.length) imps.push('Try mixing questions with value statements for better flow.');
+
+  var el = document.getElementById('scorecard');
+  el.style.display='block';
+  el.innerHTML = '<div class="score-hero"><div class="score-number" style="color:'+color+'">'+total+'</div><div class="score-label">Overall Score / 100</div>'+badge+'</div>'
+    + '<div class="breakdown"><div class="item"><div class="val">'+Math.max(0,state.scores.rapport)+'</div><div class="lbl">Rapport</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.objection)+'</div><div class="lbl">Objections</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.discovery)+'</div><div class="lbl">Discovery</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.closing)+'</div><div class="lbl">Closing</div></div></div>'
+    + '<div class="feedback"><h4><i class="fa-solid fa-check-circle" style="color:var(--color-success)"></i> What you did well</h4>'
+    + goods.map(function(g){return '<div class="fb-card good">'+g+'</div>';}).join('')
+    + '<h4><i class="fa-solid fa-exclamation-triangle" style="color:var(--color-warning)"></i> Areas to improve</h4>'
+    + imps.map(function(i){return '<div class="fb-card improve">'+i+'</div>';}).join('')
+    + '</div><button class="retry-btn" onclick="resetSim()"><i class="fa-solid fa-redo"></i> Try Again</button>';
+}
+
+function resetSim() {
+  document.getElementById('scorecard').style.display='none';
+  document.getElementById('chat').style.display='none';
+  document.getElementById('setup').style.display='block';
+  state = null;
+}
+
+// Auto-start if launched with params from parent
+(function() {
+  var hash = window.location.hash;
+  if (hash && hash.indexOf('auto') >= 0) {
+    var params = {};
+    hash.replace('#auto&', '').split('&').forEach(function(p) {
+      var kv = p.split('=');
+      if (kv.length === 2) params[kv[0]] = kv[1];
+    });
+    if (params.industry) document.getElementById('rpIndustry').value = params.industry;
+    if (params.persona) document.getElementById('rpPersona').value = params.persona;
+    if (params.difficulty) document.getElementById('rpDifficulty').value = params.difficulty;
+    if (params.objective) document.getElementById('rpObjective').value = params.objective;
+    setTimeout(function() { startSim(); }, 300);
+  }
+})();
+
+</script>
+</body>
+</html>
