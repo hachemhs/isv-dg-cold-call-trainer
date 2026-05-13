@@ -41,8 +41,6 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .header h1 { font-size: 15px; font-weight: 500; opacity: 0.95; }
 .header .badge { background: #7b2d8b; color: white; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-pill); }
 .container { max-width: 620px; margin: 24px auto; padding: 0 20px; }
-
-/* Setup */
 .setup { background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
 .setup h2 { font-size: 18px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
 .setup .subtitle { font-size: 13px; color: var(--color-text-muted); margin-bottom: 20px; }
@@ -52,8 +50,6 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .info-box { background: var(--color-info-light); padding: 12px; border-radius: var(--radius-md); font-size: 12px; color: var(--color-text-secondary); margin: 16px 0; }
 .start-btn { width: 100%; padding: 13px; background: #7b2d8b; color: white; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .start-btn:hover { background: #5e1a6e; }
-
-/* Chat */
 .chat { display: none; background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
 .chat-header { background: var(--aws-dark); color: white; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
 .avatar { width: 34px; height: 34px; background: var(--aws-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
@@ -72,8 +68,6 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .input-area input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
 .input-area button { padding: 10px 18px; background: var(--color-primary); color: white; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; }
 .input-area button:hover { background: #0747a6; }
-
-/* Scorecard */
 .scorecard { display: none; }
 .score-hero { text-align: center; padding: 28px; background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); margin-bottom: 16px; box-shadow: var(--shadow-sm); }
 .score-number { font-size: 52px; font-weight: 700; }
@@ -89,6 +83,8 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .fb-card.improve { background: var(--color-warning-light); border-left: 3px solid var(--color-warning); }
 .retry-btn { width: 100%; padding: 13px; background: #7b2d8b; color: white; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 20px; }
 .retry-btn:hover { background: #5e1a6e; }
+.typing-indicator { align-self: flex-start; padding: 10px 14px; font-size: 20px; letter-spacing: 3px; opacity:0.5; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
 </style>
 </head>
 <body>
@@ -100,7 +96,7 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 <div class="container">
   <div class="setup" id="setup">
     <h2><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Roleplay Simulator</h2>
-    <p class="subtitle">Practice cold calling against an AI customer. Handle their objections and book a meeting.</p>
+    <p class="subtitle">Practice cold calling against a context-aware AI customer. They react to what you actually say.</p>
     <div class="form-row">
       <div><label>Industry</label><select id="rpIndustry"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option><option value="ecommerce">E-Commerce</option><option value="aiml">AI/ML Company</option></select></div>
       <div><label>Customer Persona</label><select id="rpPersona"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option><option value="aiml">AI/ML Lead — Priya Kapoor</option></select></div>
@@ -109,8 +105,12 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
       <div><label>Difficulty</label><select id="rpDifficulty"><option value="easy">Easy (1-2 mild objections)</option><option value="medium" selected>Medium (3-4 objections)</option><option value="hard">Hard (5+ harsh, tries to hang up)</option></select></div>
       <div><label>Call Objective</label><select id="rpObjective"><option value="discovery">Discovery Call</option><option value="demo">Demo / Workshop Invite</option><option value="cosell">Co-Sell Introduction</option></select></div>
     </div>
+    <div class="form-row">
+      <div><label>Customer Profile (Real Accounts)</label><select id="rpCustomer"><option value="generic">Generic / Random</option><option value="nccgroup">NCC Group plc — Cybersecurity (UK)</option><option value="itrs">ITRS Group — IT Monitoring (UK)</option><option value="streetgroup">Street Group — PropTech SaaS (UK)</option><option value="yoti">Yoti Ltd — Identity Verification (UK)</option><option value="ozone">Ozone Financial Tech — Open Banking (UK)</option><option value="mediahawk">Mediahawk — MarTech SaaS (UK)</option><option value="brokertech">BrokerTech — Insurance Tech (UK)</option><option value="desl">DeSL — Fashion PLM SaaS (UK)</option><option value="mapal">Mapal Software — Hospitality SaaS (Spain)</option><option value="fabamaq">Fabamaq — Gaming/iGaming (Portugal)</option></select></div>
+      <div><label>Mode</label><select id="rpMode"><option value="practice">Practice (coaching on)</option><option value="exam">Exam (no hints, strict scoring)</option></select></div>
+    </div>
     <div class="info-box">
-      <strong>How it works:</strong> The AI plays a resistant customer trying to end the call. You have 6-8 exchanges. Your responses are scored on: rapport building, objection handling, discovery questions, and closing technique. At the end you get a scorecard with coaching tips.<br><br>
+      <strong>How it works:</strong> The AI plays a realistic customer who reacts contextually to what you say — not random responses. They'll interrupt, go off-topic, check emails mid-call, and respond based on YOUR specific words.<br><br>
       <strong>💡 Pro tip:</strong> Use the customer's name, acknowledge their situation before pitching, and use permission-based language ("would it be worth…") for best results.
     </div>
     <button class="start-btn" onclick="startSim()"><i class="fa-solid fa-phone"></i> Start Simulation</button>
@@ -133,154 +133,451 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 </div>
 
 <script>
-const PERSONAS = {
-  cto: {
-    name:'Alex Chen', title:'CTO', avatar:'A',
-    greetings:[
-      "Yeah? Alex speaking.",
-      "Hello, who's this?",
-      "Alex Chen. Make it quick — I'm in a standup in 5.",
-      "Chen here. Who gave you this number?"
-    ],
-    style:'technical',
-    concerns:['architecture','engineering bandwidth','integration complexity','technical debt','migration risk']
-  },
-  cfo: {
-    name:'Sarah Mitchell', title:'CFO', avatar:'S',
-    greetings:[
-      "Sarah Mitchell's office.",
-      "Yes? Who am I speaking with?",
-      "Mitchell here. I've got a board prep in 10 minutes so be quick.",
-      "This is Sarah. What's this regarding?"
-    ],
-    style:'financial',
-    concerns:['ROI','budget cycle','cost justification','payback period','total cost of ownership']
-  },
-  ceo: {
-    name:'James Park', title:'CEO & Founder', avatar:'J',
-    greetings:[
-      "James here, you have 30 seconds.",
-      "Park speaking. Quick — I'm walking into a meeting.",
-      "Who is this? I'm between investor calls.",
-      "Yeah, James. What is it?"
-    ],
-    style:'executive',
-    concerns:['competitive advantage','time to value','strategic fit','revenue growth','market speed']
-  },
-  cio: {
-    name:'Maria Santos', title:'CIO', avatar:'M',
-    greetings:[
-      "Maria Santos.",
-      "Santos here, who's calling?",
-      "Yes? Make it brief — I'm dealing with an incident.",
-      "Maria speaking. What do you need?"
-    ],
-    style:'governance',
-    concerns:['security posture','compliance','data governance','vendor risk','operational resilience']
-  },
-  aiml: {
-    name:'Priya Kapoor', title:'Head of AI/ML Engineering', avatar:'P',
-    greetings:[
-      "Priya here. Who's this?",
-      "Yeah, speaking. What's up?",
-      "Priya Kapoor, make it quick — I'm in the middle of a deploy.",
-      "Kapoor here. Is this a sales call? Because I can already feel it."
-    ],
-    style:'technical_ai',
-    concerns:['model performance','inference costs','vendor lock-in on models','data privacy','build vs buy']
-  }
-};
+// ===== PERSONAS =====
 
-// ===== HUMAN-LIKE RESPONSE POOLS =====
-const RESPONSES = {
-  easy: [
-    "Hmm... I mean, we're not actively looking, but I'm not totally closed off. What is it?",
-    "Oh, AWS? Yeah, we use some stuff already. What's this about specifically?",
-    "I've got about 5 minutes before my next call. What do you need?",
-    "Look, I'm not going to lie — I get a lot of these. But go on.",
-    "We might be open to something. Our contracts are up for renewal soon actually.",
-    "Okay... I'm listening. But fair warning, I have a low tolerance for fluff.",
-    "Hmm, you caught me at a decent time actually. What's the quick version?",
-    "We just finished a planning cycle so... maybe. What specifically are we talking about?",
-    "I'm open-minded but skeptical. You've got maybe 3 minutes. Go.",
-    "Alright — I won't pretend I'm not curious. But keep it tight.",
-    "Sure, why not. I'm eating lunch at my desk anyway. What've you got?",
-    "Okay. I'll hear you out. But if this is a generic 'touch base' thing, I'm out."
+// ===== REAL CUSTOMER DATA (from AWSentral call logs & opportunity notes) =====
+// These responses are derived from actual EMEA ISV customer interactions logged by the DG team
+const REAL_CUSTOMER_RESPONSES = {
+  // Based on actual call outcomes: "Don't call again", "Don't call, send email", "find right stakeholder"
+  coldCallRejections: [
+    "Look — don't call me again. If you want to reach someone, find the right person. I'm not the one who makes these decisions.",
+    "Can you not call? Just send me an email. I don't do phone calls with vendors. This isn't how we operate.",
+    "I've told the last AWS person the same thing — don't call. We'll reach out when we're ready.",
+    "This number is my personal mobile. How did you even get it? Send an email to our general inbox if you must.",
+    "I said no last time. The answer hasn't changed. Please update your system."
   ],
-  medium: [
-    "Right. So I just got out of a board meeting and honestly my head is somewhere else. Can you give me the 30-second version?",
-    "We went through this whole evaluation last year with Azure. I'm not sure I want to open that can of worms again.",
-    "Budget-wise... look, I'll be straight with you. We froze discretionary spend until Q3. Is this something that could wait?",
-    "Hold on — [muffled talking] — sorry about that. Where were we? Actually, can you just email me?",
-    "I've got three vendors calling me this week. What makes you different from the last two?",
-    "Our CTO is pretty firmly in the Azure camp. I'm not sure I can fight that battle right now.",
-    "We just went through a reorg. Honestly, I don't even know who owns this decision anymore.",
-    "I mean... sure, cloud is important. But we've got bigger fires right now. Our Series C just closed and—hold on. [pause] Sorry. What were you saying?",
-    "I was actually just talking to [competitor] yesterday. They offered something similar. Why AWS?",
-    "Okay so here's my problem — every time I take one of these meetings, it turns into a 6-month evaluation. I don't have that bandwidth.",
-    "Look, my team is burned out. We just shipped a major release. I can't pile on another initiative right now.",
-    "Fine, you've got my attention for about 60 more seconds. But I'm not committing to anything today.",
-    "I appreciate the call but honestly — timing is rough. Our CTO left last month and we're still figuring things out.",
-    "We're in the middle of fundraising so... everything that isn't core product is basically frozen. Sorry."
+  // Based on Enterprise Support cost resistance (ObjectWay, ACCA Software - SIFT insight)
+  costSensitivity: [
+    "10% of our monthly spend for Enterprise Support? That's... not commercially viable for us. The discount would just offset the support cost. What's the actual business case?",
+    "We ran the numbers on your support tier pricing. At best it breaks even with the PPA discount. So you're basically asking us to pay more for... what exactly?",
+    "Our finance team looked at this. The cost of your premium services just removes any commercial incentive from the deal. It makes the whole thing unviable.",
+    "We're a European ISV. Our margins aren't like US tech companies. A 10% tax on spend is unjustifiable to my board.",
+    "Budget sensitivity isn't optional for us right now. Every Euro we commit to infrastructure has to show clear commercial value. Can you demonstrate that?"
   ],
-  hard: [
-    "I'm going to stop you. We get calls like this literally every day. I have 45 seconds of patience left.",
-    "Okay here's the thing — I don't know you, I didn't ask for this call, and my calendar is on fire. Give me ONE reason not to hang up.",
-    "We signed a 3-year EA with Microsoft six months ago. There is literally nothing you can say.",
-    "I was burned by a cloud vendor last year who promised the world and delivered nothing. Why should I believe you're different?",
-    "Look mate, I appreciate the hustle but we're a 15-person startup. We don't have bandwidth to evaluate another platform.",
-    "[Sigh] Fine. You have exactly 20 seconds. And if I hear the word 'synergy' I'm hanging up.",
-    "Wait — are you reading from a script? Because it sounds like you're reading from a script.",
-    "I don't take cold calls. Whoever gave you this number is about to get an angry Slack message. What do you want?",
-    "Unless you can tell me in ONE sentence why I should care, this conversation is over. Go.",
-    "We tried AWS two years ago. The migration was a nightmare, support was nonexistent, and we went back to Azure. So no thanks.",
-    "I'm going to be brutally honest with you — I've had four of these calls today. I'm at my limit. You have maybe 10 seconds.",
-    "You know what? I admire the persistence. But the answer is no. It was no last month when your colleague called too.",
-    "Right. So my day: two escalations, a P1 incident, and now a cold call. Can you see why I'm not exactly in a buying mood?",
-    "I literally just hung up on someone selling me the same thing. What makes you think this is going to go differently?",
-    "Hold on — [sound of typing] — sorry I wasn't listening. I have a deploy that's about to break. Can you call back... actually, don't."
+  // Based on Mapal Software opp: Using Microsoft Autogen, agents on Azure, scalability concerns
+  microsoftEcosystem: [
+    "We're already building with Autogen and OpenAI APIs. Our entire agent framework is on the Microsoft stack. Moving would mean rewriting hundreds of endpoints.",
+    "Our agents communicate with databases hosted on Azure. The integration is done. I can't justify ripping that out.",
+    "Look, we evaluated this already. We have hundreds of agents in production on the Microsoft framework. Switching isn't a conversation we're having right now.",
+    "We're using LangChain and OpenAI for our LLMs. The framework isn't perfect — scalability is a concern — but it's what we know. Why would I add complexity with another vendor?",
+    "Our AI Director has already committed to the Microsoft ecosystem for agent orchestration. That ship sailed 6 months ago."
   ],
-  // AI/ML specific objections for Priya persona
-  aiml: [
-    "We're already running fine on Hugging Face plus our own infra. Why would I add another vendor?",
-    "Bedrock? I've looked at it. Honestly the model selection lags behind what we can do ourselves with open weights.",
-    "Every cloud vendor wants to lock us into their AI stack. At least with open-source we own our destiny.",
-    "We trained our own models. The last thing I need is another managed service abstracting away control.",
-    "Look, I've been doing ML for 12 years. I don't need a managed service to tell me how to run inference.",
-    "Our inference costs are already optimized on our own GPU cluster. Why would I pay a premium for Bedrock?",
-    "Data privacy is non-negotiable. I'm not sending our training data through someone else's API.",
-    "I tried SageMaker three years ago. The abstraction layer was infuriating. Has it actually gotten better?",
-    "We're evaluating open-source agent frameworks right now. I don't see where AWS fits into that picture.",
-    "Honestly? The pace of innovation in open-source is faster than anything a cloud vendor can ship. Prove me wrong."
+  // Based on Pure Storage opp: Build vs buy, model selection uncertainty, data dispersal, POC to production gap
+  aiReadiness: [
+    "We're evaluating multiple models right now — ChatGPT, Claude, Llama. We haven't committed to a platform because honestly we don't know which model fits best yet.",
+    "Our data is dispersed across systems — PDFs, tickets, CRM, different formats. Before we talk platform, we need to solve the data problem. Can you help with that?",
+    "The challenge for us isn't the model — it's getting from POC to production. Every vendor shows me a nice demo but nobody addresses the last mile.",
+    "We've been evaluating this for months. The CTO has a council set up for safe AI experimentation. We're not ready to commit spend until the evaluation is done.",
+    "Build vs buy is a real debate internally. Half my team wants to run open-source models on our own infrastructure. The other half wants managed services. We're stuck.",
+    "Our concern is governance and security. We're in a regulated industry. Before we touch any AI platform we need to understand data residency, access controls, the works."
+  ],
+  // Based on team avg call duration (107s) and real patterns: need to be quick, no time
+  timeConstraints: [
+    "You've got about 90 seconds before my next call. Make them count.",
+    "I'm literally walking between meetings right now. Give me the one-line version.",
+    "Listen — I've got back-to-back until 6pm. Whatever this is, can it wait until next week? Or just email me.",
+    "Two minutes. That's what you have. My calendar is completely packed today.",
+    "I'm in the middle of a deploy right now. Can you call back Tuesday? Actually — just email me instead."
+  ],
+  // Based on Closed Lost patterns: stalled due to PPA, no engagement, competitor won
+  stalledDeals: [
+    "We started a POC with you guys months ago and it went nowhere. Nobody followed up. Why would I restart that conversation?",
+    "Your PPA terms killed the last deal. The finance team said no. Unless the commercial model has fundamentally changed, I don't see a path forward.",
+    "We went through the whole evaluation with your team already. It stalled because internally our priorities shifted. That hasn't changed.",
+    "The last time we engaged with AWS, it took 3 months to get a response on our use case. By then we'd already built it ourselves."
+  ],
+  // Based on real pattern: agents/agentic AI concerns (Mapal, Pure Storage)
+  agenticAI: [
+    "We're building agent orchestration ourselves. We have hundreds of agents each specialized in a different function. What we need is better collaboration between them — not another platform.",
+    "Scalability and latency are our blockers. When you have thousands of endpoints and users expecting chatbot-speed responses, you can't wait minutes for agents to resolve a request.",
+    "We need an agent orchestrator. Not a single agent — an orchestrator that can route across hundreds of domain-specific agents. Does Bedrock actually do that at scale?",
+    "Our agents are in production already. The framework isn't mature enough for what we need next, but I'm not sure swapping the whole stack is the answer either.",
+    "We code in Python, connect to OpenAI via API, and use Autogen for inter-agent communication. It's not perfect but it works. Why would I introduce another dependency?"
+  ],
+  // Based on real pattern: account not actionable / wrong contact
+  wrongPerson: [
+    "I'm not the right person for this. You need to talk to our Head of Engineering. I'm on the business side.",
+    "This isn't my area. Try reaching out to our CTO's office directly. I can't make infrastructure decisions.",
+    "You've called the wrong department. I'm in product, not platform. Let me think who you should... actually, just look us up on LinkedIn.",
+    "I appreciate the call but this would need to go through our VP of Engineering. I literally cannot approve vendor conversations."
+  ],
+  // Based on SIFT: Azure = 57% of competitive deals, InfoSec concerns about cross-cloud data
+  crossCloudSecurity: [
+    "Our InfoSec team flagged a concern — if our data platform is on Azure and you're asking us to run AI on AWS, that means data traversal across clouds. Our security team won't approve that.",
+    "We can't have data moving between Azure and AWS. It's a security policy. Unless you can solve the data residency question, this conversation is over.",
+    "The InfoSec review killed the last cross-cloud proposal. Data has to stay in one environment. Period."
+  ],
+  // Based on SIFT: ISVs going directly to Anthropic/OpenAI instead of through AWS
+  directToProvider: [
+    "Why would I pay AWS margins when I can go directly to Anthropic for Claude? I'm already using their API.",
+    "Three of our portfolio companies went direct to OpenAI. The models are the same whether I access them through Bedrock or not. What's the added value?",
+    "We're using Claude Code directly from Anthropic. Works great. Why would I route through another vendor and add latency?"
+  ],
+  // Based on SIFT: Marketplace funding gap vs Azure ($375K vs $45K)
+  marketplaceFunding: [
+    "Azure offered us $375K in combined credits and professional services. AWS offered $45K. Do the math for me.",
+    "Microsoft is putting real money on the table — credits, co-sell support, dedicated resources. What's AWS bringing?",
+    "Our Azure marketplace listing gets promoted. On AWS we got zero leads in 6 months. Why would I invest more?"
+  ],
+  // Based on SIFT: ISV onboarding/SARL issues
+  operationalBlockers: [
+    "Last time we tried to work with AWS, there was a tax entity issue — something about SARL vs local entity. It took months. We gave up.",
+    "The procurement process with AWS was a nightmare. Currency issues, different payment terms by region... Azure just invoices us in one currency.",
+    "We tried to onboard as an ISV partner and the process was so heavy we abandoned it halfway."
   ]
 };
 
-// Contextual soft responses when DG handles well
-const SOFT_RESPONSES = [
-  "Okay... you actually asked a good question there. {concern} is something that keeps me up at night.",
-  "Huh. I wasn't expecting you to say that. Tell me more about the {concern} angle.",
-  "Alright, you've earned yourself another 2 minutes. But no promises.",
-  "Fine. I'll be honest — we ARE struggling with {concern}. But I'm not sure AWS is the answer.",
-  "Look, I'll give you this — you're not like the last 5 people who called. What specifically would this meeting cover?",
-  "Okay that's... actually relevant to something we're dealing with. Go on.",
-  "Hmm. You clearly did some homework. I'm still not saying yes to a meeting, but I'm listening.",
-  "That's a fair point. [pause] Okay, what would a next step even look like? Hypothetically.",
-  "I appreciate that you're not just reading a script. What would we actually discuss?",
-  "You know what, that resonates. We've been having that exact debate internally about {concern}."
-];
+// ===== REAL CUSTOMER PROFILES (from AWSentral - actual accounts called by DG team) =====
+const REAL_CUSTOMERS = {
+  nccgroup: {
+    company:'NCC Group plc', industry:'Cybersecurity', size:'2000+ employees', region:'UK',
+    contacts:[{name:'Nigel Gibbons',title:'Director of Global Cloud Security Services',style:'governance'},{name:'Oliver Howard',title:'Global Partner Relationship Manager',style:'executive'}],
+    context:'Major cybersecurity consultancy. Already on AWS but evaluating multi-cloud. Focus on compliance and regulated environments.',
+    knownConcerns:['data sovereignty','compliance frameworks','security certifications','multi-cloud governance']
+  },
+  itrs: {
+    company:'ITRS Group', industry:'IT Monitoring / Observability', size:'200-500', region:'UK',
+    contacts:[{name:'Ganesh Sivaraman',title:'Director of Engineering: Data Center/IT',style:'technical'},{name:'Michael Riebling',title:'Managing Director Americas',style:'executive'}],
+    context:'IT infrastructure monitoring. Legacy product moving to SaaS. Considering cloud-native observability stack.',
+    knownConcerns:['migration risk from on-prem','SaaS transformation timeline','integration with existing monitoring','pricing model change']
+  },
+  streetgroup: {
+    company:'Street Group', industry:'PropTech SaaS', size:'50-200', region:'UK',
+    contacts:[{name:'Phillip Bates',title:'Head of Data',style:'technical'},{name:'Toby Bradshaw',title:'Senior Developer',style:'technical'}],
+    context:'Property technology startup. Data-heavy workloads. Growing fast, concerned about scale.',
+    knownConcerns:['data pipeline costs','scaling infrastructure','build vs managed services','startup budget constraints']
+  },
+  yoti: {
+    company:'Yoti Ltd', industry:'Identity / Digital ID', size:'100-300', region:'UK',
+    contacts:[{name:'Ben Pearse',title:'Chief Product Officer',style:'executive'},{name:'Ivan Dyankov',title:'Software Engineering Team Lead',style:'technical'}],
+    context:'Digital identity verification. Highly regulated (GDPR, eIDAS). Processing sensitive biometric data.',
+    knownConcerns:['data privacy','GDPR compliance','biometric data handling','latency for verification','vendor trust']
+  },
+  ozone: {
+    company:'Ozone Financial Technology', industry:'Open Banking / FinTech', size:'50-100', region:'UK',
+    contacts:[{name:'Ryan Waters',title:'Senior Product Manager',style:'executive'},{name:'Juilan Coombes',title:'Product Owner',style:'technical'}],
+    context:'Open banking platform. API-first architecture. PSD2 compliance critical. High-availability requirements.',
+    knownConcerns:['API reliability','PSD2 compliance','financial data security','high availability SLAs','cost per transaction']
+  },
+  mediahawk: {
+    company:'Mediahawk', industry:'MarTech / Call Tracking', size:'30-80', region:'UK',
+    contacts:[{name:'Murray Picton',title:'Head of Development',style:'technical'},{name:'Hayley T',title:'Digital Marketing Manager',style:'executive'}],
+    context:'Call tracking and marketing analytics SaaS. Processing high-volume real-time data. Competitive market.',
+    knownConcerns:['real-time processing costs','competitive differentiation','AI for call analysis','scaling voice data']
+  },
+  brokertech: {
+    company:'BrokerTech Ltd', industry:'Insurance Technology', size:'20-50', region:'UK',
+    contacts:[{name:'Alex Rootes',title:'Head Software Engineer',style:'technical'},{name:'David Rose',title:'Operations Manager',style:'governance'}],
+    context:'Small InsurTech. Regulated environment. Cost-sensitive. Likely early-stage cloud adoption.',
+    knownConcerns:['FCA compliance','small team bandwidth','cost for regulated workloads','build vs buy']
+  },
+  desl: {
+    company:'DeSL', industry:'Fashion PLM / Supply Chain', size:'50-150', region:'UK',
+    contacts:[{name:'Nigel Read',title:'Sales & Account Director',style:'executive'},{name:'Abe Benariba',title:'Technical System Analyst',style:'technical'}],
+    context:'Product lifecycle management for fashion. Global supply chain focus. Traditional industry moving to cloud.',
+    knownConcerns:['legacy system integration','global deployment','supply chain visibility','ROI justification for PLM']
+  },
+  mapal: {
+    company:'Mapal Software', industry:'Hospitality SaaS', size:'100-300', region:'Spain',
+    contacts:[{name:'Javier',title:'Head of AI / AI Director',style:'technical_ai'}],
+    context:'Hospitality management platform. Building agentic AI chatbot with hundreds of agents. Using Microsoft Autogen + OpenAI. Databases on Azure. Scalability and latency issues.',
+    knownConcerns:['agent orchestration at scale','latency for chatbot responses','Microsoft framework maturity','hundreds of endpoints to manage']
+  },
+  fabamaq: {
+    company:'Fabamaq', industry:'iGaming / Gaming', size:'100-200', region:'Portugal',
+    contacts:[{name:'Paulo',title:'Director of Technology',style:'technical'}],
+    context:'Gaming and iGaming software. Regulated industry. High-performance compute needs. Multi-region deployment.',
+    knownConcerns:['gaming compliance','latency sensitivity','GPU compute costs','multi-region deployment']
+  }
+};
 
-// Warm closing responses when patience is high
-const WARM_RESPONSES = [
-  "Okay, I'm intrigued. But keep it quick — what's the actual ask?",
-  "I'll give you credit for persistence. What specifically would we discuss?",
-  "Alright. I can do 15 minutes next week. But it better be relevant to what we just talked about.",
-  "Fine. Send me a calendar invite. But if it turns into a pitch deck, I'm leaving.",
-  "You've made a decent case. Let me check my calendar... what works on your end?",
-  "Look, I'll take the meeting. But I'm bringing my {concern} person so come prepared."
-];
+const PERSONAS = {
+  cto: {
+    name:'Alex Chen', title:'CTO', avatar:'A',
+    greetings:["Yeah? Alex speaking.","Hello, who's this?","Alex Chen. Make it quick — I'm in a standup in 5.","Chen here. Who gave you this number?"],
+    style:'technical',
+    concerns:['architecture','engineering bandwidth','integration complexity','technical debt','migration risk'],
+    backstory:{recentEvent:'sprint planning', team:'12 engineers', challenge:'technical debt from last year', currentProject:'platform rewrite', vendor:'using some Azure DevOps'}
+  },
+  cfo: {
+    name:'Sarah Mitchell', title:'CFO', avatar:'S',
+    greetings:["Sarah Mitchell's office.","Yes? Who am I speaking with?","Mitchell here. I've got a board prep in 10 minutes so be quick.","This is Sarah. What's this regarding?"],
+    style:'financial',
+    concerns:['ROI','budget cycle','cost justification','payback period','total cost of ownership'],
+    backstory:{recentEvent:'board meeting', team:'finance and ops', challenge:'budget freeze until Q3', currentProject:'cost optimization review', vendor:'locked into a Microsoft EA'}
+  },
+  ceo: {
+    name:'James Park', title:'CEO & Founder', avatar:'J',
+    greetings:["James here, you have 30 seconds.","Park speaking. Quick — I'm walking into a meeting.","Who is this? I'm between investor calls.","Yeah, James. What is it?"],
+    style:'executive',
+    concerns:['competitive advantage','time to value','strategic fit','revenue growth','market speed'],
+    backstory:{recentEvent:'investor meeting', team:'45 people total', challenge:'fundraising Series B', currentProject:'scaling GTM', vendor:'multi-cloud but mostly GCP'}
+  },
+  cio: {
+    name:'Maria Santos', title:'CIO', avatar:'M',
+    greetings:["Maria Santos.","Santos here, who's calling?","Yes? Make it brief — I'm dealing with an incident.","Maria speaking. What do you need?"],
+    style:'governance',
+    concerns:['security posture','compliance','data governance','vendor risk','operational resilience'],
+    backstory:{recentEvent:'security audit', team:'infrastructure and security', challenge:'GDPR compliance gap', currentProject:'zero-trust rollout', vendor:'primarily AWS but evaluating'}
+  },
+  aiml: {
+    name:'Priya Kapoor', title:'Head of AI/ML Engineering', avatar:'P',
+    greetings:["Priya here. Who's this?","Yeah, speaking. What's up?","Priya Kapoor, make it quick — I'm in the middle of a deploy.","Kapoor here. Is this a sales call? Because I can already feel it."],
+    style:'technical_ai',
+    concerns:['model performance','inference costs','vendor lock-in on models','data privacy','build vs buy'],
+    backstory:{recentEvent:'model training run', team:'8 ML engineers', challenge:'inference costs growing 40% MoM', currentProject:'building agentic workflows', vendor:'Hugging Face + own GPU cluster'}
+  }
+};
 
+// ===== CONTEXTUAL RESPONSE ENGINE =====
+// Instead of random pools, responses are selected based on what the DGR actually said
+
+const CONTEXT_REACTIONS = {
+  // When DGR mentions AWS/Amazon specifically
+  mentionsAWS: {
+    easy: [
+      "AWS... yeah we use S3 and some Lambda. What specifically are we talking about here?",
+      "Oh okay, so this is an AWS thing. We have an account already, what's new?",
+      "Right, AWS. Our devs like it but we haven't done much beyond basics. What's the pitch?"
+    ],
+    medium: [
+      "AWS. Right. So we're already using like... 4 services? I'm not sure what else we'd need.",
+      "Hmm. We had a bad experience with AWS support last year actually. Took 3 days to get a human. What's changed?",
+      "Our team evaluated AWS vs Azure last quarter and it was basically a coin flip. Why should I reopen that?"
+    ],
+    hard: [
+      "AWS? We literally just finished migrating OFF AWS onto GCP. You're about 8 months too late.",
+      "Look — I have 14 AWS reps in my inbox already this month. What could you possibly say that they haven't?",
+      "Cool, AWS. So which part? The part where support takes a week, or the part where the bill is unpredictable?"
+    ]
+  },
+
+  // REAL DATA: Based on actual EMEA ISV responses from AWSentral
+  realColdCallRejection: {
+    easy: REAL_CUSTOMER_RESPONSES.timeConstraints,
+    medium: REAL_CUSTOMER_RESPONSES.coldCallRejections,
+    hard: REAL_CUSTOMER_RESPONSES.coldCallRejections.concat(REAL_CUSTOMER_RESPONSES.wrongPerson)
+  },
+
+  // REAL DATA: Actual cost objections from European ISVs
+  realCostObjection: {
+    easy: REAL_CUSTOMER_RESPONSES.costSensitivity.slice(0,2),
+    medium: REAL_CUSTOMER_RESPONSES.costSensitivity,
+    hard: REAL_CUSTOMER_RESPONSES.costSensitivity.concat(REAL_CUSTOMER_RESPONSES.stalledDeals)
+  },
+
+  // REAL DATA: Microsoft/OpenAI ecosystem lock-in
+  realCompetitorLockin: {
+    easy: REAL_CUSTOMER_RESPONSES.microsoftEcosystem.slice(0,2),
+    medium: REAL_CUSTOMER_RESPONSES.microsoftEcosystem,
+    hard: REAL_CUSTOMER_RESPONSES.microsoftEcosystem.concat(REAL_CUSTOMER_RESPONSES.stalledDeals)
+  },
+
+  // When DGR mentions AI/GenAI/ML
+  mentionsAI: {
+    easy: [
+      "AI, huh? Yeah we're... dabbling. Started a couple POCs last quarter. What's the angle?",
+      "Okay you've got my attention — we're actively looking at AI use cases. What specifically?",
+      "GenAI... right. My CEO keeps asking about this. Tell me what you're thinking."
+    ],
+    medium: [
+      "Oh god, not another AI pitch. Everyone and their mother is selling AI right now. What's different?",
+      "We're evaluating multiple models — ChatGPT, Claude, Llama. We haven't committed to a platform because we don't know which fits yet.",
+      "We tried Bedrock three months ago. Model performance was... okay? But the cost was wild. What's your answer to that?",
+      "Look, I'll be honest — my team is drowning in AI vendor outreach. We've talked to OpenAI, Anthropic, Google. Why AWS?",
+      "AI is... yeah. We know we need to do something. But our data isn't ready. That's the real blocker nobody wants to talk about."
+    ],
+    hard: [
+      "AI. Right. So every vendor on Earth is pitching me AI and nobody can explain how it actually works for a [industry] company. Can you?",
+      "Unless you can show me a production implementation at a company our size — not an enterprise case study — I'm not interested.",
+      "We built our own models. They're fine. I'm not paying Amazon a margin to access models I can run myself on a $40k GPU.",
+      "The challenge isn't the model — it's getting from POC to production. Every vendor shows a demo but nobody addresses the last mile.",
+      "We have hundreds of agents in production already. Our framework has scalability issues but I'm not ripping out the stack for another vendor."
+    ]
+  },
+
+  // When DGR mentions cost/savings/ROI
+  mentionsCost: {
+    easy: [
+      "Cost savings? Sure, that's always interesting. What kind of numbers are we talking?",
+      "Okay — we're definitely spending more than we'd like on infra. Go on.",
+      "Hmm. We did a cost review last month actually. What's the ballpark?"
+    ],
+    medium: [
+      "Right but... every vendor says 'cost savings.' Can you be specific? Like, what are companies OUR size actually seeing?",
+      "Our CFO just flagged cloud spend as a top-3 concern. So you've got my attention. But don't just give me a percentage.",
+      "We've been burned before by 'cost optimization' pitches that end up costing us MORE in services fees. What's the catch?",
+      "I mean... yeah, costs are high. But switching vendors also costs money. Have you modeled the switching cost?"
+    ],
+    hard: [      
+      "Your PPA terms killed our last deal. Finance said no. Unless the commercial model has fundamentally changed, I don't see a path.",
+      "At best the PPA discount just offsets the support cost. There's no actual commercial incentive. Makes the deal unviable.",
+      "Cost savings, yeah. So our Azure EA gives us 35% discount across everything. Can AWS beat that? Specifically?",
+      "We've done this math. We've literally done a TCO analysis three times. The numbers are basically the same. What's new?",
+      "Don't give me 'up to 40% savings.' Give me a real number for a [industry] company with 2000 daily active users. Can you do that?"
+    ]
+  },
+
+  // When DGR mentions competitors (Azure/GCP/Microsoft)
+  mentionsCompetitor: {
+    easy: [
+      "Hmm interesting. Yeah we've looked at Azure but haven't committed fully. What's the comparison?",
+      "We're multi-cloud right now actually. But I'm open to consolidating if the story makes sense."
+    ],
+    medium: [
+      "Look, we have Microsoft licenses for everything. Office, Teams, Azure. And we're building agents on Autogen. Why would I fragment that?",
+      "Our entire agent framework is on the Microsoft stack. Hundreds of endpoints. Moving would mean rewriting everything.",
+      "Our architecture team evaluated this already. Azure won on integration with our existing stack. What's your counter?",
+      "Our CTO went to a Google event last month and came back a GCP fanboy. I'm not sure I want to fight that fight for AWS.",
+      "We just signed a co-sell deal with Microsoft. They're giving us marketplace credits. Can AWS match that?"
+    ],
+    hard: [
+      "We signed a 3-year Enterprise Agreement with Microsoft. I literally cannot move workloads without paying a penalty.",
+      "I had an AWS rep tell me Graviton would save us 40%. We tested it. It saved us 8%. I lost credibility with my team over that.",
+      "Google is paying us to migrate. Like, literally writing checks. What's AWS going to do — send another cold caller?",
+      "We code in Python and connect to OpenAI via API. Use Autogen for agent-to-agent communication. It works. Why add another dependency?",
+      "The last time we engaged with AWS on this, it took 3 months to get a response. By then we'd built it ourselves."
+    ]
+  },
+
+  // When DGR mentions meetings/scheduling
+  mentionsMeeting: {
+    easy: [
+      "A meeting... okay. What would we actually discuss? And how long are we talking?",
+      "I could do next week maybe. Is this a demo or more of a discovery thing?",
+      "Sure, tentatively. Send me a calendar invite and I'll see if it works."
+    ],
+    medium: [
+      "Mmm. I don't want to waste time if this is just a pitch. What specifically would we cover that's relevant to us?",
+      "I'll be honest — I've taken 3 'introductory calls' this month that turned into 45-minute product demos. Is that what this is?",
+      "Maybe. But I need to know what you're going to bring that I can't just read on your website.",
+      "[Checking calendar] I'm slammed for the next two weeks. Send me something by email first, and if it's relevant I'll find time."
+    ],
+    hard: [
+      "A meeting. Right. So I can add another 30-minute block to my calendar that could have been an email? Pass.",
+      "I have 47 meetings this week. Forty. Seven. Give me a compelling reason to make it 48.",
+      "The last 'quick call' with a vendor turned into me being added to a cadence with 6 follow-up emails. Hard no."
+    ]
+  },
+
+  // When DGR mentions marketplace/co-sell/partners
+  mentionsMarketplace: {
+    easy: [
+      "Marketplace? We haven't really looked into that actually. What's the benefit?",
+      "Oh interesting — is that the thing where you can draw down against committed spend?",
+      "We've bought a couple things through marketplace already. What else is available?"
+    ],
+    medium: [
+      "Marketplace is interesting but... I've heard the margins for ISVs aren't great. What's the real story?",
+      "We looked at listing there but the onboarding process seemed heavy. Has that gotten easier?",
+      "Co-sell... meaning your sales team would sell alongside us? How does that actually work in practice?"
+    ],
+    hard: [
+      "We listed on marketplace last year. Got zero leads. Zero. Why would I invest more time there?",
+      "Every cloud vendor has a marketplace. What makes AWS's any different from Azure's or GCP's?",
+      "Co-sell sounds great in theory. In practice, your reps never showed up to the customer calls. Why would it be different now?"
+    ]
+  },
+
+  // When DGR is vague/generic (no specific topic detected)
+  generic: {
+    easy: [
+      "Okay... can you be a bit more specific? What exactly are we talking about here?",
+      "Hmm. That's a bit broad. Can you narrow it down to something concrete?",
+      "Right. So — what would this actually look like for a company like ours?"
+    ],
+    medium: [
+      "I'm going to be honest — that sounded a bit scripted. Can you tell me in normal words what you're actually proposing?",
+      "Okay so... that's kind of what every vendor says. What specifically makes this different for a [industry] company?",
+      "Wait — hold on. [typing sounds] Sorry, just had a Slack ping. What were you saying? Actually — can you get to the point?",
+      "Right. So I've heard that pitch before. From like 3 different companies. Give me something specific."
+    ],
+    hard: [
+      "Look — you've been talking for 30 seconds and I still don't know why you called ME specifically. This feels very spray-and-pray.",
+      "I'm going to stop you there. That was a lot of words and zero content. What. Do. You. Want.",
+      "Are you reading from a script? Because honestly it sounds like you're reading from a script. Talk to me like a human.",
+      "[Sigh] You know what — I get about 5 of these calls a week. They all start exactly like this. Give me ONE specific thing or I'm hanging up."
+    ]
+  },
+
+  // When DGR asks a question (shows curiosity)
+  asksGoodQuestion: {
+    easy: [
+      "Huh, that's actually a relevant question. So yeah — {concern} is something we're actively dealing with.",
+      "Good question. The short answer is we're struggling with {concern} more than we'd like to admit.",
+      "Okay, you're asking the right things. Yeah — {concern} is keeping me up at night."
+    ],
+    medium: [
+      "Hmm. Fair question. Look — I'll be straight: {concern} is a real issue for us. But I'm not sure it's something a vendor call fixes.",
+      "Yeah... [pause] that's actually what we discussed in our leadership meeting yesterday. {concern} specifically.",
+      "Interesting that you ask. Our board literally asked me about {concern} last week. I didn't have a great answer."
+    ],
+    hard: [
+      "Okay fine — I'll bite. {concern} is a problem. A real one. But I've heard a lot of promises. What proof do you have?",
+      "That's the first smart question anyone's asked me on a cold call in months. Fine — {concern}. It's costing us. Go on."
+    ]
+  },
+
+  // When DGR shows empathy/acknowledges situation
+  showsEmpathy: {
+    easy: [
+      "Yeah... appreciate you saying that. It has been a lot lately. Okay, I'm listening.",
+      "Thanks for acknowledging that. Most people just barrel ahead. Alright — what've you got?"
+    ],
+    medium: [
+      "Yeah look — it's been a rough quarter. [pause] I appreciate you not just diving into a pitch. Okay, talk to me.",
+      "Hm. Thanks for that. You're not wrong — {recentEvent} really took it out of us. Alright, I've got a few minutes.",
+      "Okay... you're the first person today who actually acknowledged that before trying to sell me something. Fine, keep going."
+    ],
+    hard: [
+      "Look I appreciate the empathy but... I've been conditioned to assume it's a sales tactic. Prove me wrong.",
+      "[pause] Alright. I'll give you credit for reading the room. What specifically would you do differently from the last vendor who 'understood'?"
+    ]
+  },
+
+  // When DGR mentions specific metrics/numbers
+  mentionsData: {
+    easy: [
+      "Hmm, that's a real number? Interesting. How does that translate for a company our size though?",
+      "Those are solid stats. Where's that data from — your internal data or third-party?"
+    ],
+    medium: [
+      "Okay interesting. But those are probably enterprise numbers, right? We're not exactly at that scale.",
+      "65% close rate? Come on. That's a best-case cherry-picked stat and we both know it. What's the real number?",
+      "Numbers are great but... context matters. What does 'companies like us' actually mean? Same size? Same vertical?"
+    ],
+    hard: [
+      "Yeah I've seen those stats on your website. They don't account for companies under 200 employees or outside the US. Next.",
+      "Look, I can find a stat to justify anything. Send me an actual case study — same industry, same size — and I'll read it."
+    ]
+  },
+
+  // Interruptions & human behaviors (randomly inserted)
+  humanBehaviors: [
+    "[phone buzzes] Sorry — hold on one sec... [reads text]... okay where were we?",
+    "Wait — [muffled: 'Tell them I'll be there in 5'] — sorry. You were saying?",
+    "[typing sounds]... sorry, just had to reply to something urgent. Continue.",
+    "Hold on — [doorbell rings] give me 10 seconds... [footsteps]... okay I'm back. Make it quick.",
+    "Sorry — I'm walking and the signal is — can you hear me? — okay yeah continue.",
+    "[eating sounds] Sorry, having lunch at my desk. Go ahead.",
+    "[dog barking] Sorry about that. Working from home today. You were saying?",
+    "Actually hold on — [muffled conversation]... yeah okay I'm back. Can you repeat that last part?",
+    "[notification sounds] Ugh, Slack is blowing up. You've got maybe 2 more minutes. Go.",
+    "Wait — say that again? I was looking at an email that just came in. Sorry."
+  ],
+
+  // End-of-patience responses (about to hang up)
+  aboutToHangUp: [
+    "Look — I appreciate the effort but I really need to go. Is there a one-sentence version of what you want?",
+    "I'm going to be honest — I'm losing the thread here. What's the one thing you want me to take away?",
+    "Okay I need to jump. Last chance — what's the actual ask?",
+    "Right — I'm going to have to go. Is this something I can look at async? Send me something.",
+    "Listen, my next meeting just pinged. What do you need from me — yes/no/later?"
+  ]
+};
+
+// ===== STATE =====
 let state = null;
-let lastCustomerMsg = '';
 
 function startSim() {
   var p = document.getElementById('rpPersona').value;
@@ -289,20 +586,54 @@ function startSim() {
   var obj = document.getElementById('rpObjective').value;
   var cfg = PERSONAS[p];
 
+  // === REAL CUSTOMER MODE: Override persona with actual account data ===
+  var customerProfile = document.getElementById('rpCustomer').value;
+  var realCustomerData = null;
+  if(customerProfile !== 'generic' && REAL_CUSTOMERS[customerProfile]) {
+    var rc = REAL_CUSTOMERS[customerProfile];
+    var contact = rc.contacts[Math.floor(Math.random() * rc.contacts.length)];
+    realCustomerData = rc;
+    cfg = Object.assign({}, cfg, {
+      name: contact.name,
+      title: contact.title,
+      avatar: contact.name.charAt(0),
+      style: contact.style || cfg.style,
+      concerns: rc.knownConcerns,
+      backstory: {
+        recentEvent: 'quarterly planning',
+        team: rc.size + ' company',
+        challenge: rc.knownConcerns[0],
+        currentProject: rc.context.split('.')[0],
+        vendor: 'evaluating options'
+      },
+      greetings: [
+        contact.name.split(' ')[0] + " here. Who's this?",
+        contact.name.split(' ')[0] + " speaking. What can I do for you?",
+        "Yeah, " + contact.name.split(' ')[0] + ". Make it quick — I'm between meetings.",
+        "Hello? " + contact.name.split(' ')[0] + " from " + rc.company + "."
+      ]
+    });
+    ind = rc.industry;
+  }
+
   state = {
     active:true, turn:0,
     maxTurns: d==='easy'?6 : d==='hard'?8 : 7,
-    patience: d==='easy'?100 : d==='hard'?55 : 75,
+    patience: d==='easy'?100 : d==='hard'?50 : 70,
     scores:{rapport:0, objection:0, discovery:0, closing:0},
     feedback:{good:[], improve:[]},
-    difficulty:d, persona:p, industry:ind, objective:obj, cfg:cfg, stage:0,
+    difficulty:d, persona:p, industry:ind, objective:obj, cfg:cfg,
     usedResponses: new Set(),
     consecutiveGood: 0,
-    lastDgrMsg: '',
+    conversationHistory: [],
     nameUsed: false,
     empathyShown: false,
     permissionUsed: false,
-    jargonCount: 0
+    jargonCount: 0,
+    topicsMentioned: new Set(),
+    humanBehaviorUsed: false,
+    realCustomer: realCustomerData,
+    lastCustomerMood: 'neutral' // neutral, warming, hostile
   };
 
   document.getElementById('setup').style.display='none';
@@ -311,23 +642,36 @@ function startSim() {
   chat.style.display='block';
   document.getElementById('avatar').textContent = cfg.avatar;
   document.getElementById('custName').textContent = cfg.name;
-  document.getElementById('custRole').textContent = cfg.title+' · '+ind+' · '+d.toUpperCase();
+  document.getElementById('custRole').textContent = (realCustomerData ? realCustomerData.company+' · ' : '')+cfg.title+' · '+d.toUpperCase();
   document.getElementById('patienceBar').style.width = state.patience+'%';
-  document.getElementById('patienceBar').style.background = 'var(--color-success)';
+  document.getElementById('patienceBar').style.background = state.patience>50?'var(--color-success)':'var(--color-warning)';
   document.getElementById('messages').innerHTML='';
   document.getElementById('userInput').value='';
 
   var g = cfg.greetings[Math.floor(Math.random()*cfg.greetings.length)];
-  lastCustomerMsg = g;
+  state.conversationHistory.push({role:'customer', text:g});
   addMsg('customer', g);
   document.getElementById('userInput').focus();
 }
 
 function addMsg(type, text) {
+  // Remove typing indicator if exists
+  var existing = document.querySelector('.typing-indicator');
+  if(existing) existing.remove();
+  
   var el = document.getElementById('messages');
   var div = document.createElement('div');
   div.className = 'msg '+type;
   div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function showTyping() {
+  var el = document.getElementById('messages');
+  var div = document.createElement('div');
+  div.className = 'msg customer typing-indicator';
+  div.textContent = '...';
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
 }
@@ -339,8 +683,9 @@ function sendMsg() {
   input.value='';
   addMsg('dgr', text);
   state.turn++;
-  state.lastDgrMsg = text;
-  scoreResponse(text);
+  state.conversationHistory.push({role:'dgr', text:text});
+  
+  var scoreResult = scoreResponse(text);
   updatePatience();
 
   if(state.patience<=0) {
@@ -351,166 +696,346 @@ function sendMsg() {
     setTimeout(function(){ endSim(state.patience>60?'booked': state.patience>30?'partial':'lost'); },700);
     return;
   }
+  
+  // Show typing indicator with variable delay (simulates human thinking)
+  showTyping();
+  var delay = 800 + Math.random()*1200;
+  // Longer delay if DGR said something complex
+  if(text.length > 150) delay += 500;
+  
   setTimeout(function(){
-    var resp = getCustomerResponse(text);
-    lastCustomerMsg = resp;
+    var resp = generateContextualResponse(text, scoreResult);
+    state.conversationHistory.push({role:'customer', text:resp});
     addMsg('customer', resp);
     document.getElementById('userInput').focus();
-  }, 600+Math.random()*900);
+  }, delay);
 }
 
+// ===== CONTEXT DETECTION =====
+function detectContext(text) {
+  var lower = text.toLowerCase();
+  var contexts = [];
+  
+  if(lower.match(/aws|amazon|cloud\s*(services|platform)|bedrock|sagemaker|lambda|s3|ec2|marketplace/)) contexts.push('mentionsAWS');
+  if(lower.match(/\b(ai|genai|gen ai|artificial|machine learn|ml|llm|model|chatgpt|claude|gpt|bedrock|agents?|agentic)\b/)) contexts.push('mentionsAI');
+  if(lower.match(/cost|sav|spend|budget|roi|price|cheap|expensive|afford|money|dollar|invest/)) contexts.push('mentionsCost');
+  if(lower.match(/azure|microsoft|gcp|google cloud|oracle|competitor|vs\b|compar/)) contexts.push('mentionsCompetitor');
+  if(lower.match(/meet|call|schedul|calendar|15 min|20 min|next week|book|time.*talk|catch up/)) contexts.push('mentionsMeeting');
+  if(lower.match(/marketplace|co.?sell|partner|channel|listing|aws.?partner/)) contexts.push('mentionsMarketplace');
+  if(lower.match(/\d+\s*%|\d+x|\$\d|million|billion|customers|companies|case stud|data shows|research|gartner|forrester/)) contexts.push('mentionsData');
+  
+  // Detect if they asked a good question
+  if(text.indexOf('?') >= 0 && lower.match(/what|how|why|which|when|where|who|tell me|curious|wondering/)) contexts.push('asksGoodQuestion');
+  
+  // Detect empathy
+  if(lower.match(/understand|sounds (like |)(a lot|tough|rough|busy|hectic)|appreciate|respect your time|sorry to hear|that's a lot|must be|reorgs|challenge/)) contexts.push('showsEmpathy');
+  
+  // If nothing detected, it's generic
+  if(contexts.length === 0) contexts.push('generic');
+  
+  return contexts;
+}
+
+// ===== CONTEXTUAL RESPONSE GENERATOR =====
+function generateContextualResponse(dgrText, scoreResult) {
+  var contexts = detectContext(dgrText);
+  var d = state.difficulty;
+  var cfg = state.cfg;
+  var lower = dgrText.toLowerCase();
+  
+  // === REAL DATA INJECTION: 25% chance to use actual customer language from AWSentral/SIFT ===
+  if(Math.random() < 0.25 && state.turn >= 2) {
+    // Pick from real data based on context
+    if(contexts.includes('mentionsCost') && REAL_CUSTOMER_RESPONSES.costSensitivity.length) {
+      return pickFrom(REAL_CUSTOMER_RESPONSES.costSensitivity);
+    }
+    if(contexts.includes('mentionsCompetitor') && REAL_CUSTOMER_RESPONSES.microsoftEcosystem.length) {
+      // 50% chance to use cross-cloud security objection (from SIFT - $500K Network International loss)
+      if(Math.random() < 0.5 && REAL_CUSTOMER_RESPONSES.crossCloudSecurity) {
+        return pickFrom(REAL_CUSTOMER_RESPONSES.crossCloudSecurity);
+      }
+      return pickFrom(REAL_CUSTOMER_RESPONSES.microsoftEcosystem);
+    }
+    if(contexts.includes('mentionsAI') && REAL_CUSTOMER_RESPONSES.aiReadiness.length) {
+      // 30% chance to use "direct to provider" objection (from SIFT - Minderest, ISPD, Stream Hatchet)
+      if(Math.random() < 0.3 && REAL_CUSTOMER_RESPONSES.directToProvider) {
+        return pickFrom(REAL_CUSTOMER_RESPONSES.directToProvider);
+      }
+      return pickFrom(REAL_CUSTOMER_RESPONSES.aiReadiness);
+    }
+    if(contexts.includes('mentionsMarketplace') && REAL_CUSTOMER_RESPONSES.marketplaceFunding) {
+      return pickFrom(REAL_CUSTOMER_RESPONSES.marketplaceFunding);
+    }
+    if(contexts.includes('mentionsAWS') && REAL_CUSTOMER_RESPONSES.operationalBlockers) {
+      if(Math.random() < 0.3) {
+        return pickFrom(REAL_CUSTOMER_RESPONSES.operationalBlockers);
+      }
+    }
+  }
+
+  // === REAL CUSTOMER MODE: Use account-specific concerns ===
+  if(state.realCustomer && state.turn >= 2 && Math.random() < 0.3) {
+    var concern = state.realCustomer.knownConcerns[Math.floor(Math.random() * state.realCustomer.knownConcerns.length)];
+    var customerSpecificResponses = [
+      "Look — our main challenge right now is " + concern + ". Unless you can specifically address that, I\'m not sure there\'s a fit.",
+      "The thing keeping me up at night is " + concern + ". If AWS has a specific answer to that, you have my attention. Otherwise...",
+      "We\'ve been dealing with " + concern + " for months. Every vendor says they can help. What specifically would you do?",
+      concern.charAt(0).toUpperCase() + concern.slice(1) + " is priority number one for us. If this call isn\'t about that, we should probably wrap up."
+    ];
+    return pickFrom(customerSpecificResponses);
+  }
+  
+  // Track topics for variety
+  contexts.forEach(function(c) { state.topicsMentioned.add(c); });
+  
+  // === ABOUT TO HANG UP: low patience ===
+  if(state.patience <= 20 && state.turn > 2) {
+    return pickFrom(CONTEXT_REACTIONS.aboutToHangUp);
+  }
+  
+  // === HUMAN BEHAVIOR INTERRUPTION: random chance, once per call ===
+  if(!state.humanBehaviorUsed && state.turn >= 2 && Math.random() < 0.25) {
+    state.humanBehaviorUsed = true;
+    var behavior = pickFrom(CONTEXT_REACTIONS.humanBehaviors);
+    // Sometimes after interruption, inject a real "don't call" response on hard mode
+    if(d === 'hard' && Math.random() < 0.3) {
+      return behavior + " Actually — look, can you just email me instead? I don't do vendor calls. Send something to my inbox and if it's relevant I'll look at it.";
+    }
+    if(d === 'medium' && Math.random() < 0.2) {
+      return behavior + " Sorry — where were we? Actually, this might be better over email. Can you send me a one-pager?";
+    }
+    // 50% chance to just be the interruption, 50% to add context after
+    if(Math.random() < 0.5) return behavior;
+    // Add a short follow-up after interruption
+    var follow = contexts.includes('asksGoodQuestion') 
+      ? " Anyway — what was the question?" 
+      : " Anyway — where were we? Can you repeat that last bit?";
+    return behavior + follow;
+  }
+  
+  // === EMPATHY DETECTED: warm up ===
+  if(contexts.includes('showsEmpathy') && state.turn > 1) {
+    state.lastCustomerMood = 'warming';
+    var resp = pickFromCategory('showsEmpathy', d);
+    return resp.replace(/{recentEvent}/g, cfg.backstory.recentEvent)
+              .replace(/{concern}/g, pickConcern());
+  }
+  
+  // === GOOD QUESTION: respond substantively ===
+  if(contexts.includes('asksGoodQuestion') && scoreResult > 3) {
+    state.lastCustomerMood = 'warming';
+    var resp = pickFromCategory('asksGoodQuestion', d);
+    return resp.replace(/{concern}/g, pickConcern());
+  }
+  
+  // === HIGH PATIENCE + GOOD RAPPORT: customer is warming up ===
+  if(state.patience > 70 && state.turn >= 3 && state.consecutiveGood >= 2) {
+    state.lastCustomerMood = 'warming';
+    var warmResponses = [
+      "Okay... I'm intrigued. What would a next step actually look like?",
+      "You've earned some credibility. I can do 15 minutes next week — but come prepared for questions about " + pickConcern() + ".",
+      "Alright look — I'm not saying yes. But I'm not saying no either. What specifically would we cover?",
+      "Fine. You're not annoying me, which is more than I can say for most cold calls. What's the format?",
+      "I'll give you credit — you actually seem to know our space. Let me check my calendar... what were you thinking?",
+      "Hm. Okay. I'll bite. Send me a calendar invite. But 15 minutes MAX and bring specifics about " + pickConcern() + "."
+    ];
+    return pickFrom(warmResponses);
+  }
+  
+  // === MEETING MENTIONED: contextual response about meeting asks ===
+  if(contexts.includes('mentionsMeeting')) {
+    return pickFromCategory('mentionsMeeting', d);
+  }
+  
+  // === PRIMARY CONTEXT: respond to what they actually talked about ===
+  // Prioritize the most specific context
+  var priority = ['mentionsCompetitor','mentionsAI','mentionsCost','mentionsMarketplace','mentionsAWS','mentionsData','generic'];
+  for(var i=0; i<priority.length; i++) {
+    if(contexts.includes(priority[i])) {
+      var resp = pickFromCategory(priority[i], d);
+      // Inject industry and backstory references
+      resp = resp.replace(/\[industry\]/g, state.industry)
+                 .replace(/{concern}/g, pickConcern())
+                 .replace(/{recentEvent}/g, cfg.backstory.recentEvent);
+      
+      // === CONTEXTUAL FOLLOW-UPS based on conversation history ===
+      // If DGR repeated themselves (mentioned same topic twice), call it out
+      if(state.topicsMentioned.size < state.turn && state.turn > 3 && Math.random() < 0.4) {
+        resp += " Actually — didn't you already mention that? What's the new information?";
+      }
+      
+      return resp;
+    }
+  }
+  
+  return pickFromCategory('generic', d);
+}
+
+function pickFromCategory(category, difficulty) {
+  var pool = CONTEXT_REACTIONS[category];
+  if(!pool) return pickFrom(CONTEXT_REACTIONS.generic[difficulty] || CONTEXT_REACTIONS.generic.medium);
+  
+  // If it's a flat array (humanBehaviors, aboutToHangUp), use directly
+  if(Array.isArray(pool)) return pickFrom(pool);
+  
+  // Otherwise it's difficulty-keyed
+  var diffPool = pool[difficulty] || pool.medium;
+  return pickFrom(diffPool);
+}
+
+function pickFrom(arr) {
+  var available = arr.filter(function(r) { return !state.usedResponses.has(r); });
+  if(available.length === 0) { state.usedResponses.clear(); available = arr; }
+  var pick = available[Math.floor(Math.random() * available.length)];
+  state.usedResponses.add(pick);
+  return pick;
+}
+
+function pickConcern() {
+  return state.cfg.concerns[Math.floor(Math.random() * state.cfg.concerns.length)];
+}
+
+// ===== SCORING =====
 function scoreResponse(text) {
   var lower = text.toLowerCase();
   var d = 0;
   var cfg = state.cfg;
   var firstName = cfg.name.split(' ')[0].toLowerCase();
 
-  // === POSITIVE SIGNALS ===
-
-  // Using customer's name (+8)
-  if(lower.indexOf(firstName) >= 0 && !state.nameUsed) {
-    state.scores.rapport += 8;
-    d += 8;
+  // === POSITIVE ===
+  if(lower.indexOf(firstName) >= 0) {
+    state.scores.rapport += state.nameUsed ? 3 : 8;
+    d += state.nameUsed ? 3 : 8;
+    if(!state.nameUsed) addFeedback('good', "Using their name creates instant connection — keep doing this");
     state.nameUsed = true;
-    addFeedback('good', "You referenced the customer's specific situation — this builds trust fast");
-  } else if(lower.indexOf(firstName) >= 0) {
-    state.scores.rapport += 3;
-    d += 3;
   }
 
-  // Permission-based language (+12)
   if(lower.match(/would it be (crazy|worth|okay|helpful)|is it worth|fair to say|would you be open|mind if i|how would you feel/)) {
     state.scores.closing += 12;
     d += 12;
     state.permissionUsed = true;
-    addFeedback('good', "Good permission-based language ('would it be worth') — removes pressure from the ask");
+    addFeedback('good', "Permission-based language ('would it be worth') removes pressure from the ask");
   }
 
-  // Empathy about situation (+6)
-  if(lower.match(/sounds (like a |)tough|that's rough|reorgs are|must be (hard|challenging|stressful)|sorry to hear|that's a lot|understand the pressure|appreciate you|respect your time/)) {
+  if(lower.match(/sounds (like a |)(tough|rough|busy|hectic)|that's (rough|a lot)|reorgs are|must be (hard|challenging|stressful)|sorry to hear|appreciate you|respect your time/)) {
     state.scores.rapport += 6;
     d += 6;
     state.empathyShown = true;
-    addFeedback('good', "Showing empathy for their situation builds connection before the ask");
+    addFeedback('good', "Acknowledging their situation before pitching builds real connection");
   }
 
-  // Questions (+5-8)
   if(text.indexOf('?') >= 0) {
     state.scores.discovery += 5;
-    d += 8;
-    if(state.turn <= 2) {
-      addFeedback('good', "Smart move asking about their pain before pitching — shows you're listening");
-    }
-  }
-
-  // Acknowledgment / active listening (+5-7)
-  if(lower.match(/understand|fair|makes sense|hear you|get it|appreciate|totally|you mentioned|you said|sounds like/)) {
-    state.scores.rapport += 5;
     d += 7;
-    addFeedback('good', "Strong acknowledgement before responding — builds trust");
+    if(state.turn <= 2) addFeedback('good', "Asking before pitching — shows you care about THEIR situation, not just your quota");
   }
 
-  // Social proof with specifics (+5-6)
-  if(lower.match(/\d+\s*(%|percent)|customers like|companies (like|similar)|data shows|case study|similar (isv|company)|for example/)) {
-    state.scores.objection += 5;
+  if(lower.match(/understand|fair|makes sense|hear you|get it|you mentioned|you said|sounds like you/)) {
+    state.scores.rapport += 5;
     d += 6;
-    addFeedback('good', "Strong social proof with specific metrics — makes it concrete, not abstract");
   }
 
-  // Low-friction ask (+5-8)
-  if(lower.match(/15 minutes|20 minutes|quick call|brief|short|no commitment|no obligation|low risk|just.*explore|no pressure/)) {
-    state.scores.closing += 5;
-    d += 8;
-    addFeedback('good', "You kept it brief and asked a question — that's how you earn more time");
-  }
-
-  // Business value language (+3-4)
-  if(lower.match(/roi|cost sav|revenue|growth|competitive|market|margin|efficiency/)) {
-    state.scores.objection += 3;
-    d += 4;
-  }
-
-  // Referencing what they just said (+5)
-  var lastWords = lastCustomerMsg.toLowerCase().split(/\s+/);
-  var referencedLast = lastWords.some(function(w) {
-    return w.length > 4 && lower.indexOf(w) >= 0 && !['that','this','have','been','with','about','would'].includes(w);
-  });
-  if(referencedLast && state.turn > 1) {
-    state.scores.rapport += 3;
+  if(lower.match(/\d+\s*(%|percent)|customers like|companies (like|similar)|data shows|case study|for example/)) {
+    state.scores.objection += 5;
     d += 5;
+    addFeedback('good', "Specific proof points make claims credible — abstract claims get ignored");
   }
 
-  // === NEGATIVE SIGNALS ===
+  if(lower.match(/15 minutes|20 minutes|quick|brief|short|no commitment|no obligation|just.*explore|no pressure/)) {
+    state.scores.closing += 5;
+    d += 6;
+  }
 
-  // Too long without a question (-12)
+  // Active listening: referencing specific words from last customer message
+  var lastMsg = state.conversationHistory.length >= 2 ? state.conversationHistory[state.conversationHistory.length-2].text : '';
+  var lastWords = lastMsg.toLowerCase().split(/\s+/).filter(function(w) { return w.length > 5; });
+  var referenced = lastWords.filter(function(w) { return lower.indexOf(w) >= 0 && !['about','would','should','could','their','there','these','those','which','where'].includes(w); });
+  if(referenced.length >= 2 && state.turn > 1) {
+    state.scores.rapport += 4;
+    d += 5;
+    addFeedback('good', "You echoed their exact words back — this is active listening at its best");
+  }
+
+  // === NEGATIVE ===
   if(text.length > 250 && text.indexOf('?') < 0) {
-    state.scores.rapport -= 3;
     d -= 12;
-    addFeedback('improve', "You talked for 40+ seconds without a question — customers check out after 20");
+    addFeedback('improve', "Customers check out after ~20 seconds of unbroken talking — break it up with questions");
   }
 
-  // Pushy language (-15)
   if(lower.match(/you need to|you should|you must|you have to|you're missing out/)) {
     state.scores.rapport -= 4;
     d -= 15;
-    addFeedback('improve', "Avoid pushy language like 'you need to' — guide rather than push");
+    addFeedback('improve', "Pushy language ('you need to') triggers resistance — guide with questions instead");
   }
 
-  // Too short (-5)
-  if(text.length < 15) {
+  if(text.length < 15 && state.turn > 1) {
     d -= 5;
-    addFeedback('improve', "Response too short — provide value before asking for the meeting");
+    addFeedback('improve', "One-word answers lose the customer — give value before asking for next step");
   }
 
-  // No question early in call (-5)
-  if(text.indexOf('?') < 0 && state.turn <= 2) {
-    state.scores.discovery -= 2;
+  if(state.turn <= 1 && text.indexOf('?') < 0) {
     d -= 5;
-    addFeedback('improve', "Ask a discovery question early in the call to build engagement");
+    addFeedback('improve', "Your first response should include a question — it turns a monologue into a conversation");
   }
 
-  // Ignoring what they just said (-8) 
-  if(!referencedLast && state.turn > 2 && text.indexOf('?') < 0) {
-    d -= 8;
-    addFeedback('improve', "Try referencing what they just said before pivoting — shows you're actually listening");
+  if(referenced.length === 0 && state.turn > 2 && text.indexOf('?') < 0) {
+    d -= 6;
+    addFeedback('improve', "You didn't reference anything they just said — feels like you weren't listening");
   }
 
-  // Jargon without context (-5)
-  if(lower.match(/synerg|leverage\s|scalab|holistic|paradigm|disrupt|circle back|touch base|ping|loop in/)) {
+  if(lower.match(/synerg|holistic|paradigm|disrupt|circle back|touch base|ping me|loop.*in|leverage\s/)) {
     state.jargonCount++;
-    d -= 5;
-    if(state.jargonCount >= 2) {
-      addFeedback('improve', "Avoid multi-sentence pitches on a cold call — one idea at a time");
+    d -= 5 * state.jargonCount;
+    addFeedback('improve', "Corporate jargon kills credibility on cold calls — talk like a human");
+  }
+
+  if(state.turn <= 2 && lower.match(/bedrock|sagemaker|lambda|ec2|s3|quicksight/) && !lower.match(/problem|challenge|struggle|pain|issue|concern/)) {
+    d -= 6;
+    addFeedback('improve', "Product names before pain = tuned out. Lead with THEIR problem, not your solution");
+  }
+
+  if(state.turn <= 1 && lower.match(/meeting|calendar|schedule|book|availability|time to chat/)) {
+    d -= 8;
+    addFeedback('improve', "Meeting ask on the first response = instant 'no.' Earn the right to ask by showing value first");
+  }
+
+  // REAL DATA: DGR avg connected call is 107 seconds
+  // If DGR writes very long responses (>200 chars) multiple times, penalize
+  if(text.length > 200 && state.turn > 1) {
+    var longResponses = state.conversationHistory.filter(function(m){ return m.role === 'dgr' && m.text.length > 200; }).length;
+    if(longResponses >= 2) {
+      d -= 8;
+      addFeedback('improve', "Your team's avg connected call is 107 seconds. Long monologues burn precious time — keep responses under 30 words on cold calls");
     }
   }
 
-  // Going straight to features without addressing pain (-6)
-  if(state.turn <= 2 && lower.match(/bedrock|sagemaker|lambda|ec2|marketplace|s3/) && !lower.match(/problem|challenge|struggle|pain|issue/)) {
-    d -= 6;
-    addFeedback('improve', "You went straight to product features — lead with their problem, not your solution");
+  // If DGR mentions specific company context (for real customer mode)
+  if(state.realCustomer && lower.indexOf(state.realCustomer.company.split(' ')[0].toLowerCase()) >= 0) {
+    state.scores.rapport += 10;
+    d += 10;
+    addFeedback('good', "Mentioning their specific company shows you did your homework — #1 differentiator from spray-and-pray calls");
   }
 
-  // Meeting ask too early (-5)
-  if(state.turn <= 1 && lower.match(/meeting|calendar|schedule|book|availability/)) {
-    d -= 5;
-    addFeedback('improve', "The ask came too early — build more rapport before proposing a meeting");
+  // If DGR references the customer's industry/context specifically
+  if(state.realCustomer && state.realCustomer.knownConcerns) {
+    var matchedConcern = state.realCustomer.knownConcerns.find(function(c) { return lower.indexOf(c.toLowerCase()) >= 0; });
+    if(matchedConcern) {
+      state.scores.discovery += 8;
+      d += 8;
+      addFeedback('good', "You mentioned a concern specific to THEIR business ('" + matchedConcern + "') — this shows deep research");
+    }
   }
 
-  // Track consecutive good turns
-  if(d > 5) {
-    state.consecutiveGood++;
-  } else {
-    state.consecutiveGood = 0;
-  }
-
+  // Consecutive good tracking
+  if(d > 5) { state.consecutiveGood++; } else { state.consecutiveGood = 0; }
+  
   state.patience = Math.min(100, Math.max(0, state.patience + d));
+  return d;
 }
 
 function addFeedback(type, msg) {
   var arr = state.feedback[type];
-  if(arr.indexOf(msg) < 0 && arr.length < 6) {
-    arr.push(msg);
-  }
+  if(arr.indexOf(msg) < 0 && arr.length < 7) arr.push(msg);
 }
 
 function updatePatience() {
@@ -519,79 +1044,20 @@ function updatePatience() {
   bar.style.background = state.patience>50?'var(--color-success)': state.patience>25?'var(--color-warning)':'var(--color-error)';
 }
 
-function pickUnique(pool) {
-  var available = pool.filter(function(r) { return !state.usedResponses.has(r); });
-  if(available.length === 0) {
-    state.usedResponses.clear();
-    available = pool;
-  }
-  var pick = available[Math.floor(Math.random() * available.length)];
-  state.usedResponses.add(pick);
-  return pick;
-}
-
-function getCustomerResponse(dgrText) {
-  var lower = dgrText.toLowerCase();
-  state.stage++;
-  var hasQ = dgrText.indexOf('?') >= 0;
-  var ack = !!lower.match(/understand|fair|makes sense|hear you|get it|you mentioned|sounds like/);
-  var empathy = !!lower.match(/tough|rough|challenging|stressful|sorry|appreciate|respect/);
-  var usedName = lower.indexOf(state.cfg.name.split(' ')[0].toLowerCase()) >= 0;
-  var permission = !!lower.match(/would it be|is it worth|fair to say|would you be open|mind if/);
-  var s = state.stage;
-  var d = state.difficulty;
-  var cfg = state.cfg;
-
-  // === SOFT RESPONSE: DG did well (asked question + acknowledged/empathy/name) ===
-  if((hasQ && (ack || empathy || usedName)) && s > 2) {
-    var concern = cfg.concerns[Math.floor(Math.random() * cfg.concerns.length)];
-    var soft = SOFT_RESPONSES.map(function(r) { return r.replace(/{concern}/g, concern); });
-    return pickUnique(soft);
-  }
-
-  // === WARM CLOSING: High patience late in convo ===
-  if(state.patience > 70 && s >= 3 && (permission || (hasQ && ack))) {
-    var concern = cfg.concerns[Math.floor(Math.random() * cfg.concerns.length)];
-    var warm = WARM_RESPONSES.map(function(r) { return r.replace(/{concern}/g, concern); });
-    return pickUnique(warm);
-  }
-
-  // === HIGH PATIENCE NATURAL WARM-UP ===
-  if(state.patience > 70 && s >= 4) {
-    var warm = WARM_RESPONSES.map(function(r) { 
-      return r.replace(/{concern}/g, cfg.concerns[Math.floor(Math.random() * cfg.concerns.length)]); 
-    });
-    return pickUnique(warm);
-  }
-
-  // === AI/ML PERSONA SPECIFIC ===
-  if(state.persona === 'aiml') {
-    var aiPool = RESPONSES.aiml.concat(RESPONSES[d]);
-    return pickUnique(aiPool);
-  }
-
-  // === STANDARD POOL ===
-  var pool = RESPONSES[d];
-  return pickUnique(pool);
-}
-
 function endSim(outcome) {
   state.active = false;
   document.getElementById('chat').style.display='none';
 
-  // Bonus feedback based on final state
-  if(state.nameUsed && state.empathyShown && state.permissionUsed) {
-    addFeedback('good', "Triple-stack: name + empathy + permission language = advanced technique");
-  }
-  if(state.consecutiveGood >= 3) {
-    addFeedback('good', "You maintained momentum across multiple exchanges — great call control");
-  }
-  if(!state.nameUsed) {
-    addFeedback('improve', "Your opener didn't include a reason for calling specific to THEM — generic openers get hung up on");
-  }
-  if(state.jargonCount >= 2) {
-    addFeedback('improve', "Multiple jargon terms used — customers tune out when they hear 'vendor-speak'");
-  }
+  if(state.nameUsed && state.empathyShown && state.permissionUsed)
+    addFeedback('good', "Triple-stack: name + empathy + permission language = elite cold call technique");
+  if(state.consecutiveGood >= 3)
+    addFeedback('good', "You maintained momentum over multiple turns — excellent call control");
+  if(!state.nameUsed)
+    addFeedback('improve', "You never used their name — it's the simplest way to stand out from generic calls");
+  if(state.jargonCount >= 2)
+    addFeedback('improve', "Multiple jargon terms — customers hear 'vendor-speak' and mentally check out");
+  if(state.turn >= 4 && !state.empathyShown)
+    addFeedback('improve', "No empathy shown — acknowledging their situation earns more time to pitch");
 
   var total = Math.min(100, Math.max(0,
     state.scores.rapport + state.scores.objection + state.scores.discovery + state.scores.closing + (outcome==='booked'?25 : outcome==='partial'?10 : 0)
@@ -606,8 +1072,8 @@ function endSim(outcome) {
 
   var goods = state.feedback.good.slice(0,5);
   var imps = state.feedback.improve.slice(0,5);
-  if(!goods.length) goods.push('You made the call — that puts you ahead of most reps who avoid the phone.');
-  if(!imps.length) imps.push('Try mixing questions with value statements for better flow.');
+  if(!goods.length) goods.push('You made the call — that already puts you ahead of most reps who avoid the phone.');
+  if(!imps.length) imps.push('Try mixing questions with value statements for better conversational flow.');
 
   var el = document.getElementById('scorecard');
   el.style.display='block';
@@ -627,7 +1093,7 @@ function resetSim() {
   state = null;
 }
 
-// Auto-start if launched with params from parent
+// Auto-start if launched with params
 (function() {
   var hash = window.location.hash;
   if (hash && hash.indexOf('auto') >= 0) {
@@ -643,7 +1109,6 @@ function resetSim() {
     setTimeout(function() { startSim(); }, 300);
   }
 })();
-
 </script>
 </body>
 </html>
