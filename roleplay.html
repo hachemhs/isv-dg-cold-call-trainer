@@ -328,6 +328,23 @@ function resetSim() {
   document.getElementById('setup').style.display='block';
   state = null;
 }
+// Auto-start if launched with params from parent
+(function() {
+  var hash = window.location.hash;
+  if (hash && hash.indexOf('auto') >= 0) {
+    var params = {};
+    hash.replace('#auto&', '').split('&').forEach(function(p) {
+      var kv = p.split('=');
+      if (kv.length === 2) params[kv[0]] = kv[1];
+    });
+    if (params.industry) document.getElementById('rpIndustry').value = params.industry;
+    if (params.persona) document.getElementById('rpPersona').value = params.persona;
+    if (params.difficulty) document.getElementById('rpDifficulty').value = params.difficulty;
+    if (params.objective) document.getElementById('rpObjective').value = params.objective;
+    setTimeout(function() { startSim(); }, 300);
+  }
+})();
+
 </script>
 </body>
 </html>
