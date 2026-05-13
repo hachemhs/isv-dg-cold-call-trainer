@@ -958,7 +958,26 @@ function startSim() {
     meetingConfirmed: false,
     meetingFinalQuestion: false,
     realCustomer: realCustomerData,
-    lastCustomerMood: 'neutral' // neutral, warming, hostile
+    lastCustomerMood: 'neutral', // neutral, warming, hostile
+    // === CONVERSATION FLOW ENGINE STATE ===
+    flow: {
+      phase: 'intro', // intro → discovery → pitch → negotiation → close
+      topicsDiscussed: [], // what has been talked about
+      topicDepth: {}, // how deep each topic went (shallow/medium/deep)
+      customerQuestions: [], // questions customer asked (unanswered = follow up)
+      dgrPromises: [], // things DGR said they'd do ("I'll send you...")
+      customerConcernsRaised: [], // specific concerns mentioned
+      customerInterests: [], // what they showed interest in
+      emotionalArc: ['neutral'], // mood per turn
+      lastTopic: null, // what was discussed last turn
+      rapport: 0, // -10 to +10 rapport meter
+      conversationStyle: 'formal', // formal → casual as rapport builds
+      interruptions: 0, // how many times customer cut DGR off
+      silences: 0, // awkward pauses
+      dgrTalkRatio: 0, // running % of DGR talk time
+      topicTransitions: [], // how topics shifted (natural vs forced)
+      unfinishedThreads: [] // topics that were started but not completed
+    }
   };
 
   document.getElementById('setup').style.display='none';
@@ -1820,6 +1839,249 @@ function generateContextualResponse(dgrText, scoreResult) {
   var lower = dgrText.toLowerCase();
   
 
+
+  // ===== CONVERSATION FLOW ENGINE — Human-style contextual interactions =====
+  // Tracks conversation arc and generates responses that feel like a real human thinking in real-time
+  
+  var flow = state.flow;
+  var turnNum = state.turn;
+  var history = state.conversationHistory;
+  
+  // --- UPDATE FLOW STATE ---
+  
+  // Detect current conversation phase
+  if(turnNum <= 1) flow.phase = 'intro';
+  else if(turnNum <= 3 && lower.match(/what.*do|tell.*about|challenge|priority|problem|pain/)) flow.phase = 'discovery';
+  else if(lower.match(/solution|product|service|platform|offer|bedrock|aws|feature|capability/)) flow.phase = 'pitch';
+  else if(lower.match(/meeting|calendar|schedule|next step|follow.?up|demo/)) flow.phase = 'close';
+  else if(state.patience < 40) flow.phase = 'exit';
+  
+  // Track topics from DGR's message
+  var detectedTopics = [];
+  if(lower.match(/ai|ml|machine learn|model|agent/)) detectedTopics.push('AI/ML');
+  if(lower.match(/cost|price|save|roi|budget|spend/)) detectedTopics.push('cost');
+  if(lower.match(/secur|compli|govern|risk|audit/)) detectedTopics.push('security');
+  if(lower.match(/migrat|modern|transform|move|switch/)) detectedTopics.push('migration');
+  if(lower.match(/scale|grow|expand|performance|speed/)) detectedTopics.push('scale');
+  if(lower.match(/compet|market|azure|gcp|google|microsoft/)) detectedTopics.push('competition');
+  if(lower.match(/team|resource|hire|talent|engineer/)) detectedTopics.push('team');
+  if(lower.match(/customer|user|revenue|growth|sales/)) detectedTopics.push('business');
+  if(lower.match(/data|analytics|insight|dashboard|report/)) detectedTopics.push('data');
+  if(lower.match(/partner|marketplace|co.?sell|ecosystem/)) detectedTopics.push('partnership');
+  
+  // Track topic transitions
+  if(detectedTopics.length > 0) {
+    var newTopic = detectedTopics[0];
+    if(flow.lastTopic && newTopic !== flow.lastTopic) {
+      flow.topicTransitions.push({from: flow.lastTopic, to: newTopic, turn: turnNum});
+      // Detect FORCED topic change (DGR ignored what customer was talking about)
+      if(flow.topicDepth[flow.lastTopic] === 'shallow') {
+        flow.unfinishedThreads.push(flow.lastTopic);
+      }
+    }
+    flow.lastTopic = newTopic;
+    if(!flow.topicsDiscussed.includes(newTopic)) flow.topicsDiscussed.push(newTopic);
+    flow.topicDepth[newTopic] = flow.topicDepth[newTopic] === 'shallow' ? 'medium' : (flow.topicDepth[newTopic] === 'medium' ? 'deep' : 'shallow');
+  }
+  
+  // Track DGR promises
+  if(lower.match(/i'll send|i will send|i can send|let me send|i'll email|i'll share|i'll follow/)) {
+    flow.dgrPromises.push({what: text.substring(text.toLowerCase().indexOf("i'll"), text.toLowerCase().indexOf("i'll") + 60), turn: turnNum});
+  }
+  
+  // Update emotional arc
+  var currentMood = state.patience > 65 ? 'warming' : (state.patience > 40 ? 'neutral' : (state.patience > 25 ? 'cooling' : 'hostile'));
+  flow.emotionalArc.push(currentMood);
+  
+  // Update rapport level
+  if(state.consecutiveGood >= 2) flow.rapport = Math.min(10, flow.rapport + 1);
+  if(state.patience < 40 && flow.rapport > -5) flow.rapport--;
+  
+  // Update conversation style based on rapport
+  if(flow.rapport >= 4) flow.conversationStyle = 'casual';
+  else if(flow.rapport >= 2) flow.conversationStyle = 'friendly';
+  else if(flow.rapport <= -3) flow.conversationStyle = 'cold';
+  
+  // --- GENERATE FLOW-BASED RESPONSES ---
+  
+  // === HUMAN FILLER / THINKING PATTERNS (adds realism to start of responses) ===
+  var fillerPrefix = '';
+  if(turnNum >= 2 && Math.random() < 0.4) {
+    var fillers = flow.conversationStyle === 'casual' ? 
+      ['Yeah so... ', 'Hmm, ', 'Right — ', 'Okay so ', 'I mean... ', 'Look — ', 'Well... ', 'Honestly? ', 'Ha — '] :
+      ['Mm. ', 'Right. ', 'Okay — ', 'Well — ', 'Hmm. ', 'So. ', 'Look — ', '[pause] '];
+    fillerPrefix = pickFrom(fillers);
+  }
+  
+  // === CALLBACK TO EARLIER TOPICS (human memory — references previous discussion) ===
+  if(turnNum >= 4 && flow.topicsDiscussed.length >= 2 && Math.random() < 0.25) {
+    var earlierTopic = flow.topicsDiscussed[Math.floor(Math.random() * (flow.topicsDiscussed.length - 1))];
+    if(earlierTopic !== flow.lastTopic) {
+      var callbacks = [
+        fillerPrefix + "Actually — going back to what you said about " + earlierTopic + " earlier. I've been thinking about that. How does this connect?",
+        fillerPrefix + "Wait — you mentioned " + earlierTopic + " before. Let me ask about that. What specifically would change for us there?",
+        fillerPrefix + "You know what, I keep coming back to the " + earlierTopic + " point. That's actually what matters most to me. Expand on that.",
+        fillerPrefix + "Circling back to " + earlierTopic + " — because that's the one that's going to get my boss's attention. What's the concrete impact?",
+        fillerPrefix + "Hold on — the " + earlierTopic + " thing you said earlier. That stuck with me. Can you be more specific about that?"
+      ];
+      return pickFrom(callbacks);
+    }
+  }
+  
+  // === FORCED TOPIC CHANGE DETECTION — Customer calls it out ===
+  if(flow.topicTransitions.length > 0 && turnNum >= 3) {
+    var lastTransition = flow.topicTransitions[flow.topicTransitions.length - 1];
+    if(lastTransition.turn === turnNum && flow.topicDepth[lastTransition.from] === 'shallow' && Math.random() < 0.4) {
+      return pickFrom([
+        fillerPrefix + "Hold on — we were just talking about " + lastTransition.from + " and you jumped to " + lastTransition.to + ". Can we finish one thought? What were you saying about " + lastTransition.from + "?",
+        fillerPrefix + "Wait — you just switched topics on me. We were on " + lastTransition.from + ". I actually had a follow-up on that. Can we go back?",
+        fillerPrefix + "I notice you moved on from " + lastTransition.from + " pretty quickly. Was there something there you didn't want to dig into? Because I'm curious.",
+        fillerPrefix + "[laughs] You're covering a lot of ground. Let's slow down — what's the ONE thing you want me to take away from this call?"
+      ]);
+    }
+  }
+  
+  // === UNFINISHED THREADS — Customer brings back abandoned topics ===
+  if(flow.unfinishedThreads.length > 0 && turnNum >= 5 && Math.random() < 0.2) {
+    var thread = flow.unfinishedThreads.shift(); // Remove from queue
+    return pickFrom([
+      fillerPrefix + "Actually you know what — we never finished talking about " + thread + ". I still have questions there. What were you going to say?",
+      fillerPrefix + "Something's bugging me. Earlier you mentioned " + thread + " but we moved on. What was the point you were making?",
+      fillerPrefix + "Before we go further — you brought up " + thread + " and then dropped it. Is that relevant here or not?"
+    ]);
+  }
+  
+  // === DGR PROMISE TRACKING — Customer remembers what was offered ===
+  if(flow.dgrPromises.length > 0 && turnNum >= 5 && Math.random() < 0.15) {
+    var promise = flow.dgrPromises[0];
+    return pickFrom([
+      fillerPrefix + "By the way — you said " + promise.what.trim() + ". Are you actually going to do that or is it just a sales line?",
+      fillerPrefix + "You mentioned earlier you'd " + promise.what.trim().replace(/i'll |i will /i, '') + ". I'll hold you to that. Now — what else?",
+      fillerPrefix + "Okay — so you said " + promise.what.trim() + ". Write that down because I WILL remember. [laughs] Go on."
+    ]);
+  }
+  
+  // === MOOD-BASED CONVERSATION STYLE ===
+  
+  // WARMING mood — customer becomes more open, shares more
+  if(currentMood === 'warming' && flow.rapport >= 3 && turnNum >= 3 && Math.random() < 0.2) {
+    var company = cfg.company;
+    var warmResponses = company ? [
+      fillerPrefix + "You know what — since we're having a good conversation... let me tell you what's actually going on. " + company.painPoints.split('.')[0] + ". That's the real picture.",
+      fillerPrefix + "Okay I'm going to be more candid than I usually am with vendors. " + company.painPoints.split('.')[1] + ". There. That's the honest truth.",
+      fillerPrefix + "I don't normally share this on a first call but... " + company.futurePlans.split('.')[0] + ". If you can help with that, I'm genuinely interested.",
+      fillerPrefix + "Alright — you've earned some honesty. Between you and me: " + company.recentDecisions.split('.')[0] + ". And I'm already questioning that decision.",
+      fillerPrefix + "Since we're vibing — here's what I haven't told you. " + company.priorities[company.priorities.length-1] + ". That's the one nobody's solving for us."
+    ] : [
+      fillerPrefix + "Okay you know what — you're easy to talk to. Let me be more open about what's actually happening here...",
+      fillerPrefix + "I don't usually share this with cold callers but since we're having a real conversation...",
+      fillerPrefix + "Alright — I'll level with you. The real challenge isn't what I said before. It's actually..."
+    ];
+    return pickFrom(warmResponses);
+  }
+  
+  // COOLING mood — shorter responses, less engagement
+  if(currentMood === 'cooling' && turnNum >= 3 && Math.random() < 0.3) {
+    return pickFrom([
+      "Mm-hmm.",
+      "Right.",
+      "Okay.",
+      "Sure.",
+      "And?",
+      "Mm.",
+      "Go on.",
+      "I'm listening. Barely.",
+      "Yep. What else.",
+      "Okay — and the point is...?"
+    ]);
+  }
+  
+  // === NATURAL INTERRUPTIONS — Customer cuts in mid-thought ===
+  if(text.length > 180 && turnNum >= 2 && Math.random() < 0.2) {
+    // Simulate customer interrupting a long DGR message
+    var interruptPoint = text.substring(0, 80).split(' ').slice(-3).join(' ');
+    return pickFrom([
+      "Wait wait wait — " + interruptPoint + " — what do you mean by that? Explain.",
+      "Hold on — stop. You said '" + interruptPoint + "'. That's interesting. Expand on just THAT part.",
+      "Sorry to interrupt but — '" + interruptPoint + "' — that's the thing. Tell me more about specifically that.",
+      "Okay stop — I want to drill into '" + interruptPoint + "'. What does that actually mean in practice?",
+      "Pause. '" + interruptPoint + "'. Say more about that and less about everything else."
+    ]);
+  }
+  
+  // === CONVERSATION PHASE-BASED RESPONSES ===
+  
+  // INTRO phase — customer is sizing up the caller
+  if(flow.phase === 'intro' && turnNum === 1) {
+    // This is handled by greetings, skip
+  }
+  
+  // DISCOVERY phase — customer expects questions, gets impatient with pitching
+  if(flow.phase === 'discovery' && turnNum >= 2 && !lower.match(/\?/) && text.length > 100 && Math.random() < 0.35) {
+    return pickFrom([
+      fillerPrefix + "You're telling, not asking. I thought this was supposed to be a conversation? What do you actually want to KNOW about us?",
+      fillerPrefix + "That's a lot of talking. I was hoping you'd ask me something. What do you want to understand about our situation?",
+      fillerPrefix + "I feel like I'm being presented to rather than talked with. Do you want to know what our actual problem is or...?"
+    ]);
+  }
+  
+  // PITCH phase — customer challenges claims
+  if(flow.phase === 'pitch' && turnNum >= 3 && Math.random() < 0.25) {
+    return pickFrom([
+      fillerPrefix + "Okay but that sounds like marketing. Give me the real version. What does this look like on a Tuesday afternoon when things break?",
+      fillerPrefix + "Every vendor says that. Literally every single one. What makes your version different from the last 3 people who called me?",
+      fillerPrefix + "Proof. I need proof. Not claims — evidence. Who's actually using this and what did they get out of it? Names. Numbers.",
+      fillerPrefix + "That's the theoretical benefit. What's the REALISTIC benefit for a company our size in our industry? Be specific.",
+      fillerPrefix + "I've heard this pitch before — from Azure, from GCP, from [competitor]. You all say the same thing. What's genuinely unique?"
+    ]);
+  }
+  
+  // === ACTIVE LISTENING DETECTION — Customer notices if DGR is listening ===
+  if(turnNum >= 3 && history.length >= 4) {
+    // Check if DGR referenced something customer said in previous turns
+    var prevCustomerMsgs = history.filter(function(m){return m.role==='customer';}).slice(-2);
+    var customerTopics = prevCustomerMsgs.map(function(m){return m.text.toLowerCase();}).join(' ');
+    var customerKeywords = customerTopics.split(/\s+/).filter(function(w){return w.length > 5;});
+    var dgrReferencedPast = customerKeywords.filter(function(w){return lower.indexOf(w) >= 0;}).length;
+    
+    // DGR is clearly NOT listening (no references to what customer said)
+    if(dgrReferencedPast === 0 && Math.random() < 0.2 && text.length > 80) {
+      return pickFrom([
+        fillerPrefix + "Did you hear what I just said? Because your response doesn't seem related to what I told you.",
+        fillerPrefix + "I feel like you're reading from a script. I just told you something specific. Can you address THAT?",
+        fillerPrefix + "Are you listening to me or just waiting for your turn to talk? Because I said something important just now.",
+        fillerPrefix + "That's... not what I asked about. Let me be clearer: I need you to respond to what I actually said, not your prepared pitch."
+      ]);
+    }
+    
+    // DGR IS listening (references past) — customer acknowledges
+    if(dgrReferencedPast >= 2 && Math.random() < 0.15) {
+      state.patience += 5; // Small patience boost
+      flow.rapport++;
+      return pickFrom([
+        fillerPrefix + "Okay — I appreciate that you actually listened to what I said. That's rare. Keep going.",
+        fillerPrefix + "Good — you picked up on what I mentioned. Most people just talk AT me. What else do you want to know?",
+        fillerPrefix + "Right — you're connecting the dots. I like that. Tell me more about how that applies to us specifically."
+      ]);
+    }
+  }
+  
+  // === DEEPENING QUESTIONS — Customer pushes for specifics on shallow topics ===
+  if(turnNum >= 3 && flow.topicsDiscussed.length > 0 && Math.random() < 0.15) {
+    var shallowTopics = Object.keys(flow.topicDepth).filter(function(t){return flow.topicDepth[t] === 'shallow';});
+    if(shallowTopics.length > 0) {
+      var topic = shallowTopics[Math.floor(Math.random() * shallowTopics.length)];
+      return pickFrom([
+        fillerPrefix + "You mentioned " + topic + " but didn't go deep. I need specifics. What does that actually look like?",
+        fillerPrefix + "The " + topic + " point — you glossed over it. But that's actually the one I care about. Tell me MORE.",
+        fillerPrefix + "You barely touched on " + topic + ". Is there substance there or were you just name-dropping?"
+      ]);
+    }
+  }
+  
+  // ===== END CONVERSATION FLOW ENGINE =====
+
+
   // ===== GRADUAL DISENGAGEMENT — REALISTIC "LOSING INTEREST" PATTERNS =====
   // Mimics how real customers disengage: subtle → direct → exit attempt → hang up
   
@@ -2401,6 +2663,57 @@ function scoreResponse(text) {
       else if(!lower.match(/understand|hear|respect|appreciate|got it|sure|okay|no worries/)) {
         d -= 10;
         addFeedback('improve', "They clearly said they need to go but you didn't acknowledge it. Even a quick 'Totally understand' before your response shows you're listening.");
+      }
+    }
+  }
+
+
+
+  // === CONVERSATION FLOW SCORING ===
+  if(state.flow) {
+    // Reward natural topic transitions (DGR connects topics smoothly)
+    if(lower.match(/building on|relates to|connects to|going back to|on that note|speaking of|tied to|related/)) {
+      d += 6;
+      addFeedback('good', "Smooth topic transition — shows you're building a conversation, not reading a script");
+    }
+    
+    // Reward referencing earlier conversation
+    if(lower.match(/you (said|mentioned|told me|brought up)|earlier you|going back to what you/)) {
+      d += 8;
+      state.scores.rapport += 5;
+      addFeedback('good', "Referencing earlier conversation shows genuine listening — customers notice and trust you more");
+    }
+    
+    // Penalize obvious script-reading (using exact same phrasing patterns)
+    if(state.turn >= 3) {
+      var prevDgrMsgs = state.conversationHistory.filter(function(m){return m.role === 'dgr';});
+      if(prevDgrMsgs.length >= 2) {
+        var lastDgr = prevDgrMsgs[prevDgrMsgs.length - 1].text.toLowerCase();
+        // Check if DGR is repeating their own structure ("I'd love to..." multiple times)
+        var repeatedStarters = ['i\'d love to', 'what if i told you', 'the great thing is', 'what we offer'];
+        repeatedStarters.forEach(function(starter) {
+          if(lower.indexOf(starter) === 0 && lastDgr.indexOf(starter) === 0) {
+            d -= 8;
+            addFeedback('improve', "You're using the same opener twice — sounds scripted. Vary your approach based on what THEY said.");
+          }
+        });
+      }
+    }
+    
+    // Reward answering customer's questions directly
+    if(state.flow.customerQuestions && state.flow.customerQuestions.length > 0 && lower.match(/to answer your|you asked|great question|regarding what you/)) {
+      d += 7;
+      addFeedback('good', "Directly addressing their question before continuing — this builds trust fast");
+    }
+    
+    // Penalize ignoring customer's questions
+    if(state.turn >= 3 && state.conversationHistory.length >= 2) {
+      var lastCust = state.conversationHistory.filter(function(m){return m.role==='customer';}).pop();
+      if(lastCust && lastCust.text.indexOf('?') >= 0 && text.indexOf('?') < 0 && !lower.match(/to answer|you asked|yes|no|absolutely|definitely|exactly/)) {
+        if(text.length > 100) {
+          d -= 6;
+          addFeedback('improve', "Customer asked a question but you didn't answer it — you just kept pitching. Answer first, then expand.");
+        }
       }
     }
   }
