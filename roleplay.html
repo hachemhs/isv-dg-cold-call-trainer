@@ -85,6 +85,19 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .retry-btn:hover { background: #5e1a6e; }
 .typing-indicator { align-self: flex-start; padding: 10px 14px; font-size: 20px; letter-spacing: 3px; opacity:0.5; animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+
+/* Countdown Timer */
+.call-timer { position: fixed; top: 12px; right: 20px; background: var(--aws-dark); color: white; padding: 8px 14px; border-radius: var(--radius-md); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; font-weight: 700; display: none; z-index: 1000; box-shadow: var(--shadow-md); border: 1px solid rgba(255,255,255,0.1); }
+.call-timer .timer-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; display: block; margin-bottom: 2px; }
+.call-timer .timer-value { display: flex; align-items: center; gap: 6px; }
+.call-timer .timer-value .time { font-size: 20px; letter-spacing: 1px; }
+.call-timer .timer-value .forecast { font-size: 10px; opacity: 0.7; }
+.call-timer.warning .timer-value .time { color: var(--color-warning); }
+.call-timer.danger .timer-value .time { color: var(--color-error); animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.call-timer .forecast-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.call-timer .forecast-fill { height: 100%; background: var(--color-success); transition: width 1s linear, background 0.5s; border-radius: 2px; }
+
 </style>
 </head>
 <body>
@@ -93,6 +106,16 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
   <h1>Cold Call Roleplay Simulator</h1>
   <span class="badge">ISV DG EMEA</span>
 </div>
+
+<div class="call-timer" id="callTimer">
+  <span class="timer-label">Estimated time remaining</span>
+  <div class="timer-value">
+    <span class="time" id="timerDisplay">1:47</span>
+    <span class="forecast" id="timerForecast">customer engaged</span>
+  </div>
+  <div class="forecast-bar"><div class="forecast-fill" id="timerFill" style="width:100%"></div></div>
+</div>
+
 <div class="container">
   <div class="setup" id="setup">
     <h2><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Roleplay Simulator</h2>
@@ -133,6 +156,83 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 </div>
 
 <script>
+
+// ===== REAL-TIME CALL TIMER =====
+let timerInterval = null;
+let callStartTime = null;
+let estimatedCallDuration = 107; // Based on team avg from AWSentral: 107s for DGR connected calls
+
+function startTimer() {
+  callStartTime = Date.now();
+  var difficulty = state.difficulty;
+  // Estimate based on real data: Easy=120s, Medium=107s (team avg), Hard=75s
+  estimatedCallDuration = difficulty === 'easy' ? 120 : difficulty === 'hard' ? 75 : 107;
+  // If real customer, CSR calls avg 185s
+  if(state.realCustomer) estimatedCallDuration = 150;
+  
+  document.getElementById('callTimer').style.display = 'block';
+  updateTimer();
+  timerInterval = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+  var elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+  var remaining = Math.max(0, estimatedCallDuration - elapsed);
+  
+  // Adjust estimate based on patience (real-time forecast)
+  var patienceMultiplier = state.patience / 70; // >1 if doing well, <1 if losing them
+  var forecastRemaining = Math.floor(remaining * patienceMultiplier);
+  
+  var mins = Math.floor(forecastRemaining / 60);
+  var secs = forecastRemaining % 60;
+  var display = mins + ':' + (secs < 10 ? '0' : '') + secs;
+  
+  var timerEl = document.getElementById('callTimer');
+  document.getElementById('timerDisplay').textContent = display;
+  
+  // Update forecast text
+  var forecastText = '';
+  if(state.patience > 70) forecastText = 'customer engaged — time extending';
+  else if(state.patience > 50) forecastText = 'neutral — stay on track';
+  else if(state.patience > 30) forecastText = 'losing interest — pivot now';
+  else forecastText = 'about to hang up!';
+  document.getElementById('timerForecast').textContent = forecastText;
+  
+  // Update progress bar
+  var pct = Math.max(0, (forecastRemaining / estimatedCallDuration) * 100);
+  var fillEl = document.getElementById('timerFill');
+  fillEl.style.width = pct + '%';
+  
+  // Color states
+  timerEl.classList.remove('warning', 'danger');
+  if(forecastRemaining <= 20) { timerEl.classList.add('danger'); fillEl.style.background = 'var(--color-error)'; }
+  else if(forecastRemaining <= 45) { timerEl.classList.add('warning'); fillEl.style.background = 'var(--color-warning)'; }
+  else { fillEl.style.background = 'var(--color-success)'; }
+  
+  // Auto-end if timer hits 0 and patience is low
+  if(forecastRemaining <= 0 && state.patience < 40 && state.active) {
+    clearInterval(timerInterval);
+    addMsg('system', '⏱️ Customer ended the call — time ran out.');
+    endSim('lost');
+    state.active = false;
+  }
+}
+
+function stopTimer() {
+  if(timerInterval) clearInterval(timerInterval);
+  document.getElementById('callTimer').style.display = 'none';
+}
+
+function adjustTimerOnGoodResponse() {
+  // When DGR does well, customer gives more time (realistic)
+  estimatedCallDuration += 15;
+}
+
+function adjustTimerOnBadResponse() {
+  // When DGR does poorly, timer accelerates
+  estimatedCallDuration = Math.max(30, estimatedCallDuration - 20);
+}
+
 // ===== PERSONAS =====
 
 // ===== REAL CUSTOMER DATA (from AWSentral call logs & opportunity notes) =====
@@ -194,6 +294,39 @@ const REAL_CUSTOMER_RESPONSES = {
     "Our agents are in production already. The framework isn't mature enough for what we need next, but I'm not sure swapping the whole stack is the answer either.",
     "We code in Python, connect to OpenAI via API, and use Autogen for inter-agent communication. It's not perfect but it works. Why would I introduce another dependency?"
   ],
+  
+  // SIFT: European data sovereignty concerns (Swissbit, EWE AG - actual quotes)
+  dataSovereignty: [
+    "Ownership is still Amazon — a US company. We're not interested. We prefer a European provider.",
+    "Our board set up a task force to assess the risks of having business-critical workloads on a US cloud. Until that's resolved, we're pausing all AWS conversations.",
+    "With the current geopolitical situation, we can't justify moving critical infrastructure to a US-owned platform. It's a board-level concern.",
+    "We looked at AWS Sovereign Cloud but it's still ultimately controlled by Amazon. StackIT or OVH feel safer for our compliance requirements.",
+    "GDPR is one thing, but our customers are asking where their data lives. 'US company' is not an answer they accept anymore."
+  ],
+  // SIFT: Funding gap (GCP offering more credits, Azure marketplace advantage)
+  competitiveFunding: [
+    "Google offered us far more flexible funding for the migration. AWS credits were a fraction of what GCP put on the table.",
+    "Azure gave us $375K in credits and professional services. AWS offered $45K. You tell me which one my CFO picked.",
+    "We signed a 5-year EDP with Google. The economics made sense long-term. AWS couldn't match the multi-year commitment structure.",
+    "Microsoft is putting real money behind our co-sell motion. Marketplace credits, dedicated partner resources, the works. What can AWS offer?",
+    "After 5 years on AWS, our bill keeps going up and competitors are offering funding to switch. Give me a reason to stay."
+  ],
+  // SIFT: No-differentiation perception (CTO-level)
+  noDifferentiation: [
+    "I'll be honest — I see no technical differentiation between cloud providers at this point. Capabilities have converged.",
+    "We evaluated all three. The 10-15% price difference doesn't warrant the migration effort. Everything is basically the same now.",
+    "Standing up an AWS Center of Excellence adds 20-30% overhead when we're already invested in Azure skills. Why would we do that?",
+    "Our IT team can't justify a second cloud provider without a clear compliance, lock-in, or DR driver. 'It's better' isn't enough.",
+    "The hyperscalers all do the same thing. What matters is ecosystem — and our ecosystem is Microsoft."
+  ],
+  // SIFT: GenAI specific losses (ISVs going to Anthropic/OpenAI directly)
+  genAIDirectAccess: [
+    "Why would I go through Bedrock when I can access Claude directly from Anthropic? Same model, less latency, no middleman markup.",
+    "Three of our portfolio companies went direct to OpenAI. Nobody's routing through a cloud provider for model access anymore.",
+    "We're already on Claude Code via Anthropic. It works perfectly. Adding AWS in the middle just adds complexity and cost.",
+    "Partners told us customers don't see AWS as first choice for GenAI. They prefer Azure OpenAI or going direct. That's just the market reality."
+  ],
+
   // Based on real pattern: account not actionable / wrong contact
   wrongPerson: [
     "I'm not the right person for this. You need to talk to our Head of Engineering. I'm on the business side.",
@@ -652,6 +785,7 @@ function startSim() {
   state.conversationHistory.push({role:'customer', text:g});
   addMsg('customer', g);
   document.getElementById('userInput').focus();
+  startTimer();
 }
 
 function addMsg(type, text) {
@@ -1026,8 +1160,34 @@ function scoreResponse(text) {
     }
   }
 
+  
+  // WEB BEST PRACTICES: Gong Golden Ratio (43% talk / 57% listen)
+  // Track DGR talk volume vs customer - penalize monologuing
+  var dgrMessages = state.conversationHistory.filter(function(m){return m.role==='dgr';});
+  var custMessages = state.conversationHistory.filter(function(m){return m.role==='customer';});
+  if(dgrMessages.length >= 3) {
+    var dgrChars = dgrMessages.reduce(function(s,m){return s+m.text.length;},0);
+    var custChars = custMessages.reduce(function(s,m){return s+m.text.length;},0);
+    var talkRatio = dgrChars / (dgrChars + custChars);
+    if(talkRatio > 0.65 && state.turn >= 4) {
+      addFeedback('improve', "Talk ratio is " + Math.round(talkRatio*100) + "% — Gong research shows top performers talk 43% and listen 57%. Ask more questions.");
+    }
+  }
+  
+  // WEB: Question frequency (target 3-5 per 2-min call)
+  var totalQuestions = dgrMessages.filter(function(m){return m.text.indexOf('?')>=0;}).length;
+  if(state.turn >= state.maxTurns - 1 && totalQuestions === 0) {
+    addFeedback('improve', "Zero questions asked all call — 73% of reps fail because they skip discovery. Questions earn meetings, pitches don't.");
+  }
+  if(totalQuestions >= 3 && state.turn >= 4) {
+    addFeedback('good', "Strong question frequency — research shows 3-5 questions per 2-min call is the sweet spot for booking meetings.");
+  }
+
+
   // Consecutive good tracking
   if(d > 5) { state.consecutiveGood++; } else { state.consecutiveGood = 0; }
+  if(d > 10) adjustTimerOnGoodResponse();
+  if(d < -5) adjustTimerOnBadResponse();
   
   state.patience = Math.min(100, Math.max(0, state.patience + d));
   return d;
@@ -1046,6 +1206,7 @@ function updatePatience() {
 
 function endSim(outcome) {
   state.active = false;
+  stopTimer();
   document.getElementById('chat').style.display='none';
 
   if(state.nameUsed && state.empathyShown && state.permissionUsed)
