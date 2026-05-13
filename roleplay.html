@@ -1532,6 +1532,170 @@ function generateContextualResponse(dgrText, scoreResult) {
   var cfg = state.cfg;
   var lower = dgrText.toLowerCase();
   
+
+  // ===== GRADUAL DISENGAGEMENT — REALISTIC "LOSING INTEREST" PATTERNS =====
+  // Mimics how real customers disengage: subtle → direct → exit attempt → hang up
+  
+  var patienceLevel = state.patience;
+  var turnNum = state.turn;
+  
+  // === LEVEL 1: DISTRACTED (patience 55-45) — Customer starts giving shorter attention ===
+  if(patienceLevel <= 55 && patienceLevel > 45 && turnNum >= 3 && Math.random() < 0.45) {
+    var persona = state.persona;
+    
+    if(persona === 'cto') {
+      return pickFrom([
+        "Mm-hmm... sorry, I'm getting pinged on Slack. What were you saying? The... thing about — ?",
+        "Hold on — [typing sounds] — sorry, production alert. You were saying? Actually — can you just get to the point?",
+        "Yeah... look, I've got a standup in 5. Can you get to the 'why should I care' part?",
+        "Sorry — I'm half-listening, half-reading a PR review. Not being rude, just being honest. What's the headline?",
+        "[pause] Right. So... what's the ask? I need to context-switch to something else soon."
+      ]);
+    }
+    if(persona === 'cfo') {
+      return pickFrom([
+        "Mm-hmm. I'm looking at my calendar and I've got back-to-backs all afternoon. Where is this going?",
+        "Right... I appreciate that but I'm not sure I'm the right person for this level of detail. Is there a summary?",
+        "Okay — I need to be direct. I've got a board prep session in a few minutes. What's the bottom line?",
+        "[pause] Sorry I was checking something. What's the financial impact again? In one sentence.",
+        "How much longer do you need? Because I've got maybe 2 more minutes and then I need to go."
+      ]);
+    }
+    if(persona === 'ceo') {
+      return pickFrom([
+        "Mm. My EA is waving at me — I've got someone waiting. Can you wrap up the key point?",
+        "[checking phone] Sorry — that's my board chair. Look, what's the one thing you want me to remember from this call?",
+        "I need to jump soon. Give me the 30-second version of why this matters for us.",
+        "Right — I appreciate the call but I'm running behind. What would you need from me to move this forward?",
+        "Okay I'm hearing you but honestly my mind is on something else. Not your fault — just bad timing."
+      ]);
+    }
+    if(persona === 'cio') {
+      return pickFrom([
+        "Sorry — I was multitasking. Can you repeat the last part? Actually, just the key point.",
+        "Mm-hmm. Look, I've got a change advisory board meeting in 5 minutes. What are we concluding here?",
+        "I'm not sure this is within our current evaluation window. We're locked in on priorities until Q3.",
+        "Right... I'm going to be honest — this isn't ringing the urgency bell for me right now. Why now specifically?",
+        "[pause] Sorry, I was reading something. What were we saying?"
+      ]);
+    }
+    if(persona === 'aiml') {
+      return pickFrom([
+        "Yeah... I'm going to be real with you — I've heard this pitch from 4 vendors this month. What's new?",
+        "Hmm. Look, my team is heads-down on a deadline. I don't have cycles for evaluations right now.",
+        "Sorry, I was looking at our Jira board. Where were we? Actually — is there a technical whitepaper you can just send?",
+        "[pause] Right. I'm not trying to be rude but this feels like a generic pitch. What's specific to our stack?",
+        "Mm-hmm. I mean... we could probably build this ourselves in a sprint. Why would I buy instead?"
+      ]);
+    }
+    
+    // Generic distracted responses
+    return pickFrom([
+      "Sorry — what was that? I was looking at something else. Can you repeat the main point?",
+      "Mm-hmm... [pause] ...right. Look, I need to be somewhere in about 5 minutes. What's the ask?",
+      "Yeah... I'm not sure where this is going. Can you be more direct about what you need from me?",
+      "Right. Look — I appreciate the call. I'm just not sure this is relevant for us right now."
+    ]);
+  }
+  
+  // === LEVEL 2: PULLING AWAY (patience 45-35) — Customer signals they want to end ===
+  if(patienceLevel <= 45 && patienceLevel > 35 && turnNum >= 3 && Math.random() < 0.55) {
+    return pickFrom([
+      "Look — I really need to go. Can you just send me an email with the key points? I'll read it when I have time.",
+      "I'm going to be honest — I don't think this is the right time for us. Maybe in 6 months? Try me then.",
+      "Okay I need to cut you short. I've got another meeting. Just email me something and I'll look at it. No promises.",
+      "I appreciate the call but I'm going to have to go. We're not evaluating anything new this quarter.",
+      "Right — look, my plate is full. I can't take on another conversation right now. Send me something and I'll get to it when I can.",
+      "I don't want to waste your time either — this isn't a priority for us right now. Maybe follow up in Q3?",
+      "Can we just... pause this? Send me a 1-page summary by email. If it's relevant I'll get back to you. But I need to go now.",
+      "I need to be somewhere. Tell you what — find my email on our website and send me something. If it resonates I'll reply. Fair?",
+      "Look, between you and me — even if I was interested, I couldn't push anything new through internally right now. The timing's off.",
+      "Mm-hmm. Listen, it's not personal but I've got 4 vendors calling me this week and I just can't do another evaluation right now.",
+      "Okay here's what's going to happen — I'm going to go now. If this is really as good as you say, send me a one-pager. I'll read it. That's the best I can offer.",
+      "Right. I'm going to be direct because I respect your time too — we're locked into [competitor] for this year. It's contractual. Check back next year.",
+      "I've got back-to-backs until 6pm. I literally cannot give this more time today. Email is the move here."
+    ]);
+  }
+  
+  // === LEVEL 3: ACTIVELY EXITING (patience 35-25) — Customer is done, firm rejection ===
+  if(patienceLevel <= 35 && patienceLevel > 25 && turnNum >= 3 && Math.random() < 0.7) {
+    return pickFrom([
+      "Okay — I've been polite but I need to end this call now. I'm not interested at this time. All the best.",
+      "Right, I need to go. NOW. Not in a minute — now. Send whatever you want by email but don't expect a reply. Bye.",
+      "Look — I'm going to be blunt. You've been talking for [a while] and I haven't heard anything that moves the needle for us. I need to go.",
+      "No meeting. No follow-up call. Email only. And honestly? I probably won't read it. But that's the offer. I need to go.",
+      "I'm hanging up in about 10 seconds. If there's a final thing you want to say, say it now. Otherwise — it was nice talking.",
+      "[sigh] Okay. This isn't working. You're a nice person but this isn't the right conversation for me right now. I've got to go.",
+      "Stop. I appreciate the hustle but the answer is no. Not now. Maybe not ever. I'll reach out if that changes. Please don't call again.",
+      "You know what — just email me. Here: [first.last]@[company].com. I'll look at it when I'm less slammed. Okay I really have to go. Bye.",
+      "Right — we're done. Not being rude, just being honest. This isn't going to happen this quarter. Or next, probably. Take care.",
+      "Okay I'm walking into a meeting right now. Literally walking. You need to let me go. Send an email if you want. Cheers — bye.",
+      "I've got to jump — my next call is already waiting. Look, no hard feelings. The timing's just not right. Send me something written and MAYBE in a few months. That's realistic. Okay — bye.",
+      "Can I be real with you? If we were going to do this, I'd know by now. And I don't. It's not clicking for me. No hard feelings — take care.",
+      "Look I like that you're passionate about this but I've made my decision. Not right now. Respect that and maybe there's a conversation in the future. Gotta go."
+    ]);
+  }
+  
+  // === LEVEL 4: PRE-HANGUP (patience <= 25) — Last chance before triggerGoodbye ===
+  if(patienceLevel <= 25 && turnNum >= 3) {
+    // This fires BEFORE the existing triggerGoodbye logic — gives one final warning
+    if(Math.random() < 0.8) {
+      return pickFrom([
+        "I'm hanging up now. Goodbye.",
+        "We're done. Take care. [click]",
+        "Okay bye. [silence]",
+        "Right — all the best. Bye now.",
+        "Nope. Bye. [click]",
+        "I said I need to go. Goodbye."
+      ]);
+    }
+  }
+  
+  // === INTERRUPTION PATTERNS — Random "I need to go" triggered by external events ===
+  // 12% chance after turn 4 when patience is declining (below 60)
+  if(patienceLevel < 60 && patienceLevel > 35 && turnNum >= 4 && Math.random() < 0.12 && !state.interruptionFired) {
+    state.interruptionFired = true;
+    return pickFrom([
+      "Oh — sorry, my other line is ringing. I actually need to take this. Can you — just email me? Sorry. Got to go.",
+      "Wait — [muffled talking] — sorry, someone just walked into my office. I need to deal with this. Send me an email? Bye.",
+      "Hold on — [pause] — I've just been pinged about something urgent. I really need to go handle this. Sorry — email me?",
+      "Oh damn, I just realized I'm late for something. I need to run. Literally. Email me the details? Sorry about this — bye!",
+      "My assistant is flagging me — apparently I have someone waiting. I need to wrap up. Just send the info to my email.",
+      "[loud background noise] Sorry — things are kicking off here. I need to go. Genuinely need to go. Email is best. Bye!",
+      "Oh — I just got an urgent message. Apologies — I'm going to have to cut this short. Send me something by email and I'll get to it."
+    ]);
+  }
+  
+  // ===== END GRADUAL DISENGAGEMENT =====
+
+  // === RE-ENGAGEMENT: Customer softens when DGR respects their exit ===
+  // If DGR handled disengagement gracefully (scored positive last turn), customer may give more time
+  if(patienceLevel >= 35 && patienceLevel <= 55 && turnNum >= 4 && state.consecutiveGood >= 1) {
+    var lastDgrMsg = '';
+    for(var ri = state.conversationHistory.length - 1; ri >= 0; ri--) {
+      if(state.conversationHistory[ri].role === 'dgr') {
+        lastDgrMsg = state.conversationHistory[ri].text.toLowerCase();
+        break;
+      }
+    }
+    // If DGR was respectful/graceful in their last message
+    if(lastDgrMsg.match(/understand|respect|appreciate|no worries|your time|thank|fair enough/) && Math.random() < 0.35) {
+      state.patience += 15; // Give back some patience
+      return pickFrom([
+        "You know what — I appreciate that you're not being pushy about it. Actually... tell me one more thing. What's the [main benefit] in one sentence?",
+        "Hmm. Okay — you're actually respectful about this, which is rare. Fine — you've got 30 more seconds. Make them count.",
+        "Wait — actually. Before I go. [pause] You mentioned [topic]. What did you mean by that? I'm curious despite myself.",
+        "Alright — look. I DO need to go. But... [pause] ...okay, one more minute. But that's it. What's the single most important thing?",
+        "[pause] ...you know, most people would have just kept pushing. The fact that you didn't makes me trust you more. Quick — what's the elevator pitch?",
+        "Okay wait. [sigh] I'm probably going to regret this but... fine. You've got my attention for one more minute. Don't waste it.",
+        "Actually — hold on. You handled that well. Most callers would have just steamrolled through my 'no'. Okay — what's the ONE thing you'd want me to look at?",
+        "Hmm. Alright. I respect that you backed off. [pause] ...tell me this though — if you had to describe what you do in one sentence to my board, what would it be?"
+      ]);
+    }
+  }
+
+
+
   // === REAL DATA INJECTION: 25% chance to use actual customer language from AWSentral/SIFT ===
   if(Math.random() < 0.25 && state.turn >= 2) {
     // Pick from real data based on context
@@ -1898,6 +2062,60 @@ function scoreResponse(text) {
   }
   if(totalQuestions >= 3 && state.turn >= 4) {
     addFeedback('good', "Strong question frequency — research shows 3-5 questions per 2-min call is the sweet spot for booking meetings.");
+  }
+
+
+
+  // === DISENGAGEMENT DETECTION: Score DGR's response to exit signals ===
+  // Check if customer's LAST message was a disengagement signal
+  if(state.conversationHistory.length >= 2) {
+    var lastCustomerMsg = '';
+    for(var i = state.conversationHistory.length - 1; i >= 0; i--) {
+      if(state.conversationHistory[i].role === 'customer') {
+        lastCustomerMsg = state.conversationHistory[i].text.toLowerCase();
+        break;
+      }
+    }
+    
+    var customerWantsToLeave = lastCustomerMsg.match(/need to go|got to go|gotta go|have to go|need to run|need to jump|hanging up|wrap up|cut.*short|can't.*more time|no more time|don't call|not interested|email.*only|just email|send.*email|not the right time|not a priority|next quarter|try.*again.*month/);
+    var customerAskedForEmail = lastCustomerMsg.match(/email|send.*something|one.?pager|send.*info|written/);
+    var customerSaidNo = lastCustomerMsg.match(/answer is no|not interested|not going to happen|nope|not a fit|can't.*right now/);
+    
+    if(customerWantsToLeave || customerAskedForEmail || customerSaidNo) {
+      // DGR pushes for meeting AFTER customer wants to leave = VERY BAD
+      if(lower.match(/meeting|calendar|schedule|book|15 minutes|quick call|demo|availability/)) {
+        d -= 20;
+        state.scores.closing -= 10;
+        addFeedback('improve', "They said they need to go — pushing for a meeting now damages trust. Respect the 'no' and salvage with email/follow-up.");
+      }
+      // DGR keeps pitching (long message, no acknowledgment) = BAD
+      else if(text.length > 120 && !lower.match(/understand|respect|appreciate|no worries|of course|absolutely|hear you/)) {
+        d -= 15;
+        addFeedback('improve', "Customer is disengaging. Long pitches at this stage push them further away. Acknowledge and pivot to email/follow-up.");
+      }
+      // DGR acknowledges and gracefully pivots to email = GOOD
+      else if(lower.match(/understand|respect|appreciate|no worries|of course/) && lower.match(/email|send|follow.?up|written|info|summary/)) {
+        d += 12;
+        state.scores.rapport += 8;
+        addFeedback('good', "Perfect exit salvage — you respected their 'no' and secured the email follow-up. This preserves the relationship for future outreach.");
+      }
+      // DGR asks a quick value question instead of pushing = DECENT (can re-engage)
+      else if(text.indexOf('?') >= 0 && text.length < 100 && lower.match(/one thing|quick question|curious|before you go/)) {
+        d += 5;
+        addFeedback('good', "'Before you go, one question...' — a soft re-engagement technique that can save a dying call. Use sparingly.");
+      }
+      // DGR says "I understand, thanks for your time" = NEUTRAL-POSITIVE
+      else if(lower.match(/thank|your time|appreciate.*time|fair enough|understood|no problem/)) {
+        d += 6;
+        state.scores.rapport += 4;
+        addFeedback('good', "Graceful close — thanking them for time leaves the door open for future outreach. Professional exit.");
+      }
+      // DGR ignores the exit signal completely = BAD
+      else if(!lower.match(/understand|hear|respect|appreciate|got it|sure|okay|no worries/)) {
+        d -= 10;
+        addFeedback('improve', "They clearly said they need to go but you didn't acknowledge it. Even a quick 'Totally understand' before your response shows you're listening.");
+      }
+    }
   }
 
 
