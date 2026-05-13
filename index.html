@@ -1708,7 +1708,11 @@ function generateInsights() {
   const questions = selectQuestions(maturity, objective, persona);
 
   // Render results
-  renderResults(topObjections, script, questions, company, industry, persona, maturity, objective);
+  // Generate outreach email
+  const email = generateOutreachEmail(company, industry, persona, objective, maturity, context, script);
+  lastEmailParams = {company, industry, persona, objective, maturity, context};
+  
+  renderResults(topObjections, script, questions, company, industry, persona, maturity, objective, email);
 }
 
 function scoreObjections(industry, size, persona, maturity, objective, context) {
@@ -1854,7 +1858,99 @@ function selectQuestions(maturity, objective, persona) {
 // ============================================
 // RENDER RESULTS
 // ============================================
-function renderResults(objections, script, questions, company, industry, persona, maturity, objective) {
+
+function generateOutreachEmail(company, industry, persona, objective, maturity, context, script) {
+  const personaTitles = {
+    cto: 'CTO', cio: 'CIO', cfo: 'CFO', ceo: 'CEO/Founder',
+    pm: 'Head of Product', devlead: 'Engineering Lead', datasci: 'Data Lead'
+  };
+  const personaTitle = personaTitles[persona] || 'Leader';
+  
+  const industryHooks = {
+    fintech: "regulatory compliance and real-time fraud detection are becoming table-stakes AI use cases",
+    security: "threat detection and automated response are the fastest-growing AI categories",
+    healthcare: "clinical workflow automation and diagnostics AI are moving from pilot to production",
+    saas: "AI-native features are driving 40% higher retention for early adopters",
+    ecommerce: "personalisation and demand forecasting AI is delivering 15-30% revenue lift",
+    gaming: "procedural content generation and player behaviour AI are reshaping development cycles",
+    martech: "predictive audiences and creative optimisation AI are outperforming rules-based approaches",
+    edtech: "adaptive learning and automated assessment AI are seeing 3x engagement improvements",
+    logistics: "route optimisation and demand forecasting AI are cutting costs 12-25%",
+    media: "content recommendation and automated production AI are driving subscriber growth"
+  };
+  
+  const maturitySubjects = {
+    greenfield: "Quick thought on your cloud strategy",
+    observing: "How " + (industry || 'ISVs') + " leaders are approaching AI",
+    experimenting: "From experiment to production — a pattern we\'re seeing",
+    adopting: "Accelerating what you\'ve already started"
+  };
+  
+  const objectiveSubjects = {
+    discovery: "Quick question about " + company + "\'s roadmap",
+    demo: company + " + AWS — 15 min overview",
+    cosell: "Co-selling with AWS — opportunity for " + company,
+    followup: "Following up — " + company + " + AWS",
+    reengagement: "Checking in — things have changed since we last spoke"
+  };
+  
+  const hook = industryHooks[industry] || "AI adoption is accelerating, and we\'re seeing " + (industry || 'ISVs') + " move fast";
+  
+  // Subject line
+  const subject = objectiveSubjects[objective] || maturitySubjects[maturity] || "Quick thought for " + company;
+  
+  // Opening line — context-aware
+  let opening = "";
+  if(context && context.length > 10) {
+    opening = "I came across " + company + " and noticed " + context.substring(0, 100) + (context.length > 100 ? "..." : "") + " — thought it was worth reaching out.";
+  } else {
+    const openings = [
+      "I work with " + (industry || 'ISV') + " companies across EMEA and " + company + " caught my attention.",
+      "I\'ve been following " + company + " — the growth in your space is impressive. Quick thought below.",
+      "A few " + (industry || 'ISV') + " companies similar to " + company + " have been exploring something I thought might be relevant."
+    ];
+    opening = openings[Math.floor(Math.random() * openings.length)];
+  }
+  
+  // Value proposition — ties to their maturity
+  let value = "";
+  if(maturity === 'greenfield') {
+    value = "We\'re seeing " + (industry || 'ISV') + " companies build on AWS from day one to avoid the costly re-architecture later. A few in your space launched 3-4 months faster by starting cloud-native.";
+  } else if(maturity === 'observing') {
+    value = hook + ". Specifically, " + (industry || 'ISV') + " companies are finding that starting with a focused use case (not a full transformation) delivers ROI within 8-12 weeks.";
+  } else if(maturity === 'experimenting') {
+    value = "The pattern we see with " + (industry || 'ISV') + " companies at your stage: the ones that move from experimentation to production fastest are the ones who solve the orchestration problem early. That\'s where most stall.";
+  } else {
+    value = "You\'re already on the journey — the question is usually \'what\'s the next multiplier?\' For companies like " + company + ", we\'re seeing 2-3x impact when they bring in marketplace co-sell or Bedrock for their AI layer.";
+  }
+  
+  // CTA — low-friction
+  let cta = "";
+  if(objective === 'discovery') {
+    cta = "Would a 15-minute call make sense to see if there\'s a fit? Happy to share what we\'re seeing in " + (industry || 'your space') + " — no pitch, just patterns.";
+  } else if(objective === 'demo') {
+    cta = "I can show you in 15 minutes what this looks like for a " + (industry || 'ISV') + " company your size. Would [day] or [day] work?";
+  } else if(objective === 'cosell') {
+    cta = "We have a co-sell programme that\'s generating 65% higher close rates for ISVs. 15 minutes to see if " + company + " qualifies?";
+  } else if(objective === 'followup') {
+    cta = "Based on our last conversation, I pulled together a few specific ideas. Worth a quick 10-minute catch-up?";
+  } else {
+    cta = "Things have moved on since we last connected. Worth 15 minutes to see what\'s changed?";
+  }
+  
+  // PS line — social proof
+  const psLines = [
+    "P.S. We recently helped a similar " + (industry || 'ISV') + " company reduce their time-to-market by 40% — happy to share details.",
+    "P.S. " + (industry ? industry.charAt(0).toUpperCase() + industry.slice(1) : 'ISV') + " companies on AWS Marketplace are seeing 54% larger deal sizes. Thought that might be relevant.",
+    "P.S. If email isn\'t your thing, I\'m also on LinkedIn. Whatever\'s easiest.",
+    "P.S. No pressure at all — if now isn\'t the right time, when should I check back?"
+  ];
+  const ps = psLines[Math.floor(Math.random() * psLines.length)];
+  
+  return { subject, opening, value, cta, ps };
+}
+
+function renderResults(objections, script, questions, company, industry, persona, maturity, objective, email) {
   const panel = document.getElementById('resultsPanel');
 
   const maturityLabels = { observing: 'Observing', experimenting: 'Experimenting', adopting: 'Adopting', greenfield: 'Greenfield' };
@@ -1892,6 +1988,38 @@ function renderResults(objections, script, questions, company, industry, persona
         </div>
       </div>
     </div>
+    
+    <!-- Outreach Email -->
+    <div class="result-card">
+      <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1"><i class="fa-solid fa-envelope"></i></span> Cold Outreach Email</h3>
+      <button class="copy-btn" onclick="copyEmail()"><i class="fa-solid fa-copy"></i> Copy Email</button>
+      <div id="emailContent" style="background:var(--color-bg-elevated);border-radius:12px;padding:20px;border:1px solid var(--color-border)">
+        <div style="margin-bottom:16px">
+          <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:0.5px">Subject Line</span>
+          <div style="font-weight:600;font-size:15px;margin-top:4px;color:var(--color-text-primary)" id="emailSubject">\${email.subject}</div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:12px 0">
+        <div style="font-size:14px;line-height:1.7;color:var(--color-text-primary);white-space:pre-line" id="emailBody">Hi [First Name],
+
+\${email.opening}
+
+\${email.value}
+
+\${email.cta}
+
+Best,
+[Your Name]
+AWS — ISV Team, EMEA
+
+\${email.ps}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button onclick="regenerateEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-rotate"></i> Regenerate</button>
+        <button onclick="shortenEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-compress"></i> Shorter Version</button>
+        <button onclick="makeFollowUp()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-reply"></i> Follow-up Version</button>
+      </div>
+    </div>
+
 
     
     \${objective === 'discovery' ? \`
@@ -2023,6 +2151,83 @@ function copyScript() {
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy All'; }, 2000);
   });
 }
+
+function copyEmail() {
+  const subject = document.getElementById('emailSubject').innerText;
+  const body = document.getElementById('emailBody').innerText;
+  const fullEmail = "Subject: " + subject + "\n\n" + body;
+  navigator.clipboard.writeText(fullEmail).then(() => {
+    const btns = document.querySelectorAll('.copy-btn');
+    const btn = btns[btns.length > 1 ? 1 : 0];
+    if(btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Email'; }, 2000); }
+  });
+}
+
+// Store last email params for regeneration
+var lastEmailParams = {};
+
+function regenerateEmail() {
+  if(lastEmailParams.company) {
+    const email = generateOutreachEmail(
+      lastEmailParams.company, lastEmailParams.industry, lastEmailParams.persona,
+      lastEmailParams.objective, lastEmailParams.maturity, lastEmailParams.context
+    );
+    document.getElementById('emailSubject').textContent = email.subject;
+    document.getElementById('emailBody').textContent = 
+      "Hi [First Name],\n\n" + email.opening + "\n\n" + email.value + "\n\n" + email.cta + "\n\nBest,\n[Your Name]\nAWS — ISV Team, EMEA\n\n" + email.ps;
+  }
+}
+
+function shortenEmail() {
+  const body = document.getElementById('emailBody');
+  const subject = document.getElementById('emailSubject');
+  const company = lastEmailParams.company || '[Company]';
+  const industry = lastEmailParams.industry || 'ISV';
+  
+  const shortSubjects = [
+    "Quick thought for " + company,
+    company + " + AWS?",
+    "15 min — " + company + " & AI",
+    "Worth a chat?"
+  ];
+  
+  const shortBodies = [
+    "Hi [First Name],\n\nI work with " + industry + " companies on AWS. Noticed " + company + " — thought there might be a fit.\n\n15 minutes to compare notes?\n\nBest,\n[Your Name]",
+    "Hi [First Name],\n\nQuick one: we\'re helping " + industry + " ISVs in EMEA grow faster with AWS (Marketplace, co-sell, AI). Relevant for " + company + "?\n\nHappy to share specifics in a short call.\n\n[Your Name]",
+    "Hi [First Name],\n\n" + industry.charAt(0).toUpperCase() + industry.slice(1) + " companies similar to " + company + " are seeing 54% larger deals through AWS Marketplace. Worth exploring?\n\n15 min next week?\n\n[Your Name]",
+    "Hi [First Name],\n\nI help " + industry + " ISVs scale across EMEA. Curious if " + company + " is exploring AI or marketplace opportunities.\n\nWorth a brief chat?\n\nBest,\n[Your Name]"
+  ];
+  
+  const idx = Math.floor(Math.random() * shortSubjects.length);
+  subject.textContent = shortSubjects[idx];
+  body.textContent = shortBodies[idx];
+}
+
+function makeFollowUp() {
+  const body = document.getElementById('emailBody');
+  const subject = document.getElementById('emailSubject');
+  const company = lastEmailParams.company || '[Company]';
+  const industry = lastEmailParams.industry || 'ISV';
+  
+  const followUpSubjects = [
+    "Re: " + company + " + AWS",
+    "Circling back — " + company,
+    "One more thought for " + company,
+    "Bumping this — worth 10 min?"
+  ];
+  
+  const followUpBodies = [
+    "Hi [First Name],\n\nJust circling back on my note last week. I know things get buried.\n\nThe short version: we\'re helping " + industry + " companies like " + company + " [grow faster / reduce costs / accelerate AI] and I think there\'s a fit.\n\nWorth a quick 10-minute conversation? No pressure either way.\n\nBest,\n[Your Name]",
+    "Hi [First Name],\n\nI reached out last week — appreciate you\'re busy.\n\nOne new data point: a " + industry + " company similar to " + company + " just launched on AWS Marketplace and saw 65% faster deal cycles. Thought that might be worth exploring.\n\nHappy to share details in 10 minutes if useful. If not, no worries at all.\n\n[Your Name]",
+    "Hi [First Name],\n\nFollowing up — I\'ll keep it short.\n\nI work with " + industry + " ISVs and the ones growing fastest in EMEA are leveraging [Marketplace co-sell / AI services / specific thing]. Would " + company + " benefit from a quick intro to see if there\'s a fit?\n\nEither way, happy to share a relevant case study if useful.\n\nBest,\n[Your Name]",
+    "Hi [First Name],\n\nLast note from me — I promise!\n\nIf the timing isn\'t right, just let me know and I\'ll check back in [Q3 / 6 months / next year]. But if there\'s even a small chance this is relevant for " + company + ", a 10-minute call could save you hours of research.\n\nNo pressure.\n\n[Your Name]"
+  ];
+  
+  const idx = Math.floor(Math.random() * followUpSubjects.length);
+  subject.textContent = followUpSubjects[idx];
+  body.textContent = followUpBodies[idx];
+}
+
 
 // ============================================
 // LIVE OBJECTION COACH
