@@ -157,6 +157,62 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 
 <script>
 
+
+// ===== REALISTIC CALL ENDINGS =====
+const GOODBYE_RESPONSES = {
+  // When customer is done but not hostile (patience 20-40)
+  politeEnd: [
+    "Look — I appreciate the call but I really need to go. Maybe send me something by email and I'll take a look when I have time.",
+    "Okay I need to jump into my next meeting. Thanks for calling though. If you send me a one-pager I'll have a look.",
+    "Right — I've got to go. Listen, it's not a no. It's just not the right time. Try me again in a couple months?",
+    "I need to run. Send me your info and if something changes on our end I'll reach out. Fair?",
+    "Alright — thanks for your time. I'll keep your name on file. If we start evaluating I'll circle back. Cheers.",
+    "Okay I'm being pinged. Thanks for calling — not the right moment but I appreciate you being respectful about it. Bye."
+  ],
+  // When customer is frustrated/hostile (patience < 20)
+  frustratedEnd: [
+    "Okay I'm going to stop you there. This isn't going anywhere and I need to go. All the best. [click]",
+    "Right — I've given you plenty of time and I'm not hearing anything new. I've got to go. Don't call back on this number.",
+    "Listen — I appreciate the persistence but the answer is no. Please take me off your list. Bye.",
+    "[sigh] Look, I've been polite but I really need to end this. It's not a fit right now. Take care.",
+    "I'm hanging up now. Nothing personal — just not interested. Good luck with the next call."
+  ],
+  // When meeting is sort-of agreed but not firmly (partial outcome)
+  partialEnd: [
+    "Okay tell you what — send me something by email. If it's relevant I'll find 15 minutes. But no promises. I really need to go now.",
+    "Look I can't commit to a call right now but... yeah, email me. Include the specifics we talked about and I'll review it. Gotta run.",
+    "Maybe. Send me a calendar invite for two weeks from now. If something comes up I might cancel but... tentatively yes. Okay — bye.",
+    "I'll think about it. Ping me on LinkedIn with a short summary and if it makes sense I'll reply. Fair? Alright, cheers.",
+    "I'm not saying yes but I'm not saying no. Send me details and let me digest it. I'll get back to you by end of week. Gotta go — bye."
+  ],
+  // When meeting is booked (happy ending)
+  bookedEnd: [
+    "Great — looking forward to it. Send that invite over and we'll go from there. Cheers, talk soon.",
+    "Perfect. Tuesday works. Send the invite and I'll confirm. Alright — back to my day. Thanks for calling.",
+    "Sounds good. I'll accept the invite when it comes through. Bring the specifics we discussed. Alright — bye!",
+    "Cool, let's do it. CC'd to my team as well if you can. Alright I need to jump — talk next week. Cheers.",
+    "Done. Looking forward to it. And hey — you're pretty good at this. [laughs] Alright, bye."
+  ]
+};
+
+function triggerGoodbye(outcome) {
+  state.active = false;
+  var pool;
+  if(outcome === 'booked') pool = GOODBYE_RESPONSES.bookedEnd;
+  else if(outcome === 'partial') pool = GOODBYE_RESPONSES.partialEnd;
+  else if(state.patience < 20) pool = GOODBYE_RESPONSES.frustratedEnd;
+  else pool = GOODBYE_RESPONSES.politeEnd;
+  
+  var goodbye = pickFrom(pool);
+  addMsg('customer', goodbye);
+  state.conversationHistory.push({role:'customer', text: goodbye});
+  
+  // Short delay then show scorecard
+  setTimeout(function(){
+    endSim(outcome);
+  }, 1500);
+}
+
 // ===== REAL-TIME CALL TIMER =====
 let timerInterval = null;
 let callStartTime = null;
@@ -212,9 +268,7 @@ function updateTimer() {
   // Auto-end if timer hits 0 and patience is low
   if(forecastRemaining <= 0 && state.patience < 40 && state.active) {
     clearInterval(timerInterval);
-    addMsg('system', '⏱️ Customer ended the call — time ran out.');
-    endSim('lost');
-    state.active = false;
+    triggerGoodbye('lost');
   }
 }
 
@@ -827,8 +881,8 @@ function sendMsg() {
       state.scores.closing += 15;
       addFeedback('good', "Meeting booked! You confirmed the next step with a specific time — elite closing technique.");
       setTimeout(function(){ 
-        addMsg('system', '🎉 Meeting booked! Call complete.');
-        endSim('booked'); 
+        addMsg('system', '🎉 Meeting booked!');
+        triggerGoodbye('booked'); 
       }, 500);
       return;
     }
@@ -838,7 +892,7 @@ function sendMsg() {
   updatePatience();
 
   if(state.patience<=0) {
-    setTimeout(function(){ addMsg('system','📞 Customer hung up.'); endSim('lost'); },700);
+    setTimeout(function(){ triggerGoodbye('lost'); },700);
     return;
   }
   if(state.turn >= state.maxTurns) {
@@ -850,10 +904,10 @@ function sendMsg() {
         addMsg('system', '✨ Customer is engaged — call extended. Book the meeting!');
       }, 300);
     } else if(state.patience > 30) {
-      setTimeout(function(){ endSim('partial'); },700);
+      setTimeout(function(){ triggerGoodbye('partial'); },700);
       return;
     } else {
-      setTimeout(function(){ endSim('lost'); },700);
+      setTimeout(function(){ triggerGoodbye('lost'); },700);
       return;
     }
   }
