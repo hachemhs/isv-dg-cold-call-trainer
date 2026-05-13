@@ -1158,6 +1158,98 @@ function showTyping() {
   el.scrollTop = el.scrollHeight;
 }
 
+
+// ===== CONTEXT ENRICHMENT — Makes responses reference actual company situation =====
+function contextEnrichResponse(resp, dgrText) {
+  if(!state || !state.cfg || !state.cfg.company) return resp;
+  var company = state.cfg.company;
+  var lower = dgrText.toLowerCase();
+  var turn = state.turn;
+  
+  // Don't enrich very short responses (mood indicators like "Mm-hmm")
+  if(resp.length < 30) return resp;
+  
+  // 40% chance to add company context to any response
+  if(Math.random() > 0.4) return resp;
+  
+  // Context additions based on what DGR said
+  var additions = [];
+  
+  if(lower.match(/help|solve|offer|solution|value|benefit|improve/)) {
+    additions = [
+      " Because right now our main headache is " + company.painPoints.split('.')[0].toLowerCase() + ".",
+      " We\'re dealing with " + company.painPoints.split('.')[0].toLowerCase() + " so if you can address THAT specifically...",
+      " Our priority right now is " + company.priorities[0].toLowerCase() + " — anything else is secondary.",
+      " What matters to us is " + company.priorities[0].toLowerCase() + ". Full stop."
+    ];
+  }
+  else if(lower.match(/cloud|aws|platform|infrastructure|tech/)) {
+    additions = [
+      " We\'re currently on " + company.techStack.split(',')[0] + " by the way, in case that matters.",
+      " For context, our stack is " + company.techStack.split(',').slice(0,2).join(' + ') + ".",
+      " We run " + company.techStack.split(',')[0] + " — that\'s our baseline."
+    ];
+  }
+  else if(lower.match(/similar|like you|companies|industry|sector/)) {
+    additions = [
+      " We compete with " + company.competitors.split(',')[0] + " so speed matters.",
+      " Our space is crowded — " + company.competitors + " — so anything that gives us an edge...",
+      " " + company.competitors.split(',')[0] + " is doing something similar apparently. That worries me."
+    ];
+  }
+  else if(lower.match(/meeting|call|time|calendar|schedule|15 min|demo/)) {
+    additions = [
+      " But be aware — " + company.painPoints.split('.')[0].toLowerCase() + " is what I\'d want to discuss.",
+      " If we meet, come prepared to talk about " + company.priorities[0].toLowerCase() + ". Not a generic pitch.",
+      " Fine but make it relevant to " + company.industry.split('—')[0].trim() + ". No generic slides."
+    ];
+  }
+  else if(lower.match(/cost|price|save|roi|invest|budget/)) {
+    additions = [
+      " Our current spend is " + company.budget.split('.')[0] + " so that\'s the envelope.",
+      " Context: " + company.budget.split('.')[0] + ". Not a lot of room.",
+      " " + company.budget.split('.')[0] + " — every new tool needs to justify itself."
+    ];
+  }
+  else if(lower.match(/team|people|resource|hire|engineer|staff/)) {
+    additions = [
+      " I\'ve got " + state.cfg.backstory.team + " on my team. Always under-resourced.",
+      " We\'re " + company.size.split(',')[0] + " total. Not huge.",
+      " My team is " + state.cfg.backstory.team + " — stretched thin as it is."
+    ];
+  }
+  else if(lower.match(/challenge|problem|pain|struggle|issue|concern/)) {
+    var painIdx = Math.floor(Math.random() * Math.min(3, company.painPoints.split('.').length));
+    additions = [
+      " Honestly? " + company.painPoints.split('.')[painIdx] + ". That\'s the real one.",
+      " The thing keeping me up at night: " + company.painPoints.split('.')[0] + ".",
+      " If I\'m being candid — " + company.painPoints.split('.')[painIdx] + "."
+    ];
+  }
+  else {
+    // Generic context additions for any other topic
+    additions = [
+      " For context — we\'re " + company.size.split(',')[0] + ", " + company.industry.split('—')[0].trim() + ".",
+      " Just so you know where we\'re at: " + company.priorities[0].toLowerCase() + " is priority one.",
+      " Background: we just " + company.recentDecisions.split('.')[0].toLowerCase() + ". Still processing that.",
+      " FYI we\'re in " + company.industry.split('—')[0].trim() + ". " + company.size.split(',')[0] + ".",
+      " Bit of context: " + company.recentDecisions.split('.')[0] + "."
+    ];
+  }
+  
+  if(additions.length > 0) {
+    var addition = additions[Math.floor(Math.random() * additions.length)];
+    // Add to end of response (after last sentence)
+    if(resp.endsWith('?')) {
+      return resp + ' ' + addition.trim();
+    } else {
+      return resp + addition;
+    }
+  }
+  
+  return resp;
+}
+
 function sendMsg() {
   var input = document.getElementById('userInput');
   var text = input.value.trim();
@@ -1340,6 +1432,7 @@ function sendMsg() {
     try {
       var resp = generateContextualResponse(text, scoreResult);
       if(!resp) resp = "Mm-hmm. Go on.";
+      resp = contextEnrichResponse(resp, text);
       state.conversationHistory.push({role:'customer', text:resp});
       if(typeof generateCoachTip === 'function') generateCoachTip(resp);
       addMsg('customer', resp);
