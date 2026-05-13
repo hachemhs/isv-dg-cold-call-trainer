@@ -820,6 +820,9 @@ function startSim() {
     topicsMentioned: new Set(),
     humanBehaviorUsed: false,
     meetingAccepted: false,
+    meetingTimeProposed: false,
+    meetingConfirmed: false,
+    meetingFinalQuestion: false,
     realCustomer: realCustomerData,
     lastCustomerMood: 'neutral' // neutral, warming, hostile
   };
@@ -874,16 +877,97 @@ function sendMsg() {
   state.turn++;
   state.conversationHistory.push({role:'dgr', text:text});
   
-  // If meeting was accepted last turn, this is the confirmation — end with success!
+  // === MEETING BOOKING FLOW (multi-step) ===
   if(state.meetingAccepted) {
     var lower2 = text.toLowerCase();
-    if(lower2.match(/send|calendar|invite|perfect|great|awesome|looking forward|see you|confirm|tuesday|wednesday|thursday|friday|next week/)) {
-      state.scores.closing += 15;
-      addFeedback('good', "Meeting booked! You confirmed the next step with a specific time — elite closing technique.");
-      setTimeout(function(){ 
-        addMsg('system', '🎉 Meeting booked!');
-        triggerGoodbye('booked'); 
-      }, 500);
+    
+    // Step 1: DGR proposes a time → customer responds
+    if(!state.meetingTimeProposed && lower2.match(/monday|tuesday|wednesday|thursday|friday|next week|tomorrow|morning|afternoon|send.*invite|calendar/)) {
+      state.meetingTimeProposed = true;
+      state.scores.closing += 8;
+      addFeedback('good', "Good — you proposed a specific time. Top closers always anchor a day/time instead of leaving it open.");
+      
+      showTyping();
+      setTimeout(function(){
+        var timeResponses = [
+          "Yeah " + (lower2.match(/tuesday/) ? "Tuesday" : lower2.match(/wednesday/) ? "Wednesday" : lower2.match(/thursday/) ? "Thursday" : "next week") + " works. Make it 15 minutes — I'll hold you to that.",
+          "Let me check... [pause] yeah that works. 15 or 20 minutes max though. And bring specifics about " + pickConcern() + ".",
+          "Sure. Actually — can we do 30 minutes later? I've got back-to-backs in the morning. Say 2pm?",
+          "Works for me. Send the invite and include a brief agenda — I want to know exactly what we're covering.",
+          "Fine. But here's my ask — bring someone technical who knows " + state.industry + ". I don't want a generic overview."
+        ];
+        var resp = pickFrom(timeResponses);
+        state.conversationHistory.push({role:'customer', text:resp});
+        addMsg('customer', resp);
+      }, 800 + Math.random()*600);
+      return;
+    }
+    
+    // Step 2: DGR confirms details/agenda → customer wraps up
+    if(state.meetingTimeProposed && !state.meetingConfirmed && lower2.match(/perfect|great|sounds good|will do|absolutely|done|confirmed|i'll send|sending|include|agenda|cover|bring/)) {
+      state.meetingConfirmed = true;
+      state.scores.closing += 10;
+      addFeedback('good', "You confirmed the meeting details clearly — the customer knows exactly what to expect.");
+      
+      showTyping();
+      setTimeout(function(){
+        var confirmResponses = [
+          "Great. Looking forward to it. Alright — I need to get back to it. Talk " + (lower2.match(/tuesday/) ? "Tuesday" : "next week") + ". Cheers.",
+          "Perfect. Send that invite over. And hey — good call. You're not like the usual cold callers. Talk soon.",
+          "Sounds good. Alright I'm jumping back into my day. See you then. Bye.",
+          "Done deal. Looking forward to it. Quick question though — before we hang up, anything you need from me before the call?",
+          "Cool. I'll accept when it comes through. Alright — thanks for being respectful of my time. Rare these days. Bye!"
+        ];
+        var resp = pickFrom(confirmResponses);
+        state.conversationHistory.push({role:'customer', text:resp});
+        addMsg('customer', resp);
+        
+        // If they asked a follow-up question, give DGR one more response
+        if(resp.indexOf('?') >= 0) {
+          state.meetingFinalQuestion = true;
+        } else {
+          // End after a moment
+          setTimeout(function(){
+            addMsg('system', '🎉 Meeting booked successfully!');
+            endSim('booked');
+          }, 1500);
+        }
+      }, 800 + Math.random()*500);
+      return;
+    }
+    
+    // Step 3: If customer asked a final question, DGR answers → then end
+    if(state.meetingFinalQuestion) {
+      state.scores.rapport += 5;
+      addFeedback('good', "Answering their final question shows professionalism — great way to end on a high note.");
+      setTimeout(function(){
+        var finalResp = pickFrom([
+          "Perfect — that's all I need. Alright, talk soon. Bye!",
+          "Great, thanks. See you then!",
+          "Appreciate it. Looking forward to it. Cheers!"
+        ]);
+        state.conversationHistory.push({role:'customer', text:finalResp});
+        addMsg('customer', finalResp);
+        setTimeout(function(){
+          addMsg('system', '🎉 Meeting booked successfully!');
+          endSim('booked');
+        }, 1200);
+      }, 600 + Math.random()*400);
+      return;
+    }
+    
+    // If DGR says something not related to booking, nudge them
+    if(state.meetingAccepted && !state.meetingTimeProposed) {
+      showTyping();
+      setTimeout(function(){
+        var nudge = pickFrom([
+          "So... when works for you? I've got Tuesday and Thursday open next week.",
+          "Right — so what time are we thinking? I'd rather lock it in now before my calendar fills up.",
+          "You mentioned a meeting — when did you have in mind? Sooner is better for me."
+        ]);
+        state.conversationHistory.push({role:'customer', text:nudge});
+        addMsg('customer', nudge);
+      }, 700);
       return;
     }
   }
