@@ -898,6 +898,147 @@ function detectContext(text) {
 }
 
 // ===== CONTEXTUAL RESPONSE GENERATOR =====
+
+// ===== DEEP CONTEXTUAL REACTIONS =====
+// These respond directly to what the DGR actually said, word-by-word
+function buildContextualReply(dgrText, contexts, d) {
+  var lower = dgrText.toLowerCase();
+  var cfg = state.cfg;
+  var words = lower.split(/\s+/);
+  
+  // PATTERN: DGR mentions a specific service/product by name
+  if(lower.match(/bedrock/)) {
+    var bedrock = [
+      "Bedrock... yeah I've heard of it. How's it different from just calling the model APIs directly?",
+      "We looked at Bedrock. Honest feedback? The model selection felt limited compared to what we can access ourselves.",
+      "Bedrock is interesting but our team raised concerns about latency. What's the real-world performance like?",
+      "One of my engineers tested Bedrock last quarter. Said it was fine for prototyping but they weren't sure about production scale."
+    ];
+    return pickFrom(bedrock);
+  }
+  if(lower.match(/marketplace|listing/)) {
+    var mp = [
+      "Marketplace... we've thought about it. What's the actual process to get listed? And what volume are other ISVs seeing?",
+      "Our product team looked at marketplace but the revenue share model was a concern. Walk me through the economics.",
+      "How long does onboarding take? We heard it can be months before you're actually live.",
+      "We're already listed on Azure Marketplace. What would AWS Marketplace give us that we don't already have?"
+    ];
+    return pickFrom(mp);
+  }
+  if(lower.match(/sagemaker|sage maker/)) {
+    return "SageMaker... we played with it. Felt heavy for what we need. Isn't there something lighter now?";
+  }
+  if(lower.match(/lambda|serverless/)) {
+    return "We're already on Lambda for some microservices. What else are you proposing beyond what we already use?";
+  }
+  if(lower.match(/connect|contact center/)) {
+    return "Amazon Connect? We're on Genesys right now. What's the migration path look like — and the timeline?";
+  }
+  
+  // PATTERN: DGR mentions a specific outcome/benefit
+  if(lower.match(/faster|speed|accelerat|quick/)) {
+    return "Faster is great but... how much faster? Give me a real number. What did a company like us actually see?";
+  }
+  if(lower.match(/scale|grow|expand/)) {
+    return "Scaling is on our roadmap but honestly we're not there yet. We're still figuring out product-market fit in [new segment]. Is this relevant for companies at our stage?";
+  }
+  if(lower.match(/secure|security|complian|gdpr|hipaa/)) {
+    var sec = [
+      "Security is always top of mind for us. What certifications does this carry? And how does it handle data residency in Europe?",
+      "We're going through an audit right now actually. If you can help with " + pickConcern() + " compliance, I'm interested.",
+      "Our CISO is very particular. What's the shared responsibility model look like for this?"
+    ];
+    return pickFrom(sec);
+  }
+  if(lower.match(/innovat|transform|moderniz/)) {
+    return "Everyone says innovation. What does that actually mean for a " + state.industry + " company with " + cfg.backstory.team + "?";
+  }
+  if(lower.match(/migrat|move|switch/)) {
+    var mig = [
+      "Migration is a big word. We've been burned before — what's the actual disruption to our team during a move?",
+      "How long does migration typically take for a company our size? And what's the risk of downtime?",
+      "We tried migrating one workload last year and it took 3x longer than promised. What's different about your approach?"
+    ];
+    return pickFrom(mig);
+  }
+  
+  // PATTERN: DGR references a competitor or comparison
+  if(lower.match(/better than|compared to|versus|unlike|different from/)) {
+    return "Okay — but that's what everyone says. Can you be more specific? What's the ONE thing where you genuinely have no competition?";
+  }
+  if(lower.match(/other (companies|customers|clients|isv)/)) {
+    return "Which companies? Give me names. Not 'a leading SaaS company' — actual names I can reference.";
+  }
+  
+  // PATTERN: DGR asks permission / uses soft language
+  if(lower.match(/would it (be worth|make sense|be helpful)|mind if|how would you feel|open to/)) {
+    if(state.patience > 50) {
+      return "Depends. What specifically would we cover? I don't want another generic overview — tell me what's in it for us with " + pickConcern() + ".";
+    } else {
+      return "Maybe. But give me a reason first. What specifically would make this worth my time?";
+    }
+  }
+  
+  // PATTERN: DGR mentions their own role/team
+  if(lower.match(/our team|my team|we work with|our specialists|we help|i work with/)) {
+    return "Who specifically would I be talking to? I want to know their background with " + state.industry + " companies. Not a generalist.";
+  }
+  
+  // PATTERN: DGR mentions time/money saved by other customers  
+  if(lower.match(/(saved?|reduced?|cut)\s+\d+/)) {
+    return "Those numbers sound good but... is that a median or a best case? What did the bottom quartile see?";
+  }
+  if(lower.match(/\d+\s*%\s*(faster|cheaper|more|less|reduction|improvement|increase)/)) {
+    return "Percentage improvements are nice but what's the baseline? 30% improvement on a small number is still small.";
+  }
+  
+  // PATTERN: DGR asks about their specific challenges
+  if(lower.match(/what.*challenge|what.*struggle|what.*keeping you up|what.*priority|what.*pain|what.*blocker/)) {
+    // This is a GOOD question — give a substantive answer
+    var answers = [
+      "Honestly? " + pickConcern() + ". It's costing us time and money and we haven't found a good solution yet.",
+      "[pause] That's... actually a good question. " + pickConcern() + " is the big one right now. My team spent all of last sprint on it.",
+      "Where do I start? " + pickConcern() + " is the immediate fire. But longer term, " + cfg.concerns[1] + " is what worries me.",
+      "Biggest challenge right now is " + pickConcern() + ". We've tried a few things but nothing's stuck. Why — do you have something specific for that?"
+    ];
+    return pickFrom(answers);
+  }
+  
+  // PATTERN: DGR asks about their current setup/tools
+  if(lower.match(/what.*using|what.*current|how.*today|tell me about your|what does your.*look like|walk me through/)) {
+    var setup = [
+      "We're on a mix of things honestly. " + cfg.backstory.vendor + ". It works but it's not elegant. Why?",
+      "Right now we're using " + cfg.backstory.vendor + ". It does the job but " + pickConcern() + " is where it falls short.",
+      "Our stack is... evolving. " + cfg.backstory.vendor + " for the core, plus a bunch of smaller tools. What are you getting at?",
+      "We've got about " + cfg.backstory.team + " touching this. Current setup is " + cfg.backstory.vendor + ". What specifically are you comparing to?"
+    ];
+    return pickFrom(setup);
+  }
+  
+  // PATTERN: DGR asks about decision process/timeline
+  if(lower.match(/when.*looking|timeline|decision|who.*involved|who.*decide|evaluate|by when/)) {
+    var decision = [
+      "No fixed timeline honestly. We'll move when the right solution shows up. But I'm not actively evaluating right now.",
+      "Decision would involve me and my " + (cfg.title === 'CTO' ? 'VP of Engineering' : 'technical lead') + ". Board approval needed if it's over $50K annual.",
+      "We review vendor proposals quarterly. Next review is in about 6 weeks. If you want to be in that, you'd need to move fast.",
+      "I can make a call on this myself up to a certain budget. Above that it goes to " + (cfg.title === 'CFO' ? 'the board' : 'finance') + ". What's the investment?"
+    ];
+    return pickFrom(decision);
+  }
+  
+  // PATTERN: DGR uses the customer's name
+  var firstName = cfg.name.split(' ')[0].toLowerCase();
+  if(lower.indexOf(firstName) >= 0 && state.turn > 1) {
+    // Subtle positive reaction — they noticed
+    if(state.patience > 50) {
+      return null; // Let other logic handle it, but the name-use already improved patience
+    }
+  }
+  
+  return null; // No deep match — fall through to category-based responses
+}
+
+
 function generateContextualResponse(dgrText, scoreResult) {
   var contexts = detectContext(dgrText);
   var d = state.difficulty;
@@ -946,6 +1087,10 @@ function generateContextualResponse(dgrText, scoreResult) {
     return pickFrom(customerSpecificResponses);
   }
   
+  // === TRY DEEP CONTEXTUAL REPLY FIRST ===
+  var deepReply = buildContextualReply(dgrText, contexts, d);
+  if(deepReply) return deepReply;
+  
   // Track topics for variety
   contexts.forEach(function(c) { state.topicsMentioned.add(c); });
   
@@ -955,7 +1100,7 @@ function generateContextualResponse(dgrText, scoreResult) {
   }
   
   // === HUMAN BEHAVIOR INTERRUPTION: random chance, once per call ===
-  if(!state.humanBehaviorUsed && state.turn >= 2 && Math.random() < 0.25) {
+  if(!state.humanBehaviorUsed && state.turn >= 4 && Math.random() < 0.08) {
     state.humanBehaviorUsed = true;
     var behavior = pickFrom(CONTEXT_REACTIONS.humanBehaviors);
     // Sometimes after interruption, inject a real "don't call" response on hard mode
