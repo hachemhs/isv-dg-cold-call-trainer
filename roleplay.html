@@ -958,6 +958,28 @@ function sendMsg() {
     
     // If DGR says something not related to booking, nudge them
     if(state.meetingAccepted && !state.meetingTimeProposed) {
+      // Check if DGR is at least trying (mentions any day or time)
+      if(lower2.match(/monday|tuesday|wednesday|thursday|friday|next week|tomorrow|\d+(am|pm)|morning|afternoon/)) {
+        // They proposed a time — accept it
+        state.meetingTimeProposed = true;
+        state.scores.closing += 8;
+        showTyping();
+        setTimeout(function(){
+          var accept = pickFrom([
+            "Works for me. Send the invite and let's go from there. Alright — thanks for calling. Bye!",
+            "Yeah that's fine. Send it over. Looking forward to it. Cheers!",
+            "Done. I'll accept when it comes through. Good call — talk soon."
+          ]);
+          state.conversationHistory.push({role:'customer', text:accept});
+          addMsg('customer', accept);
+          setTimeout(function(){
+            addMsg('system', '🎉 Meeting booked successfully!');
+            endSim('booked');
+          }, 1200);
+        }, 700);
+        return;
+      }
+      // Otherwise nudge
       showTyping();
       setTimeout(function(){
         var nudge = pickFrom([
@@ -968,6 +990,26 @@ function sendMsg() {
         state.conversationHistory.push({role:'customer', text:nudge});
         addMsg('customer', nudge);
       }, 700);
+      return;
+    }
+    
+    // Catch-all: if booking is in progress and DGR confirms anything, wrap up
+    if(state.meetingAccepted && state.meetingTimeProposed && !state.meetingFinalQuestion) {
+      state.scores.closing += 5;
+      showTyping();
+      setTimeout(function(){
+        var wrapUp = pickFrom([
+          "Perfect. See you then. Thanks — good call. Bye!",
+          "Great, looking forward to it. Alright, back to my day. Cheers!",
+          "Sounds good. Send that invite. Talk soon — bye!"
+        ]);
+        state.conversationHistory.push({role:'customer', text:wrapUp});
+        addMsg('customer', wrapUp);
+        setTimeout(function(){
+          addMsg('system', '🎉 Meeting booked successfully!');
+          endSim('booked');
+        }, 1200);
+      }, 600);
       return;
     }
   }
@@ -1228,6 +1270,36 @@ function generateContextualResponse(dgrText, scoreResult) {
   // === TRY DEEP CONTEXTUAL REPLY FIRST ===
   var deepReply = buildContextualReply(dgrText, contexts, d);
   if(deepReply) return deepReply;
+  // === FAST-TRACK: DGR offers specific date/time when customer is engaged ===
+  if(state.patience > 60 && state.turn >= 3 && !state.meetingAccepted) {
+    var hasSpecificTime = lower.match(/(monday|tuesday|wednesday|thursday|friday|next week|tomorrow)\s*(at|around)?\s*(\d{1,2}(am|pm|:\d{2})|morning|afternoon|evening)?/) ||
+                          lower.match(/(\d{1,2}(am|pm|:\d{2}))\s*(on\s*)?(monday|tuesday|wednesday|thursday|friday)/) ||
+                          lower.match(/how about (monday|tuesday|wednesday|thursday|friday|next week)/);
+    if(hasSpecificTime && lower.match(/meet|call|chat|catch up|connect|talk|15 min|20 min|30 min|quick/)) {
+      state.meetingAccepted = true;
+      state.meetingTimeProposed = true;
+      state.scores.closing += 12;
+      addFeedback('good', "You proposed a specific day AND time — this is how top performers close. No ambiguity.");
+      showTyping();
+      setTimeout(function(){
+        var directAccept = [
+          "You know what — yeah, let's do it. " + (lower.match(/tuesday/) ? "Tuesday" : lower.match(/wednesday/) ? "Wednesday" : lower.match(/thursday/) ? "Thursday" : "That day") + " works for me. Send the invite.",
+          "Sure. I can make that work. Keep it tight — 15-20 minutes max. And come with specifics about " + pickConcern() + ".",
+          "[checking calendar] Yeah I'm free then. Let's do it. Send me the invite and include a brief agenda.",
+          "Alright — I'll take the meeting. You've earned it. Send the invite over and I'll confirm.",
+          "Fine — you got me. " + (lower.match(/tuesday/) ? "Tuesday" : lower.match(/wednesday/) ? "Wednesday" : "Next week") + " it is. Don't waste my time though — bring something real.",
+          "Okay. [pause] Yeah. Let's do it. But promise me it's not going to be a product demo. I want a conversation about " + pickConcern() + "."
+        ];
+        var resp = pickFrom(directAccept);
+        state.conversationHistory.push({role:'customer', text:resp});
+        addMsg('customer', resp);
+        // DGR gets one more turn to confirm, then natural end
+        state.meetingConfirmed = false;
+      }, 800 + Math.random()*500);
+      return;
+    }
+  }
+
   
   // Track topics for variety
   contexts.forEach(function(c) { state.topicsMentioned.add(c); });
@@ -1277,7 +1349,7 @@ function generateContextualResponse(dgrText, scoreResult) {
     state.lastCustomerMood = 'warming';
     
     // If DGR is ASKING for the meeting and patience is very high — ACCEPT
-    if(state.patience > 85 && state.turn >= state.maxTurns - 2 && lower.match(/meet|calendar|schedul|15 min|20 min|next week|book|time.*talk|would it (be worth|make sense)|catch up/)) {
+    if(state.patience > 65 && state.turn >= 3 && lower.match(/meet|calendar|schedul|15 min|20 min|next week|book|time.*talk|would it (be worth|make sense)|catch up|tuesday|wednesday|thursday|friday|monday|2pm|3pm|10am|morning|afternoon/)) {
       // Customer agrees! 
       var acceptResponses = [
         "Alright — fine. You've earned it. Send me a calendar invite. 15 minutes, Tuesday or Wednesday works.",
@@ -1309,9 +1381,14 @@ function generateContextualResponse(dgrText, scoreResult) {
     return pickFrom(warmResponses);
   }
   
-  // === MEETING MENTIONED: contextual response about meeting asks ===
+  // === MEETING MENTIONED: if customer is engaged, accept instead of pushing back ===
   if(contexts.includes('mentionsMeeting')) {
-    return pickFromCategory('mentionsMeeting', d);
+    // If patience is high enough, don't push back — let the acceptance logic handle it
+    if(state.patience > 65 && state.turn >= 3) {
+      // Fall through to the warm/acceptance responses below
+    } else {
+      return pickFromCategory('mentionsMeeting', d);
+    }
   }
   
   // === PRIMARY CONTEXT: respond to what they actually talked about ===
