@@ -3162,19 +3162,24 @@ function simulateRing(callback) {
 // ===== GAMIFICATION SYSTEM =====
 // XP, levels, streaks, badges, combo multipliers
 
-var gamification = {
-  xp: parseInt(localStorage.getItem('dg_xp') || '0'),
-  level: parseInt(localStorage.getItem('dg_level') || '1'),
-  streak: parseInt(localStorage.getItem('dg_streak') || '0'),
-  totalCalls: parseInt(localStorage.getItem('dg_calls') || '0'),
-  meetingsBooked: parseInt(localStorage.getItem('dg_meetings') || '0'),
-  bestScore: parseInt(localStorage.getItem('dg_best') || '0'),
-  badges: JSON.parse(localStorage.getItem('dg_badges') || '[]'),
-  lastPlayDate: localStorage.getItem('dg_last_date') || '',
-  comboMultiplier: 1,
-  currentCombo: 0,
-  xpThisCall: 0
-};
+var gamification;
+try {
+  gamification = {
+    xp: parseInt(localStorage.getItem('dg_xp') || '0'),
+    level: parseInt(localStorage.getItem('dg_level') || '1'),
+    streak: parseInt(localStorage.getItem('dg_streak') || '0'),
+    totalCalls: parseInt(localStorage.getItem('dg_calls') || '0'),
+    meetingsBooked: parseInt(localStorage.getItem('dg_meetings') || '0'),
+    bestScore: parseInt(localStorage.getItem('dg_best') || '0'),
+    badges: JSON.parse(localStorage.getItem('dg_badges') || '[]'),
+    lastPlayDate: localStorage.getItem('dg_last_date') || '',
+    comboMultiplier: 1,
+    currentCombo: 0,
+    xpThisCall: 0
+  };
+} catch(e) {
+  gamification = {xp:0,level:1,streak:0,totalCalls:0,meetingsBooked:0,bestScore:0,badges:[],lastPlayDate:'',comboMultiplier:1,currentCombo:0,xpThisCall:0};
+}
 
 // XP per level (increases each level)
 function xpForLevel(level) { return level * 150 + 50; }
@@ -3285,7 +3290,7 @@ function showCombo() {
 
 // Save game state to localStorage
 function saveGameState() {
-  localStorage.setItem('dg_xp', gamification.xp);
+  try { localStorage.setItem('dg_xp', gamification.xp);
   localStorage.setItem('dg_level', gamification.level);
   localStorage.setItem('dg_streak', gamification.streak);
   localStorage.setItem('dg_calls', gamification.totalCalls);
@@ -3293,7 +3298,7 @@ function saveGameState() {
   localStorage.setItem('dg_best', gamification.bestScore);
   localStorage.setItem('dg_badges', JSON.stringify(gamification.badges));
   localStorage.setItem('dg_last_date', new Date().toDateString());
-}
+  } catch(e) {} }
 
 // Update gamification on scoreResponse (hook into existing scoring)
 var originalScoreResponse = typeof scoreResponse === 'function' ? scoreResponse : null;
@@ -3367,7 +3372,7 @@ function renderStatsBar() {
 
 
 // Initialize on load
-document.addEventListener('DOMContentLoaded', function() { renderStatsBar(); if(document.getElementById('rpPersona')) updatePersonaPreview(); });
+document.addEventListener('DOMContentLoaded', function() { try { renderStatsBar(); } catch(e) {} try { if(document.getElementById('rpPersona')) updatePersonaPreview(); } catch(e) {} });
 
 </script>
 </body>
