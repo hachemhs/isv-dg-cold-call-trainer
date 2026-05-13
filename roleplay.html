@@ -1449,8 +1449,24 @@ function sendMsg() {
       addMsg('customer', resp);
       document.getElementById('userInput').focus();
     } catch(e) {
-      // Fallback response if anything crashes
-      var fallback = "Sorry — can you repeat that? I missed something.";
+      // Show error for debugging
+      console.error('Response generation error:', e.message, e.stack);
+      var errBar = document.getElementById('jsErrorBar');
+      if(errBar) { errBar.textContent = 'DEBUG: ' + e.message + ' at ' + (e.stack ? e.stack.split('\n')[1] : 'unknown'); errBar.style.display = 'block'; }
+      
+      // Nuclear fallback — uses ONLY state.persona which is guaranteed
+      var nuclearResponses = {
+        cto: ["Hmm. Okay. And how does this impact my engineering team exactly?","Right. Technical details — give me the specifics.","I'm listening. What's the architecture look like?","We've got technical debt to deal with. How does this help?","My team is stretched thin. Why should I add another vendor?"],
+        cfo: ["What's the ROI on this? Give me numbers.","Budget is allocated for the year. Why should I revisit?","I need to see a business case. What are we talking in savings?","My board wants to see results, not experiments. What's proven?","Cost is one thing. Total cost of ownership is another. Break it down."],
+        ceo: ["How does this help us grow faster than the competition?","I've got investors asking about AI. What's your take?","We need to move fast. How quickly can we see results?","What are companies our size doing with this?","Our competitors are all talking about this. What should I actually DO?"],
+        cio: ["Security first. How does this fit with our compliance requirements?","We're multi-cloud. Where does AWS fit in our strategy?","Governance is my priority. How does this simplify things?","My team supports everything. We can't add complexity.","Data residency is a concern for us. Address that."],
+        aiml: ["We're already using some ML. What's different about your approach?","Models are one thing. Production is another. How do you help with deployment?","We've been burned by AI hype before. What's actually mature?","Training costs are killing us. What's Bedrock's pricing model?","RAG is interesting but we need it to work with our data. How?"],
+        vp_eng: ["My engineers don't have bandwidth for another platform. Convince me.","We're mid-migration already. Why would I add another stream?","Developer experience matters. Is this actually easy to use?","Show me it works at our scale. We're not a startup.","Integration with our existing stack — that's the real question."],
+        head_it: ["We run everything. New tools mean new problems. Why is this different?","Our infrastructure team is lean. What's the maintenance burden?","Uptime is everything. What's your SLA?","We just finished a major rollout. Timing isn't great.","Support when things break at 2am — what does that look like?"],
+        head_digital: ["Digital transformation is a buzzword. What's the actual impact?","We're 18 months into our roadmap. Where does this fit?","I report to the CEO. Give me something boardroom-ready.","Change management is the hard part. How do you help with adoption?","We need quick wins. What can we show in 90 days?"]
+      };
+      var personaPool = nuclearResponses[state.persona] || nuclearResponses.cto;
+      var fallback = personaPool[Math.floor(Math.random() * personaPool.length)];
       state.conversationHistory.push({role:'customer', text:fallback});
       addMsg('customer', fallback);
       document.getElementById('userInput').focus();
@@ -2058,105 +2074,145 @@ function generateContextualResponse(dgrText, scoreResult) {
 
 
   
-  // === GUARANTEED RESPONSE SYSTEM ===
-  // Simple, reliable fallback that ALWAYS produces a relevant answer
-  // based on the customer's persona and what DGR said
+  // === GUARANTEED RESPONSE SYSTEM (BULLETPROOF) ===
+  // Safe accessor — never crashes regardless of input
+  function safe(obj, key, fallback) {
+    try { 
+      if(!obj || obj[key] === undefined || obj[key] === null) return fallback || '';
+      return String(obj[key]);
+    } catch(e) { return fallback || ''; }
+  }
+  function safeArr(obj, key, idx) {
+    try {
+      if(!obj || !obj[key] || !Array.isArray(obj[key])) return '';
+      return obj[key][idx || 0] || '';
+    } catch(e) { return ''; }
+  }
   
   var simpleResponse = null;
-  var company = cfg.company || {};
-  var persona = state.persona;
+  var company = (cfg && cfg.company && typeof cfg.company === 'object') ? cfg.company : {};
+  var companyName = safe(company, 'name', 'our company');
+  var companyIndustry = safe(company, 'industry', '');
+  var companySize = safe(company, 'size', '');
+  var companyTech = safe(company, 'techStack', '');
+  var companyFirstTech = companyTech ? companyTech.split(',')[0].trim() : '';
+  var companyPriority = safeArr(company, 'priorities', 0);
+  var companyPain = safe(company, 'painPoints', '');
+  var companyFirstPain = companyPain ? companyPain.split('.')[0].trim() : '';
+  var companyBudget = safe(company, 'budget', '');
+  var companyFuture = safe(company, 'futurePlans', '');
+  var companyCompetitors = safe(company, 'competitors', '');
+  var companyRecent = safe(company, 'recentDecisions', '');
   
-  // Build a contextual response based on keywords in DGR's message
-  if(lower.match(/hi|hello|hey|good morning|good afternoon|calling from/)) {
+  // Build contextual response based on DGR's message keywords
+  if(lower.match(/^(hi|hello|hey|good morning|good afternoon|calling from|this is|my name)/)) {
     simpleResponse = pickFrom([
       "Yeah, go on. What's this about?",
       "Okay. You've got about 2 minutes. What do you want?",
       "Right. And what's this regarding exactly?",
-      "Mm-hmm. I'm listening. Briefly."
+      "Mm-hmm. I'm listening. Briefly.",
+      "Sure. What do you need?"
     ]);
   }
-  else if(lower.match(/how are you|how's your day|how's it going/)) {
+  else if(lower.match(/how are you|how's your day|how's it going|hope you're well/)) {
     simpleResponse = pickFrom([
       "Busy. What's this about?",
       "Fine. Look — what do you need? I'm in between things.",
-      "Good, thanks. But I know this isn't a social call. What's up?"
+      "Good, thanks. But I know this isn't a social call. What's up?",
+      "Can't complain. But I'm guessing you didn't call to ask about my day. Go on."
     ]);
   }
-  else if(lower.match(/aws|amazon|cloud/)) {
+  else if(lower.match(/aws|amazon web|cloud/)) {
     simpleResponse = pickFrom([
-      "AWS. Right. We " + (company.techStack ? "use " + company.techStack.split(',')[0] + " currently" : "have some cloud already") + ". What specifically?",
+      "AWS. Right. " + (companyFirstTech ? "We use " + companyFirstTech + " currently." : "We have some cloud already.") + " What specifically?",
       "Okay, cloud stuff. What's the angle here? What are you actually offering?",
-      "Yeah we know AWS exists. [laughs] What's the specific reason for the call?",
-      "We're " + (company.techStack ? "on " + company.techStack.split(',')[0] : "already in the cloud") + ". What would change?"
+      "Yeah we know AWS exists. What's the specific reason for the call?",
+      (companyFirstTech ? "We're on " + companyFirstTech + "." : "We're already in the cloud.") + " What would change?",
+      "Another AWS call. Okay — you've got 30 seconds to tell me something the last person didn't."
     ]);
   }
-  else if(lower.match(/ai|genai|machine learning|bedrock|agent/)) {
+  else if(lower.match(/ai|genai|machine learning|bedrock|agent|artificial intel/)) {
     simpleResponse = pickFrom([
       "AI. Everyone's talking about AI. What's YOUR angle that's different from the last 5 people who called?",
-      "Okay — AI. We've been looking at this. " + (company.priorities ? "Our focus is " + company.priorities[0] + " though." : "But what specifically?"),
-      "GenAI — yeah, we're exploring. " + (company.painPoints ? company.painPoints.split('.')[0] + ". Can you help with THAT?" : "What's the practical application?"),
-      "Interesting. We're cautious about AI. What's the ROI look like realistically?"
+      "Okay — AI. We've been looking at this. " + (companyPriority ? "Our focus is " + companyPriority + " though." : "But what specifically?"),
+      (companyFirstPain ? companyFirstPain + ". Can you help with THAT?" : "What's the practical application?"),
+      "Interesting. We're cautious about AI hype. What's the ROI look like realistically?",
+      "GenAI — heard it all. Give me something concrete, not another pitch about transformation."
     ]);
   }
-  else if(lower.match(/meeting|calendar|15 min|quick call|demo|schedule/)) {
+  else if(lower.match(/meeting|calendar|15 min|quick call|demo|schedule|catch up|slot/)) {
     if(state.patience > 55 && state.turn >= 3) {
       simpleResponse = pickFrom([
         "Hmm. Maybe. What would we actually cover in that time?",
         "15 minutes? What specifically would you show me that I can't read in an email?",
-        "I might be open to that. " + (company.priorities ? "But it needs to be about " + company.priorities[0] + ". Not a generic overview." : "But make it specific to us."),
-        "Tell you what — send me a calendar invite for next week. If something comes up I might reschedule but... tentatively yes."
+        (companyPriority ? "But it needs to be about " + companyPriority + ". Not a generic overview." : "But make it specific to us."),
+        "Tell you what — send me a calendar invite for next week. Tentatively yes.",
+        "Alright. But if it's a generic deck, I'm dropping after 5 minutes. Deal?"
       ]);
     } else {
       simpleResponse = pickFrom([
         "A meeting? We've barely talked. Slow down — tell me WHY first.",
         "You haven't earned that yet. What's the value? Give me a reason.",
         "No meeting. Not yet. You haven't said anything that makes me want to give you more time.",
-        "Let's not jump to meetings. What problem are you solving for me?"
+        "Let's not jump to meetings. What problem are you solving for me?",
+        "Pump the brakes. We're not there yet. Tell me what's in it for me."
       ]);
     }
   }
-  else if(lower.match(/cost|save|roi|budget|price|cheaper|reduce spend/)) {
+  else if(lower.match(/cost|save|roi|budget|price|cheaper|reduce spend|money/)) {
     simpleResponse = pickFrom([
-      (company.budget ? company.budget.split('.')[0] + ". That's our reality." : "Budget's tight.") + " What kind of savings are we talking?",
-      "ROI is the only language I speak. Give me numbers — not percentages, actual numbers for a company our size.",
-      "Cost savings from what baseline? We'd need to compare apples to apples here.",
-      "Everyone promises savings. " + (company.recentDecisions ? "We " + company.recentDecisions.split('.')[0].toLowerCase() + " recently." : "What's different about your claim?")
+      (companyBudget ? companyBudget.split('.')[0] + ". That's our reality." : "Budget's tight.") + " What kind of savings are we talking?",
+      "ROI is the only language I speak. Give me numbers — actual numbers for a company our size.",
+      "Cost savings from what baseline? We'd need to compare apples to apples.",
+      "Everyone promises savings. What's different about your claim?",
+      "Money talk — okay. But I need specifics, not percentages from a case study I can't verify."
     ]);
   }
   else if(lower.match(/competitor|azure|gcp|google|microsoft/)) {
     simpleResponse = pickFrom([
-      (company.competitors ? "We compete with " + company.competitors.split(',')[0] + ". But on cloud — " : "") + "what's AWS doing that [competitor] isn't?",
-      "We've looked at alternatives. Convince me you're better for " + (company.industry ? company.industry.split('—')[0] : "our use case") + ".",
-      "Every cloud vendor says they're the best. What's genuinely unique about your proposition?",
-      "We have a relationship with " + (cfg.backstory.vendor || "another provider") + ". Why would I switch?"
+      (companyCompetitors ? "We compete with " + companyCompetitors.split(',')[0].trim() + ". But on cloud — " : "") + "what's AWS doing that others aren't?",
+      "We've looked at alternatives. Convince me you're better for our use case.",
+      "Every cloud vendor says they're the best. What's genuinely unique?",
+      "We have a relationship with another provider. Why would I switch?",
+      "Vendor comparison is exhausting. Give me ONE thing that's clearly better. Just one."
+    ]);
+  }
+  else if(lower.match(/security|compliance|gdpr|data protect|encrypt|regulat/)) {
+    simpleResponse = pickFrom([
+      "Security is non-negotiable for us. What certifications do you have?",
+      "GDPR compliance — how do you handle data residency in Europe specifically?",
+      "Our CISO would need to sign off. What's the security posture?",
+      "Compliance is where cloud conversations get killed. How do you handle [our industry] regulations?",
+      "Before we go further — where does our data physically sit? And who has access?"
     ]);
   }
   else if(lower.indexOf('?') >= 0) {
-    // DGR asked a question - answer it using company context
+    // DGR asked a good question — reward with a real answer
     simpleResponse = pickFrom([
-      (company.painPoints ? company.painPoints.split('.')[0] + ". " : "") + "That's the honest answer.",
-      "Good question. " + (company.priorities ? "Our main focus is " + company.priorities[0] + "." : "Let me think... we're focused on growth right now."),
-      (company.futurePlans ? company.futurePlans.split('.')[0] + ". " : "") + "Does that help frame things?",
-      "Honestly? " + (company.painPoints ? company.painPoints.split('.')[Math.min(1, (company.painPoints.split('.').length-1))] : "We're trying to do more with less") + ".",
-      (company.size ? "We're " + company.size.split(',')[0] + ". " : "") + (company.priorities ? company.priorities[Math.floor(Math.random()*company.priorities.length)] + " is top of mind." : "Let me think about that.")
+      (companyFirstPain ? companyFirstPain + ". " : "") + "That's the honest answer.",
+      "Good question. " + (companyPriority ? "Our main focus is " + companyPriority + "." : "We're focused on growth right now."),
+      (companyFuture ? companyFuture.split('.')[0] + ". " : "") + "Does that help frame things?",
+      "Honestly? " + (companyFirstPain ? companyFirstPain : "We're trying to do more with less") + ".",
+      (companySize ? "We're " + companySize.split(',')[0] + ". " : "") + (companyPriority ? companyPriority + " is top of mind." : "Scaling is top of mind."),
+      "Fair question. Let me think... " + (companyFirstPain ? companyFirstPain + ". That's what keeps me up at night." : "We need to move faster. That's the honest answer.")
     ]);
   }
   else {
-    // Generic conversational responses with company context
+    // Generic but still contextual
     simpleResponse = pickFrom([
-      "Okay. " + (company.painPoints ? "Look, our real problem is " + company.painPoints.split('.')[0].toLowerCase() + ". If you can help with that, I'll listen." : "What's the actual value here?"),
-      "Mm-hmm. " + (state.turn > 2 ? "I'm still not sure what you're offering ME specifically." : "Go on."),
-      "Right. " + (company.priorities ? "How does this help with " + company.priorities[0].toLowerCase() + "? Because that's all I care about right now." : "And how does this apply to us?"),
-      (state.patience > 60 ? "Okay I'm listening. " : "Look — ") + (company.recentDecisions ? "We just " + company.recentDecisions.split('.')[0].toLowerCase() + ". Where does this fit?" : "What's the bottom line?"),
-      "That's interesting in theory. " + (company.size ? "For a " + company.size.split(',')[0].toLowerCase() + " company" : "For us") + " — what does it look like in practice?",
-      (company.futurePlans ? "We're trying to " + company.futurePlans.split('.')[0].toLowerCase() + ". " : "") + "Does what you're saying connect to that or is it separate?"
+      "Okay. " + (companyFirstPain ? "Look, our real problem is " + companyFirstPain.toLowerCase() + ". If you can help with that, I'll listen." : "What's the actual value here for us?"),
+      "Mm-hmm. " + (state.turn > 2 ? "I'm still not sure what you're offering ME specifically." : "Go on. I'm listening."),
+      "Right. " + (companyPriority ? "How does this help with " + companyPriority.toLowerCase() + "? That's all I care about right now." : "And how does this apply to us specifically?"),
+      (state.patience > 60 ? "Okay I'm listening. " : "Look — ") + (companyRecent ? "We just " + companyRecent.split('.')[0].toLowerCase() + ". Where does this fit?" : "What's the bottom line?"),
+      "That's interesting in theory. " + (companySize ? "For a " + companySize.split(',')[0].toLowerCase() + " company" : "For us") + " — what does it look like in practice?",
+      (companyFuture ? "We're planning to " + companyFuture.split('.')[0].toLowerCase() + ". " : "") + "Does what you're saying connect to that?"
     ]);
   }
   
-  // Use simple response as guaranteed fallback — complex system can override
   // This ensures something ALWAYS gets returned
   
 
+    try {
   // === REPETITION DETECTION — Customer calls out repeated questions/topics ===
   
   // Track DGR's topics per turn
@@ -2240,6 +2296,12 @@ function generateContextualResponse(dgrText, scoreResult) {
     }
   }
 
+  try {
+    } catch(repErr) {
+    // Repetition detection failed — skip it
+    if(typeof console !== 'undefined') console.error('Repetition detection error:', repErr.message);
+  }
+  
 // ===== CONVERSATION FLOW ENGINE — Human-style contextual interactions =====
   // Tracks conversation arc and generates responses that feel like a real human thinking in real-time
   
@@ -2834,9 +2896,13 @@ function generateContextualResponse(dgrText, scoreResult) {
     }
   }
   
-  // Try complex system first, fall back to simple guaranteed response
-  var complexResp = pickFromCategory('generic', d);
-  return complexResp || simpleResponse || "Mm-hmm. Tell me more about how that applies to us.";
+    } catch(complexErr) {
+    // Complex system failed — fall through to simpleResponse below
+    if(typeof console !== 'undefined') console.error('Complex response system error:', complexErr.message);
+  }
+  
+  // Simple response is our guaranteed answer
+  return simpleResponse || "Mm-hmm. Tell me more about how that applies to us.";
 }
 
 function pickFromCategory(category, difficulty) {
