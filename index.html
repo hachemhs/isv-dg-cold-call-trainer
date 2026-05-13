@@ -34,9 +34,308 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --aws-orange: #FF9900;
   --aws-dark: #232F3E;
+// ============================================
+// ROLEPLAY SIMULATION ENGINE
+// ============================================
+let rpState = { active: false, turn: 0, maxTurns: 7, patience: 100, rapportScore: 50, messages: [], scores: { rapport: 0, objection: 0, discovery: 0, closing: 0 }, feedback: { positive: [], improve: [] }, difficulty: 'medium', persona: 'cto', industry: 'saas', objective: 'discovery' };
+
+const PERSONA_CONFIG = {
+  cto: { name: 'Alex Chen', title: 'CTO', greetings: ["Yeah? Alex speaking.", "Hello, who's this?", "Alex Chen, make it quick."], style: 'technical', concerns: ['architecture', 'engineering bandwidth', 'technical debt', 'integration effort'] },
+  cfo: { name: 'Sarah Mitchell', title: 'CFO', greetings: ["Sarah Mitchell's office.", "Yes? Who am I speaking with?", "Mitchell here, go ahead."], style: 'financial', concerns: ['ROI', 'budget cycle', 'cost justification', 'payback period'] },
+  ceo: { name: 'James Park', title: 'CEO & Founder', greetings: ["James here, you have 30 seconds.", "Park speaking — who is this?", "Yeah? I'm between meetings."], style: 'strategic', concerns: ['competitive advantage', 'revenue growth', 'time investment', 'strategic fit'] },
+  cio: { name: 'Maria Santos', title: 'CIO', greetings: ["Maria Santos, IT. How can I help?", "Santos here. What's this regarding?", "Yes, who's calling?"], style: 'operational', concerns: ['security', 'compliance', 'vendor management', 'implementation risk'] }
+};
+
+const OBJECTION_SEQUENCES = {
+  easy: [
+    ["I'm a bit busy right now, can you call back?", "What exactly does this do for us?", "Hmm, interesting. But I'd need to think about it.", "Alright, send me a calendar invite."],
+    ["We're pretty happy with what we have.", "I suppose there's no harm in hearing more.", "How long would this take?", "OK, let's set something up."],
+    ["I wasn't expecting a call. What's this about?", "I've heard of AWS but we haven't explored it.", "What would a conversation look like?", "Sure, I can do 15 minutes."]
+  ],
+  medium: [
+    ["I'm not interested, we're all set.", "Look, we already have a provider for this.", "I don't see how this is different from what we have.", "Fine — but if this is a waste of time, I'm out.", "Send me something first and we'll see."],
+    ["Who? AWS? No thanks, we're on Azure.", "Our current setup works fine. Why would we change?", "I've heard this pitch before. What's actually different?", "I don't have time for another vendor meeting.", "You have 2 minutes to convince me."],
+    ["Now's really not a good time.", "We don't have budget for anything new this quarter.", "My team is maxed out — we can't take on more.", "How do I know this isn't just another sales pitch?", "What's the absolute minimum time commitment?"]
+  ],
+  hard: [
+    ["Don't know you, don't care. We're not buying anything.", "I said no. How many times do I need to say it?", "You're wasting my time. I'm hanging up.", "Listen, I get 20 of these calls a day. Why should I care?", "Prove to me in 10 seconds why I shouldn't hang up.", "Still not convinced. Goodbye."],
+    ["*sigh* Another cold call. Make it fast or I'm gone.", "We signed a 3-year deal with Microsoft last month. Not interested.", "My board would never approve switching. It's a non-starter.", "You don't know anything about our business. Why would I trust you?", "I'm going to be honest — I'm about to hang up.", "Last chance. Ten seconds."],
+    ["No.", "I said no. What part of no is confusing?", "We evaluated AWS two years ago and chose not to go with you.", "Things haven't changed. Same answer.", "OK you've got guts, I'll give you that. But the answer is still no.", "Fine. Send me ONE page. That's it."]
+  ]
+};
+
+function startRoleplay() {
+  const industry = document.getElementById('rpIndustry').value;
+  const persona = document.getElementById('rpPersona').value;
+  const difficulty = document.getElementById('rpDifficulty').value;
+  const objective = document.getElementById('rpObjective').value;
+
+  rpState = { active: true, turn: 0, maxTurns: difficulty === 'easy' ? 6 : difficulty === 'hard' ? 8 : 7, patience: difficulty === 'easy' ? 100 : difficulty === 'hard' ? 60 : 80, rapportScore: difficulty === 'easy' ? 40 : difficulty === 'hard' ? 10 : 25, messages: [], scores: { rapport: 0, objection: 0, discovery: 0, closing: 0 }, feedback: { positive: [], improve: [] }, difficulty, persona, industry, objective };
+
+  const config = PERSONA_CONFIG[persona];
+  const greeting = config.greetings[Math.floor(Math.random() * config.greetings.length)];
+
+  document.getElementById('rpSetup').style.display = 'none';
+  document.getElementById('rpScorecard').style.display = 'none';
+  const chatEl = document.getElementById('rpChat');
+  chatEl.style.display = 'block';
+
+  chatEl.innerHTML = `
+    <div class="chat-header">
+      <div class="persona-avatar">${config.name.charAt(0)}</div>
+      <div class="call-info"><div class="name">${config.name}</div><div class="role">${config.title} · ${industry.charAt(0).toUpperCase()+industry.slice(1)} · ${difficulty.toUpperCase()}</div></div>
+      <div style="text-align:right"><div style="font-size:10px;opacity:0.6;margin-bottom:3px">Patience</div><div class="patience-bar"><div class="patience-fill" id="rpPatienceFill" style="width:${rpState.patience}%"></div></div></div>
+    </div>
+    <div class="chat-messages" id="rpMessages"></div>
+    <div class="chat-input-area">
+      <textarea id="rpInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRpMessage()}"></textarea>
+      <button class="send-btn" id="rpSendBtn" onclick="sendRpMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+  `;
+
+  addChatMessage('customer', greeting);
+  rpState.turn = 1;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+function addChatMessage(type, text) {
+  const msgEl = document.getElementById('rpMessages');
+  const config = PERSONA_CONFIG[rpState.persona];
+  const senderLabel = type === 'customer' ? config.name : 'You';
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${type === 'customer' ? 'customer' : 'dg'}`;
+  bubble.innerHTML = `<div class="sender">${senderLabel}</div>${text}`;
+  msgEl.appendChild(bubble);
+  msgEl.scrollTop = msgEl.scrollHeight;
+  rpState.messages.push({ type, text });
+}
+
+function sendRpMessage() {
+  const input = document.getElementById('rpInput');
+  const text = input.value.trim();
+  if (!text || !rpState.active) return;
+
+  addChatMessage('dg', text);
+  input.value = '';
+
+  // Score the DG response
+  const turnScore = scoreDgResponse(text);
+  rpState.rapportScore = Math.min(100, Math.max(0, rpState.rapportScore + turnScore));
+
+  // Update patience
+  updatePatience(turnScore);
+
+  rpState.turn++;
+
+  // Check if simulation should end
+  if (rpState.patience <= 0) {
+    setTimeout(() => { addChatMessage('customer', "I'm done. Goodbye. *click*"); endRoleplay('fail'); }, 1200);
+    return;
+  }
+  if (rpState.turn > rpState.maxTurns) {
+    setTimeout(() => decideOutcome(), 1200);
+    return;
+  }
+
+  // AI customer responds
+  document.getElementById('rpSendBtn').disabled = true;
+  setTimeout(() => {
+    const response = generateCustomerResponse(text);
+    addChatMessage('customer', response);
+    document.getElementById('rpSendBtn').disabled = false;
+    document.getElementById('rpInput').focus();
+  }, 1000 + Math.random() * 800);
+}
+
+function scoreDgResponse(text) {
+  let score = 0;
+  const lower = text.toLowerCase();
+
+  // Positive signals
+  if (text.includes('?')) { score += 15; rpState.scores.discovery += 6; }
+  if (lower.match(/understand|fair|makes sense|hear you|get it|appreciate|totally|completely/)) { score += 10; rpState.scores.rapport += 6; rpState.feedback.positive.push('Good acknowledgement — validates the prospect before responding'); }
+  if (lower.match(/percent|%|customers|companies like|data shows|research|report|gartner/)) { score += 10; rpState.scores.objection += 5; rpState.feedback.positive.push('Strong use of data and social proof'); }
+  if (lower.match(/15 minutes|20 minutes|quick call|brief|short call|just.*minutes|no commitment/)) { score += 10; rpState.scores.closing += 7; rpState.feedback.positive.push('Good low-friction meeting ask — makes it easy to say yes'); }
+  if (lower.includes(rpState.industry) || lower.match(/your space|your industry|companies like yours/)) { score += 5; rpState.scores.rapport += 3; }
+  if (lower.match(/roi|save|reduce|increase|grow|revenue|cost|efficiency/)) { score += 5; rpState.scores.objection += 3; }
+
+  // Negative signals
+  if (text.length > 200 && !text.includes('?')) { score -= 10; rpState.scores.closing -= 3; rpState.feedback.improve.push('Response was too long without a question — keep it under 30 seconds and always end with a question'); }
+  if (lower.match(/you need to|you should|you must|have to|you're missing out/)) { score -= 15; rpState.scores.rapport -= 5; rpState.feedback.improve.push('Avoid pushy language — reframe as questions instead of directives'); }
+  if (text.length < 20 || lower.match(/^(ok|sure|right|yeah|yes|no|hmm)\.?$/)) { score -= 10; rpState.scores.rapport -= 3; rpState.feedback.improve.push('Response was too short/generic — add value or ask a specific question'); }
+  if (!text.includes('?') && rpState.turn > 2) { score -= 5; rpState.scores.discovery -= 2; }
+
+  return score;
+}
+
+function updatePatience(turnScore) {
+  if (turnScore > 10) rpState.patience = Math.min(100, rpState.patience + 5);
+  else if (turnScore < -5) rpState.patience -= (rpState.difficulty === 'hard' ? 20 : rpState.difficulty === 'medium' ? 15 : 10);
+  else rpState.patience -= (rpState.difficulty === 'hard' ? 10 : rpState.difficulty === 'medium' ? 5 : 2);
+
+  const fill = document.getElementById('rpPatienceFill');
+  if (fill) {
+    fill.style.width = rpState.patience + '%';
+    fill.style.background = rpState.patience > 60 ? 'var(--color-success)' : rpState.patience > 30 ? 'var(--color-warning)' : 'var(--color-error)';
+  }
+}
+
+function generateCustomerResponse(dgText) {
+  const seqs = OBJECTION_SEQUENCES[rpState.difficulty];
+  const seq = seqs[Math.floor(Math.random() * seqs.length)];
+  const objIdx = Math.min(rpState.turn - 1, seq.length - 1);
+
+  // Adjust response based on rapport score
+  if (rpState.rapportScore > 70 && rpState.turn >= rpState.maxTurns - 1) {
+    const positives = [
+      "OK fine, you've earned 15 minutes. When were you thinking?",
+      "Alright, I'll give you a shot. Send me a calendar invite.",
+      "You know what, you're different from the usual calls. Let's talk.",
+      "I'm slightly intrigued. Set something up for next week."
+    ];
+    return positives[Math.floor(Math.random() * positives.length)];
+  }
+
+  if (rpState.rapportScore > 50 && rpState.turn >= rpState.maxTurns - 2) {
+    const softening = [
+      "Hmm, you make a fair point. But I'd need to see something concrete first.",
+      "Interesting. I'm not committing to anything, but tell me more about that last point.",
+      "OK that's different from what I expected. How long would this actually take?",
+    ];
+    return softening[Math.floor(Math.random() * softening.length)];
+  }
+
+  // Persona-specific flavor
+  const config = PERSONA_CONFIG[rpState.persona];
+  let baseResponse = seq[objIdx];
+
+  if (rpState.persona === 'cto' && rpState.turn === 3 && rpState.rapportScore > 30) {
+    baseResponse = "What's the actual technical integration look like? We don't have bandwidth for a 6-month project.";
+  } else if (rpState.persona === 'cfo' && rpState.turn === 3 && rpState.rapportScore > 30) {
+    baseResponse = "What kind of ROI are we talking? Give me real numbers, not marketing fluff.";
+  } else if (rpState.persona === 'ceo' && rpState.turn === 3 && rpState.rapportScore > 30) {
+    baseResponse = "Get to the point — how does this move the needle on revenue?";
+  }
+
+  return baseResponse;
+}
+
+function decideOutcome() {
+  if (rpState.rapportScore >= 65) {
+    addChatMessage('customer', "Alright, you've got my attention. Set up 20 minutes next week — but it better be good.");
+    endRoleplay('success');
+  } else if (rpState.rapportScore >= 40) {
+    addChatMessage('customer', "Look, send me a one-pager. If it's relevant, I'll consider a call. No promises.");
+    endRoleplay('partial');
+  } else {
+    addChatMessage('customer', "I appreciate the effort, but this isn't for us. Good luck. *click*");
+    endRoleplay('fail');
+  }
+}
+
+function endRoleplay(outcome) {
+  rpState.active = false;
+  const sendBtn = document.getElementById('rpSendBtn');
+  if (sendBtn) sendBtn.disabled = true;
+  const input = document.getElementById('rpInput');
+  if (input) input.disabled = true;
+
+  // Calculate final scores
+  const maxPerCat = 25;
+  const s = rpState.scores;
+  s.rapport = Math.max(0, Math.min(maxPerCat, 12 + s.rapport));
+  s.objection = Math.max(0, Math.min(maxPerCat, 10 + s.objection));
+  s.discovery = Math.max(0, Math.min(maxPerCat, 8 + s.discovery));
+  s.closing = Math.max(0, Math.min(maxPerCat, 8 + s.closing));
+
+  // Bonus for outcome
+  if (outcome === 'success') { s.closing = Math.min(25, s.closing + 8); s.rapport = Math.min(25, s.rapport + 4); }
+  else if (outcome === 'partial') { s.closing = Math.min(25, s.closing + 3); }
+
+  const total = s.rapport + s.objection + s.discovery + s.closing;
+
+  // Default feedback if none accumulated
+  if (rpState.feedback.positive.length === 0) rpState.feedback.positive.push('You stayed on the call and kept trying — persistence matters');
+  if (rpState.feedback.improve.length === 0) rpState.feedback.improve.push('Try the PACRA method: Pause → Acknowledge → Clarify → Reframe → Advance');
+
+  // Additional contextual feedback
+  if (s.discovery < 12) rpState.feedback.improve.push('Ask more open-ended discovery questions to understand their world before pitching');
+  if (s.rapport > 18) rpState.feedback.positive.push('Excellent rapport building — you made the prospect feel heard');
+  if (s.closing > 18) rpState.feedback.positive.push('Strong close technique — low-friction ask that made it easy to say yes');
+  if (s.objection < 10) rpState.feedback.improve.push('When facing objections, acknowledge first, then ask a clarifying question before reframing');
+
+  // Deduplicate feedback
+  rpState.feedback.positive = [...new Set(rpState.feedback.positive)].slice(0, 4);
+  rpState.feedback.improve = [...new Set(rpState.feedback.improve)].slice(0, 4);
+
+  setTimeout(() => renderScorecard(total, outcome), 1500);
+}
+
+function renderScorecard(total, outcome) {
+  document.getElementById('rpChat').style.display = 'none';
+  const el = document.getElementById('rpScorecard');
+  el.style.display = 'block';
+
+  const s = rpState.scores;
+  const scoreColor = total >= 70 ? 'var(--color-success)' : total >= 50 ? 'var(--color-warning)' : 'var(--color-error)';
+  const outcomeLabel = outcome === 'success' ? '✅ Meeting Booked!' : outcome === 'partial' ? '⚠️ Partial Success — Send Info' : '❌ Call Lost';
+  const outcomeClass = outcome === 'success' ? 'outcome-success' : outcome === 'partial' ? 'outcome-partial' : 'outcome-fail';
+
+  function barColor(val) { return val >= 18 ? 'var(--color-success)' : val >= 12 ? 'var(--color-warning)' : 'var(--color-error)'; }
+
+  el.innerHTML = `
+    <div class="scorecard-header">
+      <div class="overall-score" style="color:${scoreColor}">${total}</div>
+      <div class="score-label">out of 100</div>
+      <div class="outcome-badge ${outcomeClass}">${outcomeLabel}</div>
+    </div>
+
+    <div class="score-breakdown">
+      <div class="score-item">
+        <div class="score-item-label">Rapport Building</div>
+        <div class="score-item-value" style="color:${barColor(s.rapport)}">${s.rapport}/25</div>
+        <div class="score-item-bar"><div class="score-item-bar-fill" style="width:${(s.rapport/25)*100}%;background:${barColor(s.rapport)}"></div></div>
+      </div>
+      <div class="score-item">
+        <div class="score-item-label">Objection Handling</div>
+        <div class="score-item-value" style="color:${barColor(s.objection)}">${s.objection}/25</div>
+        <div class="score-item-bar"><div class="score-item-bar-fill" style="width:${(s.objection/25)*100}%;background:${barColor(s.objection)}"></div></div>
+      </div>
+      <div class="score-item">
+        <div class="score-item-label">Discovery Questions</div>
+        <div class="score-item-value" style="color:${barColor(s.discovery)}">${s.discovery}/25</div>
+        <div class="score-item-bar"><div class="score-item-bar-fill" style="width:${(s.discovery/25)*100}%;background:${barColor(s.discovery)}"></div></div>
+      </div>
+      <div class="score-item">
+        <div class="score-item-label">Call Control & Close</div>
+        <div class="score-item-value" style="color:${barColor(s.closing)}">${s.closing}/25</div>
+        <div class="score-item-bar"><div class="score-item-bar-fill" style="width:${(s.closing/25)*100}%;background:${barColor(s.closing)}"></div></div>
+      </div>
+    </div>
+
+    <div class="feedback-section">
+      <h4><i class="fa-solid fa-check-circle" style="color:var(--color-success)"></i> What you did well</h4>
+      <div class="feedback-cards">
+        ${rpState.feedback.positive.map(f => `<div class="feedback-card positive">${f}</div>`).join('')}
+      </div>
+    </div>
+
+    <div class="feedback-section">
+      <h4><i class="fa-solid fa-lightbulb" style="color:var(--color-warning)"></i> Areas to improve</h4>
+      <div class="feedback-cards">
+        ${rpState.feedback.improve.map(f => `<div class="feedback-card improve">${f}</div>`).join('')}
+      </div>
+    </div>
+
+    <button class="btn-try-again" onclick="resetRoleplay()"><i class="fa-solid fa-rotate"></i> Try Again</button>
+  `;
+}
+
+function resetRoleplay() {
+  document.getElementById('rpSetup').style.display = 'block';
+  document.getElementById('rpChat').style.display = 'none';
+  document.getElementById('rpScorecard').style.display = 'none';
+}
+
 
 body {
   font-family: var(--font-sans);
@@ -729,6 +1028,100 @@ body {
   background: var(--color-primary-light);
 }
 
+/* Roleplay Simulation */
+.roleplay-container { max-width: 700px; margin: 0 auto; }
+
+.roleplay-setup {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.roleplay-setup h3 { font-size: 18px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+.roleplay-setup .subtitle { font-size: 13px; color: var(--color-text-muted); margin-bottom: 20px; }
+.roleplay-setup .instructions { font-size: 12px; background: var(--color-info-light); color: var(--color-text-secondary); padding: 12px; border-radius: var(--radius-md); margin-bottom: 20px; line-height: 1.6; }
+
+.rp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+.btn-start-sim {
+  width: 100%; padding: 14px; background: var(--color-success); color: white; border: none;
+  border-radius: var(--radius-md); font-size: 15px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px;
+  transition: all 0.15s;
+}
+.btn-start-sim:hover { background: #2d9e6e; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+/* Chat UI */
+.chat-container {
+  background: var(--color-bg-secondary); border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);
+}
+
+.chat-header {
+  background: var(--aws-dark); color: white; padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px; font-size: 13px;
+}
+.chat-header .persona-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--aws-orange);
+  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;
+}
+.chat-header .call-info { flex: 1; }
+.chat-header .call-info .name { font-weight: 600; }
+.chat-header .call-info .role { font-size: 11px; opacity: 0.7; }
+.chat-header .patience-bar { width: 80px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+.chat-header .patience-fill { height: 100%; background: var(--color-success); transition: width 0.5s, background 0.5s; border-radius: 3px; }
+
+.chat-messages { padding: 16px; min-height: 300px; max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+.chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; animation: fadeIn 0.3s; }
+.chat-bubble.customer { background: var(--color-bg); border: 1px solid var(--color-border-light); align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-bubble.dg { background: var(--color-primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.chat-bubble .sender { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; opacity: 0.7; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.chat-input-area { padding: 12px 16px; border-top: 1px solid var(--color-border-light); display: flex; gap: 8px; align-items: flex-end; }
+.chat-input-area textarea { flex: 1; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 13px; font-family: var(--font-sans); resize: none; min-height: 42px; max-height: 80px; background: var(--color-bg); color: var(--color-text); }
+.chat-input-area textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-light); }
+.chat-input-area .send-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--color-primary); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.chat-input-area .send-btn:hover { background: #0747a6; }
+.chat-input-area .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.chat-typing { align-self: flex-start; font-size: 12px; color: var(--color-text-muted); font-style: italic; padding: 4px 0; }
+
+/* Scorecard */
+.scorecard { background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-sm); }
+.scorecard-header { text-align: center; margin-bottom: 24px; }
+.scorecard-header .overall-score { font-size: 56px; font-weight: 700; line-height: 1; }
+.scorecard-header .score-label { font-size: 13px; color: var(--color-text-muted); margin-top: 4px; }
+.scorecard-header .outcome-badge { display: inline-block; margin-top: 12px; padding: 6px 16px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; }
+.outcome-success { background: var(--color-success-light); color: #006644; }
+.outcome-partial { background: var(--color-warning-light); color: #7a4d00; }
+.outcome-fail { background: var(--color-error-light); color: var(--color-error); }
+
+.score-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.score-item { padding: 12px; background: var(--color-bg); border-radius: var(--radius-md); border: 1px solid var(--color-border-light); }
+.score-item .score-item-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 4px; }
+.score-item .score-item-value { font-size: 20px; font-weight: 700; }
+.score-item .score-item-bar { height: 4px; background: var(--color-border-light); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.score-item .score-item-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s; }
+
+.feedback-section { margin-bottom: 16px; }
+.feedback-section h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.feedback-cards { display: flex; flex-direction: column; gap: 8px; }
+.feedback-card { padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; line-height: 1.5; border-left: 3px solid; }
+.feedback-card.positive { background: var(--color-success-light); border-color: var(--color-success); }
+.feedback-card.improve { background: var(--color-warning-light); border-color: var(--color-warning); }
+
+.btn-try-again {
+  width: 100%; padding: 12px; background: var(--color-primary); color: white; border: none;
+  border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; transition: all 0.15s;
+}
+.btn-try-again:hover { background: #0747a6; }
+
 
 /* Call Notes Analyzer */
 .notes-analyzer {
@@ -1082,6 +1475,7 @@ body {
     <button class="mode-tab active" onclick="switchMode('prospecting')"><i class="fa-solid fa-phone"></i> Prospecting</button>
     <button class="mode-tab" onclick="switchMode('notes')"><i class="fa-solid fa-clipboard-list"></i> Call Notes Analyzer</button>
     <button class="mode-tab" onclick="switchMode('solutions')"><i class="fa-solid fa-cube"></i> AWS Solutions</button>
+    <button class="mode-tab" onclick="switchMode('roleplay')"><i class="fa-solid fa-user-group"></i> Roleplay</button>
   </div>
 
   <!-- NOTES ANALYZER MODE -->
@@ -1180,6 +1574,41 @@ body {
   </div>
 
   <!-- PROSPECTING MODE (original content) -->
+  <!-- ROLEPLAY MODE -->
+  <div class="mode-content" id="mode-roleplay">
+    <div class="roleplay-container" id="roleplayContainer">
+      <!-- Setup Screen -->
+      <div id="rpSetup" class="roleplay-setup">
+        <h3><i class="fa-solid fa-user-group" style="color:var(--color-primary)"></i> Cold Call Roleplay Simulator</h3>
+        <p class="subtitle">Practice handling objections with an AI-simulated customer. Get scored on your performance.</p>
+        <div class="instructions">
+          <strong>How it works:</strong> You're cold-calling a prospect with no prior engagement. Your goal is to handle their objections and book a meeting. The AI will play a resistant customer trying to end the call. You have 6-8 exchanges. Good luck! 🎯
+        </div>
+        <div class="rp-row">
+          <div class="form-group"><label>Customer Industry</label>
+            <select id="rpIndustry"><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="saas">SaaS / Platform</option><option value="ecommerce">E-Commerce</option><option value="devtools">Developer Tools</option></select>
+          </div>
+          <div class="form-group"><label>Customer Persona</label>
+            <select id="rpPersona"><option value="cto">CTO / VP Engineering</option><option value="cfo">CFO / Finance Leader</option><option value="ceo">CEO / Founder</option><option value="cio">CIO / IT Director</option></select>
+          </div>
+        </div>
+        <div class="rp-row">
+          <div class="form-group"><label>Difficulty</label>
+            <select id="rpDifficulty"><option value="easy">🟢 Easy — receptive prospect</option><option value="medium" selected>🟡 Medium — standard pushback</option><option value="hard">🔴 Hard — hostile gatekeeper</option></select>
+          </div>
+          <div class="form-group"><label>Your Call Objective</label>
+            <select id="rpObjective"><option value="discovery">Discovery Call</option><option value="demo">Demo / Workshop Invite</option><option value="cosell">Co-Sell Introduction</option></select>
+          </div>
+        </div>
+        <button class="btn-start-sim" onclick="startRoleplay()"><i class="fa-solid fa-play"></i> Start Simulation</button>
+      </div>
+      <!-- Chat UI (hidden until started) -->
+      <div id="rpChat" class="chat-container" style="display:none"></div>
+      <!-- Scorecard (hidden until finished) -->
+      <div id="rpScorecard" class="scorecard" style="display:none"></div>
+    </div>
+  </div>
+
   <div class="mode-content active" id="mode-prospecting">
   <div class="main-grid">
     <!-- LEFT: Customer Input Panel -->
@@ -2244,7 +2673,7 @@ function switchMode(mode) {
   // Update tabs
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.mode-tab').forEach(t => {
-    if (t.textContent.toLowerCase().includes(mode === 'prospecting' ? 'prospect' : mode === 'notes' ? 'call notes' : 'aws')) {
+    if (t.textContent.toLowerCase().includes(mode === 'prospecting' ? 'prospect' : mode === 'notes' ? 'call notes' : mode === 'roleplay' ? 'roleplay' : 'aws')) {
       t.classList.add('active');
     }
   });
