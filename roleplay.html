@@ -203,6 +203,17 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 
 <script>
 
+// Global error catcher - shows errors on page for debugging
+window.onerror = function(msg, url, line, col, error) {
+  var errDiv = document.createElement('div');
+  errDiv.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:red;color:white;padding:8px;font-size:11px;z-index:99999;';
+  errDiv.textContent = 'JS Error: ' + msg + ' (line ' + line + ')';
+  document.body.appendChild(errDiv);
+  return false;
+};
+
+
+
 
 // ===== REALISTIC CALL ENDINGS =====
 var GOODBYE_RESPONSES = {
@@ -3377,6 +3388,22 @@ function generateCoachTip(customerMsg) {
 // Hook coaching into the response cycle
 // This gets called after each customer message is displayed
 
+
+
+// Safety: if typing indicator stays for more than 4 seconds, force a response
+var typingSafetyInterval = setInterval(function() {
+  if(!state || !state.active) return;
+  var typing = document.querySelector('.typing-indicator-wrapper');
+  if(typing) {
+    // Typing has been showing — check if it's been too long
+    if(!typing._startTime) { typing._startTime = Date.now(); }
+    else if(Date.now() - typing._startTime > 4000) {
+      // Force a response
+      typing.remove();
+      addMsg('customer', 'Mm-hmm. Go on.');
+    }
+  }
+}, 1000);
 
 </script>
 
