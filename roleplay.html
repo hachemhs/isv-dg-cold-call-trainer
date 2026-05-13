@@ -2156,6 +2156,90 @@ function generateContextualResponse(dgrText, scoreResult) {
   // Use simple response as guaranteed fallback — complex system can override
   // This ensures something ALWAYS gets returned
   
+
+  // === REPETITION DETECTION — Customer calls out repeated questions/topics ===
+  
+  // Track DGR's topics per turn
+  if(!state.dgrTopicHistory) state.dgrTopicHistory = [];
+  
+  var currentTopics = [];
+  if(lower.match(/ai|genai|machine learn|bedrock|agent|model/)) currentTopics.push('AI');
+  if(lower.match(/cost|price|save|roi|budget|spend|cheaper/)) currentTopics.push('cost');
+  if(lower.match(/meeting|calendar|schedule|demo|15 min|catch up/)) currentTopics.push('meeting');
+  if(lower.match(/cloud|migrat|infra|server|compute/)) currentTopics.push('cloud');
+  if(lower.match(/security|compliance|gdpr|data protect|encrypt/)) currentTopics.push('security');
+  if(lower.match(/competitor|azure|gcp|google|microsoft/)) currentTopics.push('competitor');
+  if(lower.match(/challenge|problem|pain|struggle|issue|blocker/)) currentTopics.push('challenges');
+  if(lower.match(/team|headcount|hiring|resource|staff/)) currentTopics.push('team');
+  if(lower.match(/timeline|roadmap|plan|when|quarter|deadline/)) currentTopics.push('timeline');
+  if(lower.match(/partner|marketplace|co-sell|isvs/)) currentTopics.push('marketplace');
+  if(lower.match(/what.*do|tell.*about|how.*work|can you explain/)) currentTopics.push('explain');
+  
+  // Check for repetition
+  var repeatedTopics = currentTopics.filter(function(t) {
+    return state.dgrTopicHistory.filter(function(h) { return h === t; }).length >= 1;
+  });
+  
+  // Store this turn's topics
+  currentTopics.forEach(function(t) { state.dgrTopicHistory.push(t); });
+  
+  // If DGR is repeating topics they already covered, call it out (high priority)
+  if(repeatedTopics.length > 0 && state.turn > 2) {
+    var repeatCount = state.dgrTopicHistory.filter(function(h) { return h === repeatedTopics[0]; }).length;
+    
+    if(repeatCount >= 3) {
+      // Third time — very frustrated
+      state.patience -= 12;
+      return pickFrom([
+        "Okay — you've now brought up " + repeatedTopics[0] + " three times. I feel like we're going in circles. What are you ACTUALLY trying to get to?",
+        "We keep coming back to the same thing. I'm starting to think you don't have much else to offer. Prove me wrong.",
+        "You've said this already. Twice. I'm losing patience — either tell me something NEW or let's wrap this up.",
+        "Look — [sighs] — we've covered this. I heard you the first time. What ELSE have you got?",
+        "Third time on the same topic. I'm going to be blunt: if this is all you have, we should end the call."
+      ]);
+    }
+    else if(repeatCount === 2) {
+      // Second time — notices and pushes back
+      state.patience -= 5;
+      var topicName = repeatedTopics[0];
+      return pickFrom([
+        "Didn't you already ask me about " + topicName + "? I told you — " + (topicName === 'cost' ? "budget is tight" : topicName === 'AI' ? "we're exploring" : topicName === 'meeting' ? "I'll think about it" : topicName === 'challenges' ? "I mentioned our issues" : "we covered that") + ". What's changed?",
+        "Wait — we talked about this already. Are you reading from a script? Come on.",
+        "You mentioned " + topicName + " before. I get it. Move on to something new.",
+        "Déjà vu. [laughs] We literally just discussed this. What's your NEXT question?",
+        "Same topic again? Okay... is there something specific you didn't understand from my earlier answer?",
+        "I feel like you're circling. We covered " + topicName + ". Is there a reason you're coming back to it?",
+        "Mate, you asked me that already. Were you not listening or...?",
+        "Hold on — am I on a loop? You said the same thing 2 minutes ago. New topic, please."
+      ]);
+    }
+  }
+  
+  // Also detect if DGR literally sends the same/very similar message
+  if(history && history.length > 2) {
+    var prevMessages = history.filter(function(h) { return h.role === 'dgr'; }).map(function(h) { return h.text.toLowerCase(); });
+    var similarity = prevMessages.some(function(prev) {
+      if(!prev) return false;
+      // Check if >60% of words match
+      var prevWords = prev.split(/\s+/);
+      var currWords = lower.split(/\s+/);
+      var matches = currWords.filter(function(w) { return prevWords.indexOf(w) >= 0; });
+      return matches.length / Math.max(currWords.length, 1) > 0.6 && currWords.length > 4;
+    });
+    
+    if(similarity) {
+      state.patience -= 8;
+      return pickFrom([
+        "You literally just said that. Word for word. Are you okay?",
+        "I swear you said this exact thing 2 minutes ago. Am I losing it or are you repeating yourself?",
+        "Copy-paste much? [laughs] Mate, you said the same thing earlier. Try a different angle.",
+        "Okay this is the same pitch again. I'm not going to respond differently just because you repeat it.",
+        "Wait... did you just say the same thing twice? Look — I heard you. I need NEW information.",
+        "You're repeating yourself. That's... not a great sign. Either you're nervous or you've run out of things to say."
+      ]);
+    }
+  }
+
 // ===== CONVERSATION FLOW ENGINE — Human-style contextual interactions =====
   // Tracks conversation arc and generates responses that feel like a real human thinking in real-time
   
