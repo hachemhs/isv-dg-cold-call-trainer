@@ -52,7 +52,7 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .start-btn:hover { background: #5e1a6e; }
 .chat { display: none; background: var(--color-bg-secondary); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
 .chat-header { background: var(--aws-dark); color: white; padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
-.avatar { width: 34px; height: 34px; background: var(--aws-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary); }
 .chat-header .info { flex: 1; }
 .chat-header .name { font-size: 13px; font-weight: 600; }
 .chat-header .role { font-size: 11px; opacity: 0.7; }
@@ -98,6 +98,17 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 .call-timer .forecast-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 4px; overflow: hidden; }
 .call-timer .forecast-fill { height: 100%; background: var(--color-success); transition: width 1s linear, background 0.5s; border-radius: 2px; }
 
+
+/* Message wrapper with avatars */
+.msg-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 4px; }
+.msg-wrapper.customer { justify-content: flex-start; }
+.msg-wrapper.dgr { justify-content: flex-end; }
+.msg-wrapper.system { justify-content: center; }
+.msg-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--color-border-light); background: #f5f5f5; }
+.msg-wrapper.dgr .msg-avatar { border-color: var(--color-primary); }
+
+
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 </style>
 </head>
 <body>
@@ -124,6 +135,17 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
       <div><label>Industry</label><select id="rpIndustry"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option><option value="ecommerce">E-Commerce</option><option value="aiml">AI/ML Company</option></select></div>
       <div><label>Customer Persona</label><select id="rpPersona"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option><option value="aiml">AI/ML Lead — Priya Kapoor</option></select></div>
     </div>
+    
+    <!-- Persona Preview Card -->
+    <div id="personaPreview" style="display:flex; align-items:center; gap:16px; padding:14px 18px; background:linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%); border-radius:12px; border:1px solid #e0e7ff; margin:12px 0;">
+      <img id="personaImg" src="https://api.dicebear.com/7.x/personas/svg?seed=AlexChen&backgroundColor=b6e3f4" style="width:56px; height:56px; border-radius:50%; border:3px solid #6366f1; box-shadow:0 2px 8px rgba(99,102,241,0.2);" />
+      <div style="flex:1;">
+        <div id="personaName" style="font-weight:700; font-size:15px; color:#1e293b;">Alex Chen — CTO</div>
+        <div id="personaCompany" style="font-size:12px; color:#6366f1; font-weight:500; margin-top:2px;">Nextera Digital — B2B SaaS</div>
+        <div id="personaDetail" style="font-size:11px; color:#64748b; margin-top:4px;">120 employees, Series B • £8M ARR • Main challenge: technical debt</div>
+      </div>
+    </div>
+    
     <div class="form-row">
       <div><label>Difficulty</label><select id="rpDifficulty"><option value="easy">Easy (1-2 mild objections)</option><option value="medium" selected>Medium (3-4 objections)</option><option value="hard">Hard (5+ harsh, tries to hang up)</option></select></div>
       <div><label>Call Objective</label><select id="rpObjective"><option value="discovery">Discovery Call</option><option value="demo">Demo / Workshop Invite</option><option value="cosell">Co-Sell Introduction</option></select></div>
@@ -141,7 +163,7 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 
   <div class="chat" id="chat">
     <div class="chat-header">
-      <div class="avatar" id="avatar">A</div>
+      <img class="avatar" id="avatarImg" src="https://api.dicebear.com/7.x/personas/svg?seed=AlexChen&backgroundColor=b6e3f4" style="width:40px;height:40px;border-radius:50%;border:2px solid #6366f1;" />
       <div class="info"><div class="name" id="custName">Alex Chen</div><div class="role" id="custRole">CTO · SaaS · Medium</div></div>
       <div style="text-align:right"><div style="font-size:10px;opacity:0.6;margin-bottom:2px">Patience</div><div class="patience-bar"><div class="patience-fill" id="patienceBar" style="width:100%"></div></div></div>
     </div>
@@ -481,40 +503,152 @@ const REAL_CUSTOMERS = {
 const PERSONAS = {
   cto: {
     name:'Alex Chen', title:'CTO', avatar:'A',
-    greetings:["Yeah? Alex speaking.","Hello, who's this?","Alex Chen. Make it quick — I'm in a standup in 5.","Chen here. Who gave you this number?"],
+    image:'https://api.dicebear.com/7.x/personas/svg?seed=AlexChen&backgroundColor=b6e3f4',
+    greetings:["Yeah? Alex speaking.","Hello, who's this?","Alex Chen. Make it quick — I'm in a standup in 5.","Chen here. Who gave you this number?","Alex here — I've got about 3 minutes before my next meeting. Go."],
     style:'technical',
     concerns:['architecture','engineering bandwidth','integration complexity','technical debt','migration risk'],
-    backstory:{recentEvent:'sprint planning', team:'12 engineers', challenge:'technical debt from last year', currentProject:'platform rewrite', vendor:'using some Azure DevOps'}
+    backstory:{
+      recentEvent:'sprint planning', team:'12 engineers', challenge:'technical debt from last year', 
+      currentProject:'platform rewrite', vendor:'using some Azure DevOps'
+    },
+    company:{
+      name:'Nextera Digital', industry:'B2B SaaS — project management platform', 
+      size:'120 employees, Series B (raised £18M)', hq:'London, UK',
+      revenue:'£8M ARR, growing 45% YoY', customers:'2,400 SMB customers across Europe',
+      techStack:'React frontend, Node.js + Python microservices, PostgreSQL, Redis, deployed on Azure (legacy) + AWS (newer services)',
+      priorities:['Migrate monolith to microservices by Q4','Reduce deployment pipeline from 45 min to under 10 min','Implement proper observability stack','Hire 4 senior engineers'],
+      futurePlans:'Building AI-powered project assistant (copilot). Evaluating RAG for customer knowledge base. Want to expand to US market by end of 2027.',
+      recentDecisions:'Chose Datadog over CloudWatch (6 months ago). Started POC with Anthropic Claude for AI features. Rejected a ServiceNow integration due to cost.',
+      painPoints:'Engineer velocity dropping due to tech debt. CI/CD is fragile. Onboarding new devs takes 3 weeks. AI features behind competitor roadmap.',
+      competitors:'Monday.com, Asana, ClickUp — all shipping AI features faster',
+      budget:'Cloud spend: £45K/month (Azure £30K, AWS £15K). Engineering tools: £200K/year.'
+    }
   },
   cfo: {
     name:'Sarah Mitchell', title:'CFO', avatar:'S',
-    greetings:["Sarah Mitchell's office.","Yes? Who am I speaking with?","Mitchell here. I've got a board prep in 10 minutes so be quick.","This is Sarah. What's this regarding?"],
+    image:'https://api.dicebear.com/7.x/personas/svg?seed=SarahMitchell&backgroundColor=ffd5dc',
+    greetings:["Sarah Mitchell's office.","Yes? Who am I speaking with?","Mitchell here. I've got a board prep in 10 minutes so be quick.","This is Sarah. What's this regarding?","Mitchell. Make it count — I'm reviewing financials."],
     style:'financial',
     concerns:['ROI','budget cycle','cost justification','payback period','total cost of ownership'],
-    backstory:{recentEvent:'board meeting', team:'finance and ops', challenge:'budget freeze until Q3', currentProject:'cost optimization review', vendor:'locked into a Microsoft EA'}
+    backstory:{
+      recentEvent:'board meeting', team:'finance and ops', challenge:'budget freeze until Q3', 
+      currentProject:'cost optimization review', vendor:'locked into a Microsoft EA'
+    },
+    company:{
+      name:'Veritas Health Group', industry:'Healthcare SaaS — patient engagement platform',
+      size:'280 employees, publicly traded (AIM market)', hq:'Manchester, UK',
+      revenue:'£32M ARR, targeting £45M by FY27', customers:'150 NHS trusts + 400 private clinics',
+      techStack:'Microsoft ecosystem (Azure, O365, Dynamics), some AWS for ML workloads, .NET backend',
+      priorities:['Reduce cloud costs by 20% this fiscal year','Consolidate vendors (too many contracts)','Pass SOC 2 Type II audit','Improve unit economics before next earnings'],
+      futurePlans:'Potential acquisition of a smaller competitor. IPO upgrade from AIM to main LSE board. Expand into European healthcare markets (Germany, France).',
+      recentDecisions:'Signed 3-year Microsoft EA renewal (£2.4M). Cancelled a Snowflake POC (too expensive). Cut R&D headcount by 8% in Q1.',
+      painPoints:'Cloud costs growing faster than revenue. Board demanding path to profitability. Microsoft EA locked in but overpaying for unused licenses.',
+      competitors:'Epic MyChart (US), Doctolib (EU), PatientPoint',
+      budget:'Total cloud: £180K/month. IT budget: £4.2M annually. Discretionary tech budget: basically frozen until we hit profitability targets.'
+    }
   },
   ceo: {
     name:'James Park', title:'CEO & Founder', avatar:'J',
-    greetings:["James here, you have 30 seconds.","Park speaking. Quick — I'm walking into a meeting.","Who is this? I'm between investor calls.","Yeah, James. What is it?"],
+    image:'https://api.dicebear.com/7.x/personas/svg?seed=JamesPark&backgroundColor=d1d4f9',
+    greetings:["James here, you have 30 seconds.","Park speaking. Quick — I'm walking into a meeting.","Who is this? I'm between investor calls.","Yeah, James. What is it?","Park. You've got one minute — I'm juggling three things."],
     style:'executive',
     concerns:['competitive advantage','time to value','strategic fit','revenue growth','market speed'],
-    backstory:{recentEvent:'investor meeting', team:'45 people total', challenge:'fundraising Series B', currentProject:'scaling GTM', vendor:'multi-cloud but mostly GCP'}
+    backstory:{
+      recentEvent:'investor meeting', team:'45 people total', challenge:'fundraising Series B', 
+      currentProject:'scaling GTM', vendor:'multi-cloud but mostly GCP'
+    },
+    company:{
+      name:'Kinetic AI', industry:'AI-powered supply chain optimization for retail',
+      size:'45 employees, Series A (raised $6M, targeting Series B at $25M)', hq:'Dublin, Ireland',
+      revenue:'$1.8M ARR, 4 enterprise logos, growing 120% YoY', customers:'Tesco, Primark, Zalando (POC), one US retailer',
+      techStack:'Python/FastAPI backend, GCP (BigQuery, Vertex AI, Cloud Run), React frontend, Snowflake for data warehouse',
+      priorities:['Close Series B by September','Land 2 more enterprise logos','Build US sales presence','Ship agentic demand forecasting product'],
+      futurePlans:'Become the Salesforce of supply chain AI. Series B to fund US expansion. Building autonomous agents that can reorder inventory without human intervention. Want to be category leader before the market consolidates.',
+      recentDecisions:'Hired a US-based VP of Sales. Chose GCP over AWS 18 months ago (co-founder knew it from Google). Turned down an acquisition offer from SAP.',
+      painPoints:'GCP getting expensive as data grows. Need to prove ROI faster for enterprise pilots. Only 2 engineers can maintain ML pipeline. Sales cycle is 9+ months for enterprise.',
+      competitors:'Blue Yonder (legacy), o9 Solutions, Relex Solutions — all much larger and better funded',
+      budget:'Cloud: $28K/month (all GCP). R&D: 60% of spend. Runway: 14 months at current burn.'
+    }
   },
   cio: {
     name:'Maria Santos', title:'CIO', avatar:'M',
-    greetings:["Maria Santos.","Santos here, who's calling?","Yes? Make it brief — I'm dealing with an incident.","Maria speaking. What do you need?"],
+    image:'https://api.dicebear.com/7.x/personas/svg?seed=MariaSantos&backgroundColor=c0aede',
+    greetings:["Maria Santos.","Santos here, who's calling?","Yes? Make it brief — I'm dealing with an incident.","Maria speaking. What do you need?","Santos. I've got 2 minutes — make them count."],
     style:'governance',
     concerns:['security posture','compliance','data governance','vendor risk','operational resilience'],
-    backstory:{recentEvent:'security audit', team:'infrastructure and security', challenge:'GDPR compliance gap', currentProject:'zero-trust rollout', vendor:'primarily AWS but evaluating'}
+    backstory:{
+      recentEvent:'security audit', team:'infrastructure and security', challenge:'GDPR compliance gap', 
+      currentProject:'zero-trust rollout', vendor:'primarily AWS but evaluating'
+    },
+    company:{
+      name:'EuroFinance Partners', industry:'Financial services — wealth management platform',
+      size:'800 employees across 5 countries, PE-backed', hq:'Frankfurt, Germany (UK office in London)',
+      revenue:'€95M revenue, 12% margins', customers:'200+ wealth managers, 3 banks, €45B AUM on platform',
+      techStack:'AWS (primary), some on-prem for regulated data, Java/Spring Boot, Oracle DB (migrating to Aurora), Kubernetes',
+      priorities:['Complete zero-trust implementation by Q3','Pass ECB regulatory audit','Migrate remaining on-prem to cloud','Reduce security incidents to zero P1s'],
+      futurePlans:'Digital transformation of remaining manual processes. AI for fraud detection and compliance monitoring. Geographic expansion to Nordics. Potential acquisition target (PE wants exit in 2-3 years).',
+      recentDecisions:'Blocked a shadow IT project from the trading desk. Mandated all new services go through architectural review board. Chose CrowdStrike over SentinelOne. Rejected multi-cloud strategy (too complex for security).',
+      painPoints:'Legacy Oracle DB is a bottleneck. DORA compliance deadline approaching. 3 P1 incidents in Q1 (board noticed). Half the dev team bypasses security gates. Talent retention in InfoSec.',
+      competitors:'Avaloq (now NEC), FNZ, SS&C Technologies',
+      budget:'IT budget: €12M/year. Cloud: €350K/month. Security tools: €1.8M/year. Change Advisory Board approval needed for anything over €50K.'
+    }
   },
   aiml: {
     name:'Priya Kapoor', title:'Head of AI/ML Engineering', avatar:'P',
-    greetings:["Priya here. Who's this?","Yeah, speaking. What's up?","Priya Kapoor, make it quick — I'm in the middle of a deploy.","Kapoor here. Is this a sales call? Because I can already feel it."],
+    image:'https://api.dicebear.com/7.x/personas/svg?seed=PriyaKapoor&backgroundColor=ffdfbf',
+    greetings:["Priya here. Who's this?","Yeah, speaking. What's up?","Priya Kapoor, make it quick — I'm in the middle of a deploy.","Kapoor here. Is this a sales call? Because I can already feel it.","Priya. I've got a model training and I need to watch it. Be quick."],
     style:'technical_ai',
     concerns:['model performance','inference costs','vendor lock-in on models','data privacy','build vs buy'],
-    backstory:{recentEvent:'model training run', team:'8 ML engineers', challenge:'inference costs growing 40% MoM', currentProject:'building agentic workflows', vendor:'Hugging Face + own GPU cluster'}
+    backstory:{
+      recentEvent:'model training run', team:'8 ML engineers', challenge:'inference costs growing 40% MoM', 
+      currentProject:'building agentic workflows', vendor:'Hugging Face + own GPU cluster'
+    },
+    company:{
+      name:'Mediwise AI', industry:'AI-powered medical imaging diagnostics',
+      size:'65 employees, Series A (raised £12M)', hq:'Cambridge, UK',
+      revenue:'£3.2M ARR from 15 NHS trusts, growing 80% YoY', customers:'NHS trusts, 2 private hospital chains, 1 pharma company (R&D partnership)',
+      techStack:'PyTorch for training, own GPU cluster (8x A100), Hugging Face for model registry, FastAPI serving, S3 for data lake, minimal cloud compute (prefer own hardware)',
+      priorities:['Reduce inference cost per scan by 50%','Get CE marking for new cardiac model','Scale to 50 NHS trusts by Q4','Build agentic radiology assistant prototype'],
+      futurePlans:'Series B to fund US FDA clearance. Want to build multi-modal model (combines imaging + clinical notes + genomics). Exploring Amazon Bedrock for the NLP components but skeptical of managed services. Long-term: become the foundation model for medical imaging.',
+      recentDecisions:'Rejected Azure ML (too locked in). Bought 4 more A100s instead of going cloud. Tried Bedrock for 2 weeks but went back to direct Anthropic API. Using Weights & Biases for experiment tracking.',
+      painPoints:'GPU costs eating 40% of burn rate. Only 2 people can maintain infra. Model serving latency spikes at peak hours. Regulatory requirements (MDR) slowing everything down. Hard to hire ML engineers who understand healthcare.',
+      competitors:'Aidoc (Israel), Zebra Medical (Israel), Qure.ai (India) — all better funded',
+      budget:'Compute: £35K/month (own GPUs + some cloud). R&D: 70% of total spend. Very cost-conscious — every £ matters at our stage.'
+    }
   }
 };
+
+
+// ===== PERSONA PREVIEW UPDATE =====
+var PERSONA_PREVIEW_DATA = {
+  cto: {name:'Alex Chen — CTO', company:'Nextera Digital — B2B SaaS (Project Management)', detail:'120 employees, Series B • £8M ARR • Main challenge: tech debt & slow deploys', img:'https://api.dicebear.com/7.x/personas/svg?seed=AlexChen&backgroundColor=b6e3f4'},
+  cfo: {name:'Sarah Mitchell — CFO', company:'Veritas Health Group — Healthcare SaaS', detail:'280 employees, Public (AIM) • £32M ARR • Main challenge: cloud costs & vendor consolidation', img:'https://api.dicebear.com/7.x/personas/svg?seed=SarahMitchell&backgroundColor=ffd5dc'},
+  ceo: {name:'James Park — CEO & Founder', company:'Kinetic AI — Supply Chain Optimization', detail:'45 employees, Series A • $1.8M ARR • Main challenge: Series B fundraising & US expansion', img:'https://api.dicebear.com/7.x/personas/svg?seed=JamesPark&backgroundColor=d1d4f9'},
+  cio: {name:'Maria Santos — CIO', company:'EuroFinance Partners — Financial Services', detail:'800 employees, PE-backed • €95M revenue • Main challenge: zero-trust & regulatory compliance', img:'https://api.dicebear.com/7.x/personas/svg?seed=MariaSantos&backgroundColor=c0aede'},
+  aiml: {name:'Priya Kapoor — Head of AI/ML', company:'Mediwise AI — Medical Imaging Diagnostics', detail:'65 employees, Series A • £3.2M ARR • Main challenge: inference costs & scaling GPU infra', img:'https://api.dicebear.com/7.x/personas/svg?seed=PriyaKapoor&backgroundColor=ffdfbf'}
+};
+
+function updatePersonaPreview() {
+  var sel = document.getElementById('rpPersona');
+  if(!sel) return;
+  var p = PERSONA_PREVIEW_DATA[sel.value];
+  if(!p) return;
+  var img = document.getElementById('personaImg');
+  var name = document.getElementById('personaName');
+  var company = document.getElementById('personaCompany');
+  var detail = document.getElementById('personaDetail');
+  if(img) img.src = p.img;
+  if(name) name.textContent = p.name;
+  if(company) company.textContent = p.company;
+  if(detail) detail.textContent = p.detail;
+}
+
+// Attach listener when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  var sel = document.getElementById('rpPersona');
+  if(sel) sel.addEventListener('change', updatePersonaPreview);
+});
+
 
 // ===== CONTEXTUAL RESPONSE ENGINE =====
 // Instead of random pools, responses are selected based on what the DGR actually said
@@ -831,7 +965,9 @@ function startSim() {
   document.getElementById('scorecard').style.display='none';
   var chat = document.getElementById('chat');
   chat.style.display='block';
-  document.getElementById('avatar').textContent = cfg.avatar;
+  var avatarImgEl = document.getElementById('avatarImg');
+  if(avatarImgEl && cfg.image) { avatarImgEl.src = cfg.image; }
+  else if(avatarImgEl) { avatarImgEl.src = 'https://api.dicebear.com/7.x/personas/svg?seed=' + cfg.name.replace(/\s/g,'') + '&backgroundColor=b6e3f4'; }
   document.getElementById('custName').textContent = cfg.name;
   document.getElementById('custRole').textContent = (realCustomerData ? realCustomerData.company+' · ' : '')+cfg.title+' · '+d.toUpperCase();
   document.getElementById('patienceBar').style.width = state.patience+'%';
@@ -852,19 +988,53 @@ function addMsg(type, text) {
   if(existing) existing.remove();
   
   var el = document.getElementById('messages');
+  var wrapper = document.createElement('div');
+  wrapper.className = 'msg-wrapper ' + type;
+  
+  // Add avatar image
+  var avatar = document.createElement('img');
+  avatar.className = 'msg-avatar';
+  if(type === 'customer' && state && state.cfg && state.cfg.image) {
+    avatar.src = state.cfg.image;
+    avatar.alt = state.cfg.name;
+  } else if(type === 'dgr') {
+    avatar.src = 'https://api.dicebear.com/7.x/personas/svg?seed=DGRep&backgroundColor=c8f7c5';
+    avatar.alt = 'You (DGR)';
+  } else {
+    avatar.style.display = 'none';
+  }
+  
   var div = document.createElement('div');
-  div.className = 'msg '+type;
+  div.className = 'msg ' + type;
   div.textContent = text;
-  el.appendChild(div);
+  
+  if(type === 'customer') {
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(div);
+  } else if(type === 'dgr') {
+    wrapper.appendChild(div);
+    wrapper.appendChild(avatar);
+  } else {
+    wrapper.appendChild(div);
+  }
+  
+  el.appendChild(wrapper);
   el.scrollTop = el.scrollHeight;
 }
 
 function showTyping() {
   var el = document.getElementById('messages');
+  var wrapper = document.createElement('div');
+  wrapper.className = 'msg-wrapper customer typing-indicator-wrapper';
+  var avatar = document.createElement('img');
+  avatar.className = 'msg-avatar';
+  if(state && state.cfg && state.cfg.image) { avatar.src = state.cfg.image; avatar.alt = state.cfg.name; }
   var div = document.createElement('div');
   div.className = 'msg customer typing-indicator';
   div.textContent = '...';
-  el.appendChild(div);
+  wrapper.appendChild(avatar);
+  wrapper.appendChild(div);
+  el.appendChild(wrapper);
   el.scrollTop = el.scrollHeight;
 }
 
@@ -1216,7 +1386,124 @@ function buildContextualReply(dgrText, contexts, d) {
   }
   
   
-  // ===== PERSONA-SPECIFIC CONVERSATION TREES =====
+  
+  // ===== COMPANY-AWARE RESPONSES — Persona can discuss their business realistically =====
+  var company = cfg.company;
+  if(company) {
+    
+    // DGR asks about the company/business
+    if(lower.match(/what.*do.*you.*do|tell.*about.*company|what.*your.*company|what.*business|what.*product|your.*platform|your.*solution/)) {
+      return pickFrom([
+        "We're " + company.name + " — " + company.industry + ". About " + company.size.split(',')[0] + ". Our customers are mostly " + company.customers.split(',')[0] + ".",
+        "Short version? We do " + company.industry.split('—')[1] + ". " + company.size.split(',')[0] + ". Growing well — " + company.revenue.split(',')[0] + ".",
+        company.name + ". " + company.industry + ". We serve " + company.customers.split(',')[0] + " and a few others. Been around a few years now."
+      ]);
+    }
+    
+    // DGR asks about priorities/challenges/what keeps you up at night
+    if(lower.match(/priorit|challenge|keep.*up.*night|focus|main.*goal|what.*working|biggest.*problem|struggle|pain.?point/)) {
+      var p1 = company.priorities[0];
+      var p2 = company.priorities[1];
+      var pain = company.painPoints.split('.')[0];
+      return pickFrom([
+        "Honestly? Right now it's: " + p1 + ". That's priority one. And then " + p2 + ". Those two are consuming most of my bandwidth.",
+        "What keeps me up? " + pain + ". That's the honest answer. We're trying to fix it but it's not simple.",
+        "Our big focus this quarter is " + p1 + ". Everything else is secondary. If you can help with THAT specifically, I'm listening.",
+        "Three things: " + company.priorities[0] + ", " + company.priorities[1] + ", and " + company.priorities[2] + ". In that order. Which one can you actually help with?",
+        pain + ". And on top of that, " + company.priorities[1] + ". It's a lot."
+      ]);
+    }
+    
+    // DGR asks about tech stack/infrastructure
+    if(lower.match(/tech.*stack|infrastructure|what.*run|what.*using|platform|tools|cloud|current.*setup|environment/)) {
+      return pickFrom([
+        "Our stack? " + company.techStack.split(',').slice(0,3).join(', ') + ". It works... mostly. Has its quirks.",
+        "We're on " + company.techStack.split(',')[0] + ". Plus " + company.techStack.split(',')[1] + ". It's evolved organically, which means it's a bit of a mess in places.",
+        "Current setup is " + company.techStack + ". I know — it's a lot. That's part of the challenge.",
+        "Without going into too much detail: " + company.techStack.split(',').slice(0,2).join(' and ') + " are the main ones. Why?"
+      ]);
+    }
+    
+    // DGR asks about competitors/market
+    if(lower.match(/compet|market|rival|alternative|who.*against|landscape|versus|compared/)) {
+      return pickFrom([
+        "We compete with " + company.competitors + ". They're all [bigger/faster/better-funded] in different ways. It's a tough market.",
+        company.competitors.split(',')[0] + " is probably our main competitor. They've got more resources but we're more agile. Classic David and Goliath.",
+        "The competitive landscape? " + company.competitors + ". Everyone's moving fast. That's why speed matters to us.",
+        "Yeah — " + company.competitors.split(',')[0] + " and " + company.competitors.split(',')[1] + " are the ones we watch. They're shipping AI features faster than us right now and that worries me."
+      ]);
+    }
+    
+    // DGR asks about future plans/roadmap/where headed
+    if(lower.match(/future|plan|roadmap|next.*year|where.*headed|vision|strategy|long.?term|grow|expand|scaling/)) {
+      return pickFrom([
+        company.futurePlans.split('.')[0] + ". That's the big picture. Everything we're doing now feeds into that.",
+        "Where are we headed? " + company.futurePlans.split('.').slice(0,2).join('. ') + ".",
+        "The plan is ambitious: " + company.futurePlans.split('.')[0] + ". But we need the right infrastructure to get there.",
+        "Long-term? " + company.futurePlans.split('.').slice(0,2).join('. ') + ". Whether we get there depends on execution."
+      ]);
+    }
+    
+    // DGR asks about budget/spend/investment
+    if(lower.match(/budget|spend|invest|afford|money|how much|cost.*currently|paying/)) {
+      return pickFrom([
+        "Our current spend? " + company.budget.split('.')[0] + ". That's roughly the envelope we're working with.",
+        "Budget-wise... " + company.budget + " That's what we've got. Not a lot of wiggle room.",
+        "I'd rather not get into exact numbers on a first call, but I'll say this: we're cost-conscious. " + company.budget.split('.')[0] + ".",
+        "It's tight. " + company.budget.split('.')[0] + ". Every new investment needs to justify displacing something else."
+      ]);
+    }
+    
+    // DGR asks about team size/structure
+    if(lower.match(/team|how many|headcount|people|employee|size.*org|staff|hire|engineer/)) {
+      return pickFrom([
+        "We're " + company.size.split(',')[0] + ". " + cfg.backstory.team + " in my org specifically.",
+        cfg.backstory.team + " report to me. Company overall is " + company.size.split(',')[0] + ". We punch above our weight.",
+        "My team is " + cfg.backstory.team + ". Whole company is about " + company.size.split(',')[0] + ". Always feel under-resourced though."
+      ]);
+    }
+    
+    // DGR asks about recent decisions/what you've tried
+    if(lower.match(/tried|evaluated|looked at|considered|decided|recent.*decision|chose|picked|selected|past.*experience/)) {
+      return pickFrom([
+        "Recent decisions? " + company.recentDecisions.split('.')[0] + ". " + company.recentDecisions.split('.')[1] + ".",
+        "Yeah we've looked at a few things. " + company.recentDecisions.split('.')[0] + ". I can tell you what worked and what didn't.",
+        company.recentDecisions.split('.')[0] + ". That was a big one for us. We're fairly methodical about vendor selection."
+      ]);
+    }
+    
+    // DGR asks about customers/who they serve
+    if(lower.match(/customer|client|who.*serve|user|who.*use|market.*segment|target/)) {
+      return pickFrom([
+        "Our customers are " + company.customers + ". That's our bread and butter.",
+        "We serve " + company.customers + ". The enterprise logos took ages to land but they're sticky.",
+        company.customers + ". Growing the base is obviously a priority but retention is where we focus most."
+      ]);
+    }
+    
+    // DGR asks about revenue/growth
+    if(lower.match(/revenue|arr|mrr|grow|metric|how.*doing|traction|performance|financ/)) {
+      return pickFrom([
+        "We're at " + company.revenue + ". Can't complain but we need to move faster.",
+        company.revenue + ". The growth is there — the question is whether we can sustain it while scaling infrastructure.",
+        "Revenue-wise: " + company.revenue + ". Investors want more. [laughs] They always want more."
+      ]);
+    }
+    
+    // Generic "tell me more" / "what else should I know"
+    if(lower.match(/tell.*more|anything.*else|what.*else|more.*context|background/)) {
+      var randomFact = pickFrom([
+        "One thing worth knowing: " + company.painPoints.split('.')[0] + ". That's been top of mind.",
+        "Context that might be useful: " + company.recentDecisions.split('.')[0] + ". Still dealing with the implications.",
+        "Here's what matters: " + company.priorities[0] + ". If you can genuinely help with that, I'll make time.",
+        "What you should know is we're at an inflection point. " + company.futurePlans.split('.')[0] + ". The decisions we make now matter a lot."
+      ]);
+      return randomFact;
+    }
+  }
+
+
+// ===== PERSONA-SPECIFIC CONVERSATION TREES =====
   // Each persona has unique voice, interests, and reaction patterns
   
   var persona = state.persona;
