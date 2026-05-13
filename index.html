@@ -2257,10 +2257,16 @@ function switchMode(mode, btn) {
     var el = document.querySelector('.mode-tab[data-mode="' + mode + '"]');
     if (el) el.classList.add('active');
   }
-  // Update content - use inline styles for maximum compatibility
-  document.querySelectorAll('.mode-content').forEach(c => { c.style.display = 'none'; });
+  // Update content - hide all, show target
+  document.querySelectorAll('.mode-content').forEach(function(c) {
+    c.style.display = 'none';
+    c.classList.remove('active');
+  });
   var target = document.getElementById('mode-' + mode);
-  if (target) { target.style.display = 'block'; }
+  if (target) {
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
 }
 
 function goHome() {
