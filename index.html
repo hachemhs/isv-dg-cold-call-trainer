@@ -895,7 +895,7 @@ body {
 }
 
 .mode-content { display: none; }
-.mode-content.active { display: block; }
+.mode-content.active { display: block !important; }
 
 /* Cold Openers */
 .opener-card {
@@ -1123,10 +1123,10 @@ body {
 <div class="container">
   <!-- Mode Tabs -->
   <div class="mode-tabs">
-    <button class="mode-tab active" onclick="switchMode('prospecting')"><i class="fa-solid fa-phone"></i> Prospecting</button>
-    <button class="mode-tab" onclick="switchMode('notes')"><i class="fa-solid fa-clipboard-list"></i> Call Notes Analyzer</button>
-    <button class="mode-tab" onclick="switchMode('solutions')"><i class="fa-solid fa-cube"></i> AWS Solutions</button>
-    <button class="mode-tab" onclick="switchMode('roleplay')"><i class="fa-solid fa-user-group"></i> Roleplay</button>
+    <button class="mode-tab active" data-mode="prospecting" onclick="switchMode('prospecting', this)"><i class="fa-solid fa-phone"></i> Prospecting</button>
+    <button class="mode-tab" data-mode="notes" onclick="switchMode('notes', this)"><i class="fa-solid fa-clipboard-list"></i> Call Notes Analyzer</button>
+    <button class="mode-tab" data-mode="solutions" onclick="switchMode('solutions', this)"><i class="fa-solid fa-cube"></i> AWS Solutions</button>
+    <button class="mode-tab" data-mode="roleplay" onclick="switchMode('roleplay', this)"><i class="fa-solid fa-user-group"></i> Roleplay</button>
   </div>
 
   <!-- NOTES ANALYZER MODE -->
@@ -2319,18 +2319,19 @@ function renderCoachResponse(objection, response) {
 // ============================================
 // MODE SWITCHING
 // ============================================
-function switchMode(mode) {
+function switchMode(mode, btn) {
   // Update tabs
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.mode-tab').forEach(t => {
-    if (t.textContent.toLowerCase().includes(mode === 'prospecting' ? 'prospect' : mode === 'notes' ? 'call notes' : mode === 'roleplay' ? 'roleplay' : 'aws')) {
-      t.classList.add('active');
-    }
-  });
-  
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    var el = document.querySelector('.mode-tab[data-mode="' + mode + '"]');
+    if (el) el.classList.add('active');
+  }
   // Update content
   document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('mode-' + mode).classList.add('active');
+  var target = document.getElementById('mode-' + mode);
+  if (target) target.classList.add('active');
 }
 
 function goHome() {
