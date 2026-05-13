@@ -1130,7 +1130,7 @@ body {
   </div>
 
   <!-- NOTES ANALYZER MODE -->
-  <div class="mode-content" id="mode-notes">
+  <div class="mode-content" id="mode-notes" style="display:none">
     <div class="notes-analyzer">
       <h3><i class="fa-solid fa-clipboard-list" style="color:#7b2d8b"></i> Call Notes Analyzer</h3>
       <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px;">Paste call notes, meeting summaries, or Zoom transcripts from any customer interaction. The AI will extract objections, recommend next steps, and generate follow-up talking points.</p>
@@ -1141,7 +1141,7 @@ body {
   </div>
 
   <!-- AWS SOLUTIONS REFERENCE MODE -->
-  <div class="mode-content" id="mode-solutions">
+  <div class="mode-content" id="mode-solutions" style="display:none">
     <div class="solutions-panel">
       <div class="solutions-header" onclick="toggleSolutions()">
         <span><i class="fa-solid fa-cube"></i> AWS Solutions & Value Propositions — Quick Reference</span>
@@ -1225,7 +1225,7 @@ body {
   </div>
 
   <!-- PROSPECTING MODE (original content) -->
-  <div class="mode-content active" id="mode-prospecting">
+  <div class="mode-content active" id="mode-prospecting" style="display:block">
   <div class="main-grid">
     <!-- LEFT: Customer Input Panel -->
     <div class="input-panel">
@@ -1341,7 +1341,7 @@ body {
   </div><!-- end mode-prospecting -->
 
   <!-- ROLEPLAY MODE -->
-  <div class="mode-content" id="mode-roleplay">
+  <div class="mode-content" id="mode-roleplay" style="display:none">
     <div class="rp-setup" id="rpSetup">
       <h3><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Cold Call Roleplay Simulator</h3>
       <p class="subtitle">Practice handling objections against an AI customer. Your goal: book a meeting.</p>
@@ -2328,10 +2328,10 @@ function switchMode(mode, btn) {
     var el = document.querySelector('.mode-tab[data-mode="' + mode + '"]');
     if (el) el.classList.add('active');
   }
-  // Update content
-  document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+  // Update content - use inline styles for maximum compatibility
+  document.querySelectorAll('.mode-content').forEach(c => { c.style.display = 'none'; });
   var target = document.getElementById('mode-' + mode);
-  if (target) target.classList.add('active');
+  if (target) { target.style.display = 'block'; }
 }
 
 function goHome() {
