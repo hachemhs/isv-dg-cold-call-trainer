@@ -2857,7 +2857,101 @@ function generateContextualResponse(dgrText, scoreResult) {
   // ============================================================
   
   // ============================================================
-  // === EXPANDED INTERACTIONS: Deeper content-reactive paths ===
+  
+  // ============================================================
+  // === CUSTOMER-INITIATED OBJECTIONS (Real cold call pushback) ===
+  // ============================================================
+  // These fire based on turn + patience + probability — customer brings up
+  // objections WITHOUT being prompted, just like real cold calls.
+  
+  if(!resp && turn > 2 && Math.random() < 0.18) {
+    var objectionPool = [];
+    
+    // Low patience = harder objections
+    if(patience < 45) {
+      objectionPool = [
+        // DISMISSIVE
+        "Look — I\'m going to be straight. We\'re not in market for anything right now. Full stop.",
+        "I appreciate the call but honestly, we\'re fine. We don\'t need anything from AWS at the moment.",
+        "Yeah... I\'m going to stop you. This isn\'t relevant to us. Sorry.",
+        "Can you just send me an email? I\'ll read it when I have time. Which might be never, but still.",
+        "I get 10 of these calls a week. What makes yours different? Because so far — nothing.",
+        "We went through this evaluation 6 months ago and chose not to move forward. Nothing\'s changed.",
+        // TIMING
+        "Timing\'s terrible. We\'re mid-reorg. Nobody\'s making decisions for at least 8 weeks.",
+        "Call me back in Q" + (Math.floor(Math.random()*2)+3) + ". Seriously. Now is the worst possible time.",
+        "We just signed a 3-year deal with " + (Math.random() > 0.5 ? "Microsoft" : "Google") + ". You\'re literally 4 months too late.",
+        "Budget cycle closed in January. There\'s no money until next FY. Zero.",
+        // AUTHORITY
+        "Even if I liked this — I can\'t approve anything. My boss\'s boss would need to sign off and he\'s... not a cloud person.",
+        "I don\'t make these decisions alone. You\'d need to convince my CTO and he doesn\'t take vendor calls. Ever.",
+        // REAL EMEA OBJECTIONS (from SIFT data)
+        "Honestly? The US cloud thing is a problem for us. AWS is American. We\'re European. Our board has concerns about data sovereignty.",
+        "Look — and I don\'t mean this personally — but after Snowden, after CLOUD Act, our legal team won\'t let us put production data on a US provider. Period.",
+        "We evaluated AWS. You know what we found? No meaningful difference between you and Azure. Seriously. The capabilities have converged. Why would we switch?",
+        "Our procurement team just told me Azure offered us £" + (Math.floor(Math.random()*300)+100) + "K in credits. What are you offering? Because that\'s what I\'m competing against internally.",
+        "I\'m going to be honest: my team built something on Anthropic\'s API directly. Why would we add Bedrock as a middleman?"
+      ];
+    }
+    // Medium patience = softer objections (testing the DGR)
+    else if(patience < 65) {
+      objectionPool = [
+        // VALUE QUESTIONING
+        "I\'m still not hearing what\'s in it for ME specifically. Not AWS, not \'the market\' — me, this company, this quarter.",
+        "You know what — lots of vendors promise the same thing. \'Faster, cheaper, better.\' What proof do you have?",
+        "My concern is: we start this, it takes 6 months, costs 3x what you said, and we\'re stuck. How do I avoid that?",
+        "I\'ve been burned before. Last vendor — won\'t name them — promised " + (Math.random() > 0.5 ? "50% savings" : "3-month deployment") + ". Didn\'t deliver. Why should I trust you?",
+        // TEAM CAPACITY
+        "Even if the tech is good — my team is at 110% capacity. Adding ANYTHING right now means something else drops. What drops?",
+        "We\'re a " + (firstOf(s(company.size),',') || "small") + " team. We don\'t have a dedicated cloud person. Who does the actual work?",
+        "My engineers are going to push back. They just learned " + (tech || "our current stack") + ". Now you want them to learn something new?",
+        // COMPETITIVE POSITIONING
+        "Between us — my CTO prefers Google. He came from there. How do I make the case for AWS internally?",
+        "Azure just launched a thing that looks pretty similar to what you\'re describing. Why wouldn\'t I just use that?",
+        "Our investors are pushing us towards " + (Math.random() > 0.5 ? "Azure because of their enterprise customer base" : "GCP because of their AI reputation") + ". How do I counter that?",
+        // NEED/VALUE GAP
+        "What you\'re describing sounds nice in theory. But I don\'t have a problem to solve right now. We\'re... fine.",
+        "I hear you, but we\'re not bleeding. Things work. They\'re not perfect but they work. \'Better\' isn\'t worth the disruption.",
+        "Honestly — and I\'m being real here — I don\'t have time to evaluate another vendor. Even if it\'s good. Time is the constraint, not willingness.",
+        // ISV-SPECIFIC
+        "We\'re an ISV. We sell to enterprises. They ask us to run on Azure because THEY\'re on Azure. I can\'t force AWS on my customers.",
+        "Our customers are asking for multi-cloud. Going all-in on AWS feels like limiting our market.",
+        "Marketplace sounds great but we already have direct sales relationships. Why would I add a middleman who takes 3-5%?"
+      ];
+    }
+    // High patience = curious objections (customer wants to be convinced)
+    else {
+      objectionPool = [
+        // GENUINE CURIOSITY WITH SKEPTICISM
+        "Okay I\'m interested — but devil\'s advocate: what happens when your pricing goes up next year? We\'ve seen it with other vendors.",
+        "I like what I\'m hearing but... AI is moving so fast. What if Bedrock is obsolete in 18 months? Then what?",
+        "This sounds good. But I need to sell it internally. Give me the 30-second pitch I can repeat to my CEO without sounding like a salesperson.",
+        "Interesting. But — be honest — what\'s the catch? What are you NOT telling me?",
+        "I want to believe you but here\'s the thing: every vendor says they\'re different. Prove it. Not with slides — with a reference customer I can actually call.",
+        "Okay so let\'s say hypothetically I\'m interested. What does the next 30 days look like? Walk me through it.",
+        // GENUINE CONCERNS FROM REAL CUSTOMERS
+        "One real concern: we\'re regulated. " + (s(company.industry) ? s(company.industry).split('—')[0] + " regulations are brutal." : "Compliance isn\'t optional for us.") + " Can you handle that specifically?",
+        "My board asks one question: \'what\'s the exit strategy if this doesn\'t work?\' What do I tell them?",
+        "I\'m cautiously optimistic but — our last cloud initiative took 14 months instead of 3. How do I make sure this is different?",
+        "Real talk: we had a " + (Math.random() > 0.5 ? "security incident" : "major outage") + " last year on a cloud platform. The whole company is now scared of change. How do you handle that psychology?",
+        // BUYING SIGNALS DISGUISED AS OBJECTIONS
+        "If — and this is a BIG if — I agreed to explore this, who from your side would I be working with? I don\'t want to be handed off to someone junior.",
+        "Let me be clear: I\'m not saying no. I\'m saying \'not unless you can show me X.\' " + (pri ? "And X is: how does this accelerate " + pri.toLowerCase() + "?" : "And X is: what\'s the ROI in quarter one?"),
+        "You know what, I\'m going to give you credit — you\'ve been more specific than most people. But I still need one more thing: " + (pain ? "how specifically does this fix " + pain.toLowerCase().split('.')[0] + "?" : "a case study from our exact industry and size."),
+        "I\'ll be honest — I\'m half convinced. What pushes me over the edge is usually: can someone technical from your side talk to my " + (persona === 'ceo' ? "CTO" : persona === 'cto' ? "lead engineer" : "team") + "?"
+      ];
+    }
+    
+    resp = pick(objectionPool);
+    
+    // Set memory so DGR knows customer raised an objection
+    mem.lastQ = resp.indexOf('?') >= 0 ? resp.match(/[^.!]*\?/) ? resp.match(/[^.!]*\?/)[0] : null : null;
+    if(resp.indexOf('?') >= 0) { mem.askedFor = 'objection response'; mem.turnsSinceQ = 0; }
+    
+    return resp;
+  }
+
+// === EXPANDED INTERACTIONS: Deeper content-reactive paths ===
   // ============================================================
   
   // --- DGR TRIES TO BUILD RAPPORT ---
