@@ -2335,6 +2335,67 @@ function humanizeResponse(resp, state) {
     resp += volunteers[Math.floor(Math.random() * volunteers.length)];
   }
   
+  
+  // --- K. CUSTOMER ASKS FOLLOW-UP QUESTION MID-RESPONSE (15% chance when engaged) ---
+  if(patience > 60 && Math.random() < 0.15 && resp.length > 40) {
+    var followUps = [
+      " Actually — while we\'re on this. What\'s your onboarding process like?",
+      " Quick one: would this require us to change our existing contracts?",
+      " And how does support work? Like if it breaks at 2am — who do we call?",
+      " Do you work with companies our size? Or is this more for enterprise-enterprise?",
+      " And the data — where does it physically sit? EU? US?",
+      " One more: can I trial this without signing anything? Like a sandbox?",
+      " Also curious: what\'s YOUR background? Sales or technical? Just trying to gauge if you actually understand our problems.",
+      " Random: how many customers do you have in " + (state.cfg && state.cfg.company && state.cfg.company.industry ? state.cfg.company.industry.split('—')[0] : "our industry") + "?"
+    ];
+    resp += followUps[Math.floor(Math.random() * followUps.length)];
+  }
+  
+  // --- L. INCOMPLETE THOUGHTS trailing off (7% chance) ---
+  if(Math.random() < 0.07 && resp.length > 50) {
+    var trailOffs = [
+      function(r) { var dot = r.lastIndexOf('. '); if(dot > 30) return r.substring(0, dot) + ". And also... hmm, never mind. Go on."; return r; },
+      function(r) { return r + " I was going to say something else but... it\'s not important. Continue."; },
+      function(r) { var mid = Math.floor(r.length * 0.6); var sp = r.indexOf(' ', mid); if(sp > 0) return r.substring(0, sp) + "... actually, you know what — " + r.substring(sp); return r; }
+    ];
+    resp = trailOffs[Math.floor(Math.random() * trailOffs.length)](resp);
+  }
+  
+  // --- M. SENTIMENT-ADAPTIVE LANGUAGE (always active) ---
+  if(patience > 75) {
+    // Very engaged — warmer language
+    if(Math.random() < 0.15) {
+      var warm = [
+        function(r) { return r.replace(/Right\./, "Yeah, right, right."); },
+        function(r) { return r.replace(/Okay\./, "Okay yeah."); },
+        function(r) { if(r.indexOf("good") < 0) return r + " This is actually a good conversation."; return r; }
+      ];
+      resp = warm[Math.floor(Math.random() * warm.length)](resp);
+    }
+  } else if(patience < 30) {
+    // Very disengaged — curt language
+    if(Math.random() < 0.2) {
+      var curt = [
+        function(r) { var firstSent = r.match(/^[^.!?]+[.!?]/); return firstSent ? firstSent[0] : r; },
+        function(r) { return r.replace(/\. .+$/, ". That\'s all I\'ve got."); },
+        function(r) { return "Mm. " + (r.length > 60 ? r.split('.')[0] + "." : r); }
+      ];
+      resp = curt[Math.floor(Math.random() * curt.length)](resp);
+    }
+  }
+  
+  // --- N. CUSTOMER SHARES PERSONAL CONTEXT (5% chance when warming) ---
+  if(patience > 65 && Math.random() < 0.05 && (state.turn || 0) > 3) {
+    var personal = [
+      " By the way — I\'ve been in this role for " + (Math.floor(Math.random()*5)+1) + " years. Before this I was at " + (Math.random() > 0.5 ? "a startup" : "a bigger company") + ". So I get the build-vs-buy tension.",
+      " Fun fact: I actually used to work in tech before moving to the business side. So you can talk technical with me — I won\'t glaze over.",
+      " Context: our board meets in 3 weeks. If you can get me something compelling by then, timing-wise it could actually work.",
+      " Look, between you and me — my team is frustrated with our current setup. I just can\'t say that publicly. So... yeah, there might be an opening here.",
+      " Honestly? The reason I\'m still on this call is because my last vendor conversation was terrible and you\'re at least asking questions. Low bar but you\'re clearing it."
+    ];
+    resp += personal[Math.floor(Math.random() * personal.length)];
+  }
+
   return resp;
 }
 
@@ -2794,7 +2855,150 @@ function generateContextualResponse(dgrText, scoreResult) {
   }
   
   // ============================================================
-  // === DEFAULT: Based on mood/patience ===
+  
+  // ============================================================
+  // === EXPANDED INTERACTIONS: Deeper content-reactive paths ===
+  // ============================================================
+  
+  // --- DGR TRIES TO BUILD RAPPORT ---
+  if(!resp && lower.match(/how.*(your|the) (day|week|morning|afternoon)|hope you.*(well|good)|nice to|pleasure|great to connect|weather/i)) {
+    resp = pick([
+      "Ha. Small talk. [amused] I respect the attempt. But yeah — day\'s fine. What\'s this actually about?",
+      "I\'m good thanks. But we both know you didn\'t call to ask about my day. [smiles] What\'s up?",
+      "Appreciate the pleasantries. I\'m running between things though so let\'s skip to it. What\'ve you got?",
+      "[caught off guard] Oh. Um — yeah I\'m good. That\'s... surprisingly human for a cold call. Okay, you\'ve got my attention for 30 more seconds.",
+      "Day\'s chaos as always. [laughs] But I appreciate you asking like a normal person instead of launching into a pitch. Go on.",
+      "Fine, fine. You know how it is. Meetings about meetings. What can I do for you?",
+      "Not bad actually — had a win this morning. Riding the high. So your timing\'s good. Quick though — what is it?"
+    ]);
+    state.patience += 2;
+    return resp;
+  }
+  
+  // --- DGR APOLOGIZES OR BACKTRACKS ---
+  if(!resp && lower.match(/sorry|apologize|didn.t mean|let me rephrase|what i meant|back up|start over|wrong word/i)) {
+    resp = pick([
+      "It\'s fine. Take a breath. Start again — what are you actually trying to say?",
+      "[waves hand] Don\'t apologize. Just tell me straight. What\'s the point?",
+      "No need to be sorry. I\'d rather you be honest than polished. Go on.",
+      "Ha. Points for self-awareness. Most salespeople just bulldoze through. What did you mean?",
+      "Stop. Breathe. Try again. I\'m not going anywhere... yet.",
+      "[amused] That\'s actually refreshing. Most people on these calls never admit they misspoke. Go ahead, rephrase."
+    ]);
+    state.patience += 1;
+    return resp;
+  }
+  
+  // --- DGR NAME-DROPS OR REFERENCES SOMEONE ---
+  if(!resp && lower.match(/your (colleague|cto|ceo|team|boss|manager)|spoke (to|with)|referred|recommended|mentioned your name|[A-Z][a-z]+ suggested|someone on your team/i)) {
+    var nameRef = dgrText.match(/([A-Z][a-z]+ ?[A-Z]?[a-z]*) (?:suggested|recommended|mentioned|referred|told)/i);
+    resp = pick([
+      (nameRef ? "Wait — " + nameRef[1] + " told you to call me? [surprised] Hm. That changes things a bit. What did they say?" : "Someone referred you? Who? Because that matters."),
+      "[intrigued] Who specifically gave you my name? I want to know who to blame. [laughs]",
+      "Ah, so this isn\'t completely cold then. Okay — if " + (nameRef ? nameRef[1] : "someone internal") + " thinks it\'s worth my time, I\'ll give you an extra minute.",
+      "Hmm. That\'s... interesting. Usually nobody refers people to me unless there\'s a real reason. What\'s the context?",
+      "[pauses] Okay you\'ve earned slightly more of my attention with that. Who was it and what did they tell you about our situation?"
+    ]);
+    state.patience += 5;
+    mem.askedFor = 'who referred';
+    mem.turnsSinceQ = 0;
+    return resp;
+  }
+  
+  // --- DGR SHARES A CASE STUDY OR EXAMPLE ---
+  if(!resp && lower.match(/for example|one of our customers|similar company|case study|we worked with|recently helped|last quarter we/i)) {
+    var companyRef = dgrText.match(/(?:worked with|helped|customer|company) (?:called |named |like )?([A-Z][A-Za-z& ]{2,25})/i);
+    resp = pick([
+      (companyRef ? "Hmm, " + companyRef[1] + ". " : "Okay. ") + "Are they similar to us though? Because every company says \'we helped someone like you\' and then the details don\'t match.",
+      "[interested] Okay, a real example. Good. But I need to understand — what\'s their size? Industry? Are we actually comparable?",
+      "Case studies are nice but they\'re always cherry-picked. What happened to the ones that DIDN\'T work? [smiles]",
+      (companyRef ? "I actually know " + companyRef[1] + ". Or at least I\'ve heard of them. " : "Right. ") + "What specifically did you do for them?",
+      "Give me the numbers from that. Not the \'we helped them grow\' stuff — the actual before/after metrics.",
+      "Interesting. " + (companyRef ? "Can I talk to someone at " + companyRef[1] + " directly?" : "Can I get a reference call?") + " Because I trust them more than you. No offence.",
+      "Okay that\'s more like it. You\'re giving me something real. " + (pri ? "How does that connect to our " + pri.toLowerCase() + " situation?" : "Keep going.")
+    ]);
+    state.patience += 2;
+    return resp;
+  }
+  
+  // --- DGR SAYS SOMETHING GENUINELY INSIGHTFUL ---
+  if(!resp && lower.match(/the real (challenge|issue|problem)|what (I|we).ve seen is|the pattern (is|we see)|most companies (fail|struggle) (because|when)|the reason .+ don.t|truth is/i)) {
+    resp = pick([
+      "[pauses] ...huh. That\'s actually not a bad observation. You\'re not wrong about that.",
+      "Okay wait. Say that again. That part about " + (echo || "the pattern") + ". That resonates.",
+      "[surprised] You\'ve actually thought about this beyond the surface level. That\'s rare for these calls. Keep talking.",
+      "Hmm. You might be onto something there. " + (pain ? "Because yeah — " + pain.toLowerCase().split('.')[0] + ". That IS the core of it." : "That tracks with what I\'m seeing."),
+      "[leans back] Interesting. You\'re not wrong. I hate that you\'re not wrong because now I have to take this seriously. [laughs]",
+      "Now THAT is a good point. " + (pri ? "We\'ve been struggling with " + pri.toLowerCase() + " and what you just said about " + (echo || "that pattern") + " — yeah, I see it." : "I\'ve never heard a cold caller say that before."),
+      "Hold on — [takes note] — that\'s actually... yeah. Who told you that? Is that from working with other companies or...?"
+    ]);
+    state.patience += 5;
+    mem.specific++;
+    return resp;
+  }
+  
+  // --- DGR MENTIONS A SPECIFIC USE CASE ---
+  if(!resp && lower.match(/use case|implementation|deployment|migration|moderniz|automat|orchestrat|pipeline|workflow|integration|consolidat/i)) {
+    var useCase = (lower.match(/(?:for|around|with) (\w+ ?\w+ ?\w+)(?:ion|ing|ment)?/i) || [null, echo || 'that'])[1];
+    resp = pick([
+      (useCase ? useCase.charAt(0).toUpperCase() + useCase.slice(1) : "That") + ". Okay. We\'ve actually been thinking about this internally. What\'s your approach?",
+      "Right, so " + (useCase || "this use case") + ". My question is: how much of this is us doing the work vs your team?",
+      "[interested] We\'ve discussed " + (useCase || "something like that") + " internally. It always stalls at the \'who owns it\' question. How do you handle that?",
+      "Hmm. " + (useCase || "That") + ". " + (tech ? "We\'re on " + tech + " — does that complicate things or help?" : "What prerequisites do we need?"),
+      (useCase || "That use case") + " — how long does that typically take? Start to value? Not start to \'it\'s technically deployed.\'",
+      "Okay so " + (useCase || "this") + ". My CTO asked about this last week actually. " + (pain ? "It connects to our " + pain.toLowerCase().split('.')[0] + " problem." : "Send me something on it."),
+      "That\'s relevant. [nods] " + (pri ? "We\'re trying to " + pri.toLowerCase() + " and " + (useCase || "this") + " might help." : "What does the first month look like?")
+    ]);
+    state.patience += 2;
+    mem.askedFor = useCase + ' details';
+    mem.turnsSinceQ = 0;
+    return resp;
+  }
+  
+  // --- CONVERSATION STALL (DGR just says "yeah" or "right" or makes a statement without direction) ---
+  if(!resp && !hasQ && !generic && !specific && !product && !closing && !competitor && !ai && !cost && len > 5 && len < 20) {
+    // DGR said something mid-length but without clear direction
+    if(patience > 55) {
+      resp = pick([
+        "Okay... and what do you want me to do with that information?",
+        "Right. I\'m following. Where are you going with this?",
+        "Mm-hmm. [waits] Is there a question in there or...?",
+        "Sure. And? What\'s the ask? What do you want from me?",
+        "[nods slowly] Okay. I\'m tracking. But I need you to connect the dots for me.",
+        "I hear you. But I\'m not sure what you want me to say to that. Help me out.",
+        "Right. So — what\'s the next word? [smiles] I\'m waiting for the punchline."
+      ]);
+    } else {
+      resp = pick([
+        "...okay? And? Is there more?",
+        "I\'m waiting for the point.",
+        "Uh huh. And that means...?",
+        "[silence] ...right. Moving on?",
+        "Cool. What do you want me to do with that?"
+      ]);
+    }
+    return resp;
+  }
+  
+  // --- CUSTOMER INITIATES OWN TOPIC (15% chance when engaged, inserted into conversation flow) ---
+  if(!resp && patience > 60 && turn > 4 && Math.random() < 0.15) {
+    var initiations = [
+      "Actually — completely off-topic but since I have you — what\'s AWS doing about sovereignty? We keep getting asked about it internally and nobody has a clear answer.",
+      "Random one: do you know if there\'s a way to get AWS credits for a POC? Because we\'d test something if there was no risk.",
+      "Oh by the way — we\'re going to AWS Summit " + (Math.random() > 0.5 ? "London" : "Berlin") + " next month. Will you be there? Might be easier to talk in person.",
+      "Side note — my CEO just said in all-hands that we need to \'be AI-first by 2027.\' [rolls eyes] What does that even mean? Seriously.",
+      "Quick tangent: one of my engineers keeps asking about " + (Math.random() > 0.5 ? "Graviton" : "Bedrock") + ". Is it actually worth looking at or is it just hype?",
+      "Oh actually — is there any funding available? Like partner credits or whatever? Because budget is the real blocker here, not willingness.",
+      "Wait, before you answer — let me tell you what happened last week. We had " + (Math.random() > 0.5 ? "an outage" : "a competitor approach us") + " and it\'s completely shifted my thinking. The timing of your call is... interesting.",
+      "You know what — I should tell you. We\'re being acquired. It\'s not public yet. But any cloud decisions are frozen for 60 days. Can you come back then?",
+      "Unrelated: do you have experience with " + (Math.random() > 0.5 ? "regulated industries" : "multi-tenant SaaS") + "? Because that\'s where most vendors fall down with us."
+    ];
+    resp = pick(initiations);
+    mem.turnsSinceQ = 0;
+    return resp;
+  }
+
+// === DEFAULT: Based on mood/patience ===
   // ============================================================
   if(patience > 65) {
     resp = pick([
