@@ -549,6 +549,148 @@ var REAL_CUSTOMERS = {
   }
 };
 
+
+// === ENRICHMENT: Real competitive intelligence from Highspot + AWSentral (May 2026) ===
+
+var COMPETE_INTEL = {
+  azure: {
+    marketShare: "Azure dominates EMEA competitive losses — 6 of 11 cite Azure in Q1 2026",
+    realLosses: [
+      {account:"Topicus Healthcare", arr:"$480K", reason:"Kiro Licenses — customer already Azure-aligned"},
+      {account:"SYNAXON AG", arr:"$120K", reason:"EC2 Infrastructure — chose Azure for existing Microsoft alignment"},
+      {account:"Rio Tinto", arr:"$110K", reason:"Market Intelligence — Azure won on data platform"},
+      {account:"MimiqAI", arr:"$84K", reason:"GenAI/Trainium — chose Azure AI Studio over Bedrock"},
+      {account:"Vizrt", arr:"$48K", reason:"Acquisition by Azure-aligned parent — Flowics MAP stalled"}
+    ],
+    objections: [
+      {claim:"We\'re a Microsoft shop — Azure is good enough", response:"AWS and Azure are architected differently. AWS multi-AZ design is what Gartner recommends for enterprise HA. Netflix, Disney, Instacart, Adidas run on AWS when business is on the line."},
+      {claim:"Microsoft has more enterprise experience", response:"AWS has 17+ years — more than any other cloud provider. Millions of active customers. Not just tech — financial services, healthcare, governments."},
+      {claim:"Azure offers better integrated tooling with Microsoft 365", response:"Integration is one thing, best-in-class is another. AWS offers 200+ services purpose-built for cloud-native. You can still use M365 — it doesn\'t require Azure."},
+      {claim:"Azure credits are more generous", response:"In EMEA, Azure offered $375K credits vs AWS $45K in one case. But credits aren\'t strategy. What happens when they expire? AWS Marketplace co-sell delivers 65% higher close rates sustainably."},
+      {claim:"Our IT team already knows Azure", response:"Training gap is 2-3 weeks for AWS basics. The long-term TCO difference is 25-40% — that pays for training in month one."}
+    ]
+  },
+  gcp: {
+    marketShare: "GCP wins on pricing and AI halo effect — perceived as cheaper and easier",
+    realLosses: [
+      {account:"Sparkers NV", arr:"$24K", reason:"ML use cases — partner didn\'t convert from GCP"},
+      {account:"Porters", arr:"$0", reason:"Developer tooling — chose GCP for simplicity"},
+      {account:"LSports (Israel)", arr:"$500K", reason:"Signed 5-year EDP with GCP, actively migrating FROM AWS"},
+      {account:"eDreams + Grupo Sonae (Spain)", arr:"$200K", reason:"More flexible funding mechanisms from GCP"}
+    ],
+    objections: [
+      {claim:"GCP is cheaper", response:"Focus on TCO not list price. AWS provides predictable pricing with Savings Plans + Reserved Instances. GCP sustained discounts sound good but lock you into their commitment model."},
+      {claim:"Google is better at AI/ML", response:"AWS has 2x more production-ready AI capabilities. 73% of Bedrock GenAI initiatives move from POC to production vs industry average of ~30%."},
+      {claim:"GCP is easier to use", response:"Ease at small scale, but AWS gives you choice and depth. 200+ services vs GCP\'s 100. When you scale, you need breadth."},
+      {claim:"Google has better data/analytics", response:"BigQuery is one product. AWS gives you Redshift, Athena, EMR, Kinesis, QuickSight — purpose-built for each workload. One-size-fits-all breaks at scale."},
+      {claim:"GCP funding is more flexible", response:"Short-term credits vs long-term partnership. AWS ISV Accelerate gives you co-sell support, 65% higher close rates, 54% larger deals — that\'s revenue, not credits."}
+    ]
+  },
+  anthropic: {
+    marketShare: "Emerging: ISVs going direct to model providers (Anthropic/OpenAI) instead of through Bedrock",
+    realLosses: [
+      {account:"DeepL SE", arr:"$1.8M", reason:"Chose Anthropic for Nova Act — largest single competitive loss Q1 2026"},
+      {account:"Gearset", arr:"$12K", reason:"Chose Claude tooling over AWS Quicksuite"},
+      {account:"3 ISVs (Minderest, ISPD, Stream Hatchet)", arr:"$100K", reason:"Adopted Claude Code directly from Anthropic instead of through Bedrock"}
+    ],
+    objections: [
+      {claim:"Why Bedrock when I can go direct to Anthropic/OpenAI?", response:"Direct access = one model. Bedrock = model choice (Claude, Nova, Llama, Mistral), plus Guardrails, Knowledge Bases, Agents, fine-tuning — all managed. Plus you keep your AWS billing and security posture."},
+      {claim:"Anthropic/OpenAI APIs are simpler", response:"Simpler for a POC. But production needs guardrails, monitoring, RAG, multi-model routing. Bedrock gives you that without building it yourself. 75% reduction in infrastructure development time."},
+      {claim:"We want the latest models immediately", response:"Bedrock has same-day or week-of access to new Claude models. Plus you get Nova (AWS-native), Llama, Mistral. Model diversity = negotiation leverage and no single-vendor lock-in."}
+    ]
+  },
+  marketplace: {
+    stats: {
+      closeRates: "65% higher close rates for co-selling through Marketplace",
+      dealSize: "54% larger deals (some studies show 80% richer)",
+      revenueGrowth: "51% higher average revenue growth",
+      winRates: "27% higher win rates",
+      salesCycles: "40%+ faster sales cycles / 45% of partners report shortened cycles",
+      renewals: "33% of partners report improved renewal rates",
+      procurement: "70% procurement time savings (Forrester 2025)",
+      payment: "48% of partners prefer Marketplace for reliable payment collection"
+    },
+    objections: [
+      {claim:"Why Marketplace when we have our own billing?", response:"Customers can draw down their EDP commitment by buying your solution through Marketplace. That means budget is pre-approved — no new procurement cycle. 70% faster procurement."},
+      {claim:"We lose margin on Marketplace", response:"Standard fee is 3-5%. But you gain 65% higher close rates and 54% larger deals. Net revenue goes UP not down. Plus: procurement savings mean customers buy faster."},
+      {claim:"Azure Marketplace offered more credits", response:"Credits are one-time. AWS co-sell gives you ongoing pipeline — AWS account teams actively bring you into deals. SaaS Co-Sell Benefit means AWS AMs get quota retirement for helping you close."}
+    ]
+  },
+  agenticAI: {
+    stats: {
+      gartner: "33% of enterprise apps will incorporate agentic AI by 2028 (Gartner)",
+      production: "73% of AWS GenAI Innovation Center initiatives move POC → production",
+      speed: "2.1x faster development, 5.2x faster deployment",
+      infraReduction: "75% reduction in infrastructure development time",
+      capabilities: "Nearly 2x more production-ready AI capabilities than other clouds"
+    },
+    valueProp: [
+      "Freedom to Invent: Most comprehensive AI stack — infrastructure to applications. Framework flexibility (Strands, LangGraph, CrewAI). No vendor lock-in.",
+      "Maximize Value: 73% POC-to-production rate. 75% less infra dev time. 2.1x faster dev cycles.",
+      "Scale with Trust: Responsible AI frameworks built-in. Guardrails, sandboxed runtime, IAM-level agent controls."
+    ]
+  }
+};
+
+var DISCOVERY_QUESTIONS = {
+  cto: [
+    "What are your biggest technical challenges with your current architecture?",
+    "Where are you in modernizing your stack? Any migration plans?",
+    "How much engineering time goes to undifferentiated work vs product features?",
+    "What\'s your AI strategy? Where are you on the build-vs-buy spectrum?",
+    "What does your deployment pipeline look like? What\'s the cycle time?",
+    "If you could eliminate one technical bottleneck tomorrow, what would it be?",
+    "How do you handle observability and incident response today?",
+    "What\'s your biggest scaling concern for the next 12 months?"
+  ],
+  cfo: [
+    "How does your IT spend break down between run vs grow?",
+    "What\'s your cloud cost trajectory? Is it predictable?",
+    "How do you measure ROI on technology investments today?",
+    "What would a 20% infrastructure cost reduction mean for your P&L?",
+    "Are there procurement bottlenecks that slow down your buying process?",
+    "How does customer acquisition cost compare to your targets?",
+    "What\'s the board\'s appetite for technology investment right now?",
+    "How do you think about vendor consolidation vs best-of-breed?"
+  ],
+  ceo: [
+    "What\'s your growth strategy for the next 18 months?",
+    "Where do you see AI changing your industry in 2-3 years?",
+    "What are your competitors doing with technology that concerns you?",
+    "If you could accelerate one initiative, what would it be?",
+    "How do you think about international expansion?",
+    "What does your board ask about when it comes to technology?",
+    "Where is your biggest go-to-market bottleneck?",
+    "What would make your next fundraise/quarter significantly easier?"
+  ],
+  cio: [
+    "What\'s your biggest compliance challenge right now?",
+    "How do you handle data residency requirements across European markets?",
+    "What does your security assessment process look like for new vendors?",
+    "How many point solutions are you managing? Is consolidation a goal?",
+    "What\'s your DR/BC strategy? When was it last tested?",
+    "How do you balance innovation speed vs governance?",
+    "What keeps you up at night from a security perspective?",
+    "How do you handle the growing AI governance requirements?"
+  ]
+};
+
+// Real customer objection patterns from SIFT insights (EMEA 2026)
+var SIFT_OBJECTIONS = [
+  {pattern:"Data sovereignty — US company concern", example:"Swissbit (Germany): \'Ownership is still Amazon, a US company — not interested, prefer European provider\'. Chose StackIT.", region:"DACH", frequency:"growing"},
+  {pattern:"Board-level US cloud risk", example:"EWE AG (Germany): Board task force to assess US cloud risks — halted AWS migration entirely.", region:"DACH", frequency:"growing"},
+  {pattern:"No technical differentiation perceived", example:"Corporacion Pascual (Spain): CTO said \'no technical differentiation between providers\' — chose Azure Fabric + Power BI.", region:"Iberia", frequency:"common"},
+  {pattern:"Hyperscaler convergence argument", example:"Atlas Copco, ArcelorMittal: \'Capabilities converged, 10-15% price diff doesn\'t warrant migration.\'", region:"Nordics/Benelux", frequency:"common"},
+  {pattern:"CoE overhead concern", example:"Tata Steel: \'Standing up AWS CoE adds 20-30% overhead vs staying multi-cloud.\'", region:"Enterprise", frequency:"moderate"},
+  {pattern:"Database gaps (Exascale)", example:"Telenet Group: \'ODB@AWS lags behind Azure and GCP — missing Exascale offering.\' Cancelled POC.", region:"Benelux", frequency:"specific"},
+  {pattern:"Direct model provider preference", example:"3 ISVs (Minderest, ISPD, Stream Hatchet): Adopted Claude Code from Anthropic instead of Bedrock.", region:"Iberia", frequency:"growing"},
+  {pattern:"Competitive funding gap", example:"Michelin: Azure offered $375K credits vs AWS $45K. Customer chose Azure.", region:"France", frequency:"moderate"},
+  {pattern:"SARL onboarding blockers", example:"Rapid7 ($1.2M ACV): Lost due to SARL entity onboarding issues — operational friction.", region:"France", frequency:"specific"},
+  {pattern:"GCP flexible funding wins", example:"eDreams + Grupo Sonae: GCP won with \'more flexible funding mechanisms.\'", region:"Iberia", frequency:"moderate"}
+];
+
+
+
 var PERSONAS = {
   cto: {
     name:'Alex Chen', title:'CTO', avatar:'A',
