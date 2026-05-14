@@ -3960,7 +3960,7 @@ var typingSafetyInterval = setInterval(function() {
 
 
 
-// ===== VOICE MODE (Web Speech API) =====
+// ===== VOICE MODE (Enhanced Natural Speech) =====
 var voiceMode = {
   enabled: false,
   speaking: false,
@@ -3969,16 +3969,15 @@ var voiceMode = {
   synthesis: null,
   voices: [],
   customerVoice: null,
-  ringtone: null,
-  callConnected: false
+  speakQueue: [],
+  currentUtterance: null
 };
 try { voiceMode.synthesis = window.speechSynthesis || null; } catch(e) { voiceMode.synthesis = null; }
 
-// Initialize speech recognition
 function initVoiceMode() {
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!SpeechRecognition) {
-    alert('Speech recognition not supported in this browser. Use Chrome for voice mode.');
+    alert('Speech recognition not supported. Use Chrome or Edge.');
     return false;
   }
   voiceMode.recognition = new SpeechRecognition();
@@ -3993,124 +3992,230 @@ function initVoiceMode() {
       transcript += event.results[i][0].transcript;
       if(event.results[i].isFinal) isFinal = true;
     }
-    
-    // Show interim results in the input field
     var input = document.getElementById('userInput');
     if(input) input.value = transcript;
     
-    // Auto-send on final result after a pause
-    if(isFinal && transcript.trim().length > 5) {
+    if(isFinal && transcript.trim().length > 3) {
       setTimeout(function() {
         if(voiceMode.listening && state && state.active) {
           sendMsg();
           voiceMode.listening = false;
           updateVoiceUI('idle');
         }
-      }, 600); // faster pause before sending
+      }, 500);
     }
   };
   
   voiceMode.recognition.onerror = function(e) {
-    if(e.error !== 'no-speech') console.log('Speech error:', e.error);
+    if(e.error !== 'no-speech' && e.error !== 'aborted') console.log('Speech error:', e.error);
     updateVoiceUI('idle');
   };
   
   voiceMode.recognition.onend = function() {
-    // Auto-restart if still in listening mode
-    if(voiceMode.listening && state && state.active) {
+    if(voiceMode.listening && state && state.active && !voiceMode.speaking) {
       try { voiceMode.recognition.start(); } catch(e) {}
     }
   };
   
-  // Load voices
-  if(voiceMode.synthesis) {
-    voiceMode.synthesis.onvoiceschanged = function() {
-      voiceMode.voices = voiceMode.synthesis.getVoices();
-    };
+  // Load voices with preference for high-quality ones
+  function loadVoices() {
+    if(!voiceMode.synthesis) return;
     voiceMode.voices = voiceMode.synthesis.getVoices();
+    if(voiceMode.voices.length > 0) selectPersonaVoice();
   }
-  
+  if(voiceMode.synthesis) {
+    voiceMode.synthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+  }
   return true;
 }
 
-// Get appropriate voice for persona
-function getVoiceForPersona(persona) {
+// === VOICE SELECTION: Prefer neural/natural voices ===
+function selectPersonaVoice() {
   var voices = voiceMode.voices;
-  if(!voices.length) return null;
+  if(!voices.length) return;
+  var persona = state ? state.persona : 'cto';
   
-  // Try to match persona gender/style
-  var preferred = [];
-  if(['cfo','cio','headit','aiml'].includes(persona)) {
-    // Female voices for Sarah, Maria, Rachel, Priya
-    preferred = voices.filter(function(v) { return v.name.match(/female|samantha|karen|kate|moira|fiona|victoria|zira/i) && v.lang.match(/en/); });
-  } else {
-    // Male voices for Alex, James, Tom, Marcus
-    preferred = voices.filter(function(v) { return v.name.match(/male|daniel|james|david|alex|tom|george/i) && v.lang.match(/en/); });
-  }
+  // Voice quality ranking: Google UK > Microsoft Neural > Apple > Default
+  var quality = voices.map(function(v, idx) {
+    var score = 0;
+    // Prefer English UK/US
+    if(v.lang === 'en-GB') score += 20;
+    else if(v.lang === 'en-US') score += 15;
+    else if(v.lang.match(/^en/)) score += 10;
+    else return {voice: v, score: -100, idx: idx};
+    
+    // Prefer Google and Microsoft neural voices (much higher quality)
+    if(v.name.match(/Google UK/i)) score += 30;
+    if(v.name.match(/Microsoft .+ Online/i)) score += 25;
+    if(v.name.match(/Natural|Neural/i)) score += 20;
+    if(v.name.match(/Google/i)) score += 15;
+    if(v.name.match(/Microsoft/i)) score += 10;
+    
+    // Gender matching per persona
+    var wantFemale = ['cfo','cio','aiml','head_it'].includes(persona);
+    var isFemale = v.name.match(/female|samantha|karen|kate|moira|fiona|victoria|zira|hazel|libby|sonia|jenny|aria|sara/i);
+    var isMale = v.name.match(/male|daniel|james|david|george|ryan|guy|thomas|rishi/i);
+    
+    if(wantFemale && isFemale) score += 15;
+    else if(!wantFemale && isMale) score += 15;
+    else if(wantFemale && isMale) score -= 10;
+    else if(!wantFemale && isFemale) score -= 10;
+    
+    return {voice: v, score: score, idx: idx};
+  });
   
-  // Fallback: any English voice
-  if(!preferred.length) {
-    preferred = voices.filter(function(v) { return v.lang.match(/en-GB|en-US|en/); });
-  }
-  
-  return preferred.length ? preferred[Math.floor(Math.random() * preferred.length)] : voices[0];
+  quality.sort(function(a, b) { return b.score - a.score; });
+  voiceMode.customerVoice = quality[0].voice;
 }
 
-// Speak customer response
+// === PERSONA VOICE PROFILES ===
+function getVoiceProfile(persona) {
+  var profiles = {
+    cto: {baseRate: 1.05, basePitch: 0.9, style: 'direct'},       // Fast, lower pitch, technical
+    cfo: {baseRate: 0.95, basePitch: 1.0, style: 'measured'},      // Slower, precise, measured
+    ceo: {baseRate: 1.0, basePitch: 0.95, style: 'confident'},     // Medium pace, commanding
+    cio: {baseRate: 0.9, basePitch: 1.05, style: 'careful'},       // Slower, methodical
+    aiml: {baseRate: 1.1, basePitch: 1.1, style: 'enthusiastic'},  // Faster, higher, excited about tech
+    vp_eng: {baseRate: 1.05, basePitch: 0.85, style: 'direct'},    // Fast, deep voice
+    head_it: {baseRate: 0.92, basePitch: 1.0, style: 'careful'},   // Methodical
+    head_digital: {baseRate: 1.0, basePitch: 0.9, style: 'confident'} // Confident
+  };
+  return profiles[persona] || profiles.cto;
+}
+
+// === ENHANCED SPEAK: Chunked, natural pacing ===
 function speakResponse(text, callback) {
   if(!voiceMode.enabled || !voiceMode.synthesis) { if(callback) callback(); return; }
-  try {
   
   // Stop any current speech
   voiceMode.synthesis.cancel();
   voiceMode.speaking = true;
+  voiceMode.speakQueue = [];
   updateVoiceUI('speaking');
   
-  // === HUMAN VOICE ENHANCEMENT ===
-  // Split on natural pause points and speak in segments for realistic pacing
+  // Stop listening while speaking
+  if(voiceMode.recognition) try { voiceMode.recognition.stop(); } catch(e) {}
+  
+  var persona = state ? state.persona : 'cto';
+  var profile = getVoiceProfile(persona);
+  var patience = state ? state.patience : 50;
+  
+  // === CLEAN TEXT for speech ===
   var cleanText = text
-    .replace(/\[pause\]/g, '...')
-    .replace(/\[laughs\]/g, 'ha,')
-    .replace(/\[sigh\]/g, 'hmm,')
-    .replace(/\[typing sounds\]/g, '')
-    .replace(/\[muffled talking\]/g, '')
-    .replace(/\[loud background noise\]/g, '')
-    .replace(/\[click\]/g, '');
+    .replace(/\[sighs?\]/gi, '... hmm ...')
+    .replace(/\[laughs?\]/gi, '... ha ...')
+    .replace(/\[thinks?\]/gi, '... hmm ...')
+    .replace(/\[pauses?\]/gi, '...')
+    .replace(/\[interrupts?\]/gi, '')
+    .replace(/\[surprised\]/gi, '')
+    .replace(/\[amused\]/gi, '')
+    .replace(/\[intrigued\]/gi, '')
+    .replace(/\[directly\]/gi, '')
+    .replace(/\[nods?\]/gi, '')
+    .replace(/\[leans? (?:in|back|forward)\]/gi, '')
+    .replace(/\[checks? (?:phone|time|calendar|laptop)\]/gi, '...')
+    .replace(/\[(?:phone|slack|notification) (?:buzzes?|sounds?)\]/gi, '... oh ...')
+    .replace(/\[takes? notes?\]/gi, '')
+    .replace(/\[stands? up[^\]]*\]/gi, '')
+    .replace(/\[typing[^\]]*\]/gi, '')
+    .replace(/\[muffled[^\]]*\]/gi, '...')
+    .replace(/\[dog barks?[^\]]*\]/gi, '... oh sorry ...')
+    .replace(/\[doorbell[^\]]*\]/gi, '... one moment ...')
+    .replace(/\[coffee[^\]]*\]/gi, '')
+    .replace(/\[someone[^\]]*\]/gi, '... hold on ...')
+    .replace(/\[tone shifts?\]/gi, '...')
+    .replace(/\[half listening\]/gi, '')
+    .replace(/\[gets? (?:distracted|excited)[^\]]*\]/gi, '... sorry ...')
+    .replace(/\[opens?[^\]]*\]/gi, '')
+    .replace(/\[[^\]]*\]/g, '...')  // Catch all remaining brackets
+    .replace(/\\/g, "'")
+    .replace(/\.{3,}/g, '...');
   
-  // Natural speech parameters based on customer mood
-  var moodRate = state && state.patience > 60 ? 1.0 : (state && state.patience > 35 ? 1.1 : 1.2);
-  var moodPitch = state && state.patience > 60 ? 1.0 : (state && state.patience > 35 ? 0.95 : 0.9);
+  // === CHUNK INTO NATURAL PHRASES ===
+  // Split on sentence boundaries, dashes, and ellipses for natural pauses
+  var chunks = cleanText
+    .split(/(?<=[.!?])\s+|(?<=\.\.\.)\s*|(?<=—)\s*|(?<=,\s)(?=[A-Z])/)
+    .filter(function(c) { return c && c.trim().length > 0; });
   
-  var utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.voice = voiceMode.customerVoice;
+  if(chunks.length === 0) chunks = [cleanText];
   
-  // Human-like variation: slightly different each time
-  utterance.rate = moodRate + (Math.random() * 0.15 - 0.07);
-  utterance.pitch = moodPitch + (Math.random() * 0.2 - 0.1);
-  utterance.volume = 0.85 + (Math.random() * 0.1);
+  // === SPEAK CHUNKS SEQUENTIALLY with natural pauses ===
+  var chunkIndex = 0;
   
-  // Add natural pauses by replacing punctuation with longer gaps  
-  utterance.text = cleanText
-    .replace(/\.\.\./g, ', , ,')
-    .replace(/—/g, ', ,')
-    .replace(/\?/g, '? ')
-    .replace(/\. /g, '. , ');
-  
-  utterance.onend = function() {
-    voiceMode.speaking = false;
-    updateVoiceUI('listening');
-    // Auto-start listening after customer finishes speaking
-    if(voiceMode.enabled && state && state.active) {
-      startListening();
+  function speakNextChunk() {
+    if(chunkIndex >= chunks.length || !voiceMode.enabled) {
+      // Done speaking
+      voiceMode.speaking = false;
+      updateVoiceUI('listening');
+      if(voiceMode.enabled && state && state.active) {
+        setTimeout(startListening, 300);
+      }
+      if(callback) callback();
+      return;
     }
-    if(callback) callback();
-  };
+    
+    var chunk = chunks[chunkIndex].trim();
+    chunkIndex++;
+    
+    // Skip empty chunks
+    if(!chunk || chunk === '...') {
+      // Just pause
+      setTimeout(speakNextChunk, 400 + Math.random() * 300);
+      return;
+    }
+    
+    var utterance = new SpeechSynthesisUtterance(chunk);
+    utterance.voice = voiceMode.customerVoice;
+    
+    // === NATURAL RATE VARIATION per chunk ===
+    // First chunk slightly slower (thinking), middle faster (flowing), last slower (concluding)
+    var positionFactor = chunkIndex === 1 ? -0.05 : (chunkIndex === chunks.length ? -0.03 : 0.02);
+    
+    // Patience affects overall speed (impatient = faster)
+    var patienceFactor = patience > 60 ? 0 : (patience > 40 ? 0.05 : 0.12);
+    
+    // Random human variation
+    var randomVariation = (Math.random() * 0.1) - 0.05;
+    
+    utterance.rate = Math.max(0.7, Math.min(1.4, profile.baseRate + positionFactor + patienceFactor + randomVariation));
+    
+    // === NATURAL PITCH VARIATION ===
+    // Questions go up in pitch at the end
+    var isQuestion = chunk.indexOf('?') >= 0;
+    var pitchUp = isQuestion ? 0.1 : 0;
+    utterance.pitch = Math.max(0.6, Math.min(1.5, profile.basePitch + pitchUp + (Math.random() * 0.1 - 0.05)));
+    
+    // === VOLUME: slightly quieter for filler words ===
+    var isFiller = chunk.match(/^(hmm|mm|uh|um|right|okay|yeah|hm|ah)\.?$/i);
+    utterance.volume = isFiller ? 0.6 : (0.8 + Math.random() * 0.15);
+    
+    utterance.onend = function() {
+      // Pause between chunks (natural breathing gap)
+      var pauseDuration;
+      if(chunk.indexOf('...') >= 0) pauseDuration = 600 + Math.random() * 400;  // Thinking pause
+      else if(chunk.match(/[.!]$/)) pauseDuration = 300 + Math.random() * 250;   // Sentence end
+      else if(chunk.match(/\?$/)) pauseDuration = 400 + Math.random() * 300;     // Question (wait for effect)
+      else if(isFiller) pauseDuration = 200 + Math.random() * 200;              // Quick filler
+      else pauseDuration = 150 + Math.random() * 150;                           // Comma/mid-sentence
+      
+      setTimeout(speakNextChunk, pauseDuration);
+    };
+    
+    utterance.onerror = function() {
+      setTimeout(speakNextChunk, 100);
+    };
+    
+    try {
+      voiceMode.synthesis.speak(utterance);
+    } catch(e) {
+      setTimeout(speakNextChunk, 100);
+    }
+  }
   
-  voiceMode.synthesis.speak(utterance);
-  } catch(e) { if(callback) callback(); }
+  speakNextChunk();
 }
 
-// Start listening to DGR
 function startListening() {
   if(!voiceMode.recognition || voiceMode.speaking || !state || !state.active) return;
   voiceMode.listening = true;
@@ -4118,34 +4223,54 @@ function startListening() {
   try { voiceMode.recognition.start(); } catch(e) {}
 }
 
-// Stop listening
 function stopListening() {
   voiceMode.listening = false;
-  if(voiceMode.recognition) {
-    try { voiceMode.recognition.stop(); } catch(e) {}
-  }
+  if(voiceMode.recognition) try { voiceMode.recognition.stop(); } catch(e) {}
   updateVoiceUI('idle');
 }
 
-// Toggle voice mode
+function updateVoiceUI(mode) {
+  var status = document.getElementById('voiceStatus');
+  var avatar = document.getElementById('voiceAvatar');
+  if(!status) return;
+  if(mode === 'speaking') {
+    status.textContent = '🔊 Customer speaking...';
+    status.style.color = '#22c55e';
+    if(avatar) avatar.style.borderColor = '#22c55e';
+  } else if(mode === 'listening') {
+    status.textContent = '🎤 Listening to you...';
+    status.style.color = '#6366f1';
+    if(avatar) avatar.style.borderColor = '#6366f1';
+  } else {
+    status.textContent = 'Voice mode ready';
+    status.style.color = '#8892a4';
+    if(avatar) avatar.style.borderColor = '#334155';
+  }
+}
+
 function toggleVoiceMode() {
   voiceMode.enabled = !voiceMode.enabled;
   var btn = document.getElementById('voiceModeBtn');
-  var voicePanel = document.getElementById('voiceCallPanel');
+  var panel = document.getElementById('voicePanel');
   
   if(voiceMode.enabled) {
     if(!initVoiceMode()) { voiceMode.enabled = false; return; }
-    btn.innerHTML = '<i class="fa-solid fa-phone-volume"></i> Voice ON';
+    selectPersonaVoice();
+    btn.innerHTML = '<i class="fa-solid fa-phone-volume" style="margin-right:6px"></i> Voice ON';
     btn.style.background = '#22c55e';
-    if(voicePanel) voicePanel.style.display = 'flex';
+    btn.style.color = '#fff';
+    if(panel) panel.style.display = 'flex';
+    updateVoiceUI('idle');
   } else {
     stopListening();
-    voiceMode.synthesis.cancel();
-    btn.innerHTML = '<i class="fa-solid fa-phone"></i> Voice Mode';
-    btn.style.background = '';
-    if(voicePanel) voicePanel.style.display = 'none';
+    if(voiceMode.synthesis) voiceMode.synthesis.cancel();
+    btn.innerHTML = '<i class="fa-solid fa-microphone" style="margin-right:6px"></i> Voice Mode';
+    btn.style.background = '#1e293b';
+    btn.style.color = '#e2e8f0';
+    if(panel) panel.style.display = 'none';
   }
 }
+
 
 </script>
 
