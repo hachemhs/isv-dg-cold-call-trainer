@@ -137,6 +137,29 @@ function formatDate(ts) {
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 }
 
+
+// === DEMO DATA: Sample sessions for first-time visitors ===
+function loadDemoData() {
+  var demoSessions = [
+    {date:new Date(Date.now()-86400000*14).toISOString(),persona:'cto',difficulty:'medium',rapport:45,objection:55,discovery:60,closing:30,totalScore:48,meetingBooked:false,turns:6,duration:95,customerName:'Alex Chen'},
+    {date:new Date(Date.now()-86400000*12).toISOString(),persona:'cfo',difficulty:'easy',rapport:60,objection:40,discovery:50,closing:55,totalScore:51,meetingBooked:false,turns:5,duration:78,customerName:'Sarah Mitchell'},
+    {date:new Date(Date.now()-86400000*10).toISOString(),persona:'ceo',difficulty:'medium',rapport:55,objection:60,discovery:65,closing:45,totalScore:56,meetingBooked:false,turns:7,duration:110,customerName:'James Park'},
+    {date:new Date(Date.now()-86400000*8).toISOString(),persona:'cto',difficulty:'hard',rapport:50,objection:70,discovery:55,closing:40,totalScore:54,meetingBooked:false,turns:8,duration:130,customerName:'Alex Chen'},
+    {date:new Date(Date.now()-86400000*6).toISOString(),persona:'cio',difficulty:'medium',rapport:65,objection:60,discovery:70,closing:60,totalScore:64,meetingBooked:true,turns:7,duration:145,customerName:'Maria Santos'},
+    {date:new Date(Date.now()-86400000*5).toISOString(),persona:'cfo',difficulty:'medium',rapport:70,objection:55,discovery:65,closing:70,totalScore:65,meetingBooked:true,turns:6,duration:120,customerName:'Sarah Mitchell'},
+    {date:new Date(Date.now()-86400000*3).toISOString(),persona:'cto',difficulty:'hard',rapport:60,objection:75,discovery:70,closing:55,totalScore:65,meetingBooked:false,turns:8,duration:150,customerName:'Alex Chen'},
+    {date:new Date(Date.now()-86400000*2).toISOString(),persona:'ceo',difficulty:'medium',rapport:75,objection:65,discovery:80,closing:70,totalScore:73,meetingBooked:true,turns:7,duration:160,customerName:'James Park'},
+    {date:new Date(Date.now()-86400000*1).toISOString(),persona:'cio',difficulty:'hard',rapport:70,objection:80,discovery:75,closing:65,totalScore:73,meetingBooked:true,turns:8,duration:170,customerName:'Maria Santos'},
+    {date:new Date().toISOString(),persona:'cto',difficulty:'medium',rapport:80,objection:70,discovery:75,closing:75,totalScore:75,meetingBooked:true,turns:7,duration:155,customerName:'Alex Chen'}
+  ];
+  
+  try {
+    localStorage.setItem('rpSessions', JSON.stringify(demoSessions));
+    localStorage.setItem('rpStats', JSON.stringify({level:3,xp:850,totalCalls:10,totalMeetings:5,streak:3,badges:['first_call','ice_breaker','meeting_machine']}));
+  } catch(e) {}
+  renderDashboard();
+}
+
 function renderDashboard() {
   var data = getAllSessions();
   var container = document.getElementById('mainContent');
@@ -146,7 +169,8 @@ function renderDashboard() {
       '<i class="fa-solid fa-phone-slash"></i>' +
       '<h2>No Sessions Yet</h2>' +
       '<p>Complete roleplay sessions to see your coaching analytics here. Each call generates insights on rapport, objection handling, discovery, and closing skills.</p>' +
-      '<a href="roleplay.html"><i class="fa-solid fa-play" style="margin-right:8px"></i>Start a Roleplay Session</a>' +
+      '<a href="roleplay.html" style="margin-right:12px"><i class="fa-solid fa-play" style="margin-right:8px"></i>Start a Roleplay Session</a>' +
+      '<a href="#" onclick="loadDemoData();return false;" style="display:inline-block;padding:12px 24px;background:var(--card);border:1px solid var(--primary);color:var(--primary);border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-top:12px"><i class="fa-solid fa-database" style="margin-right:8px"></i>Load Demo Data</a>' +
       '</div>';
     return;
   }
@@ -281,7 +305,23 @@ window.addEventListener('message', function(e) {
 function loadDGR(val) { renderDashboard(); }
 
 // Init
-document.addEventListener('DOMContentLoaded', renderDashboard);
+
+// Auto-load demo on first visit so dashboard isn't empty
+document.addEventListener('DOMContentLoaded', function() {
+  var sessions = null;
+  try { sessions = JSON.parse(localStorage.getItem('rpSessions')); } catch(e) {}
+  if(!sessions || sessions.length === 0) {
+    loadDemoData();
+  } else {
+    renderDashboard();
+  }
+});
+
 </script>
+<div style="position:fixed;bottom:0;left:0;right:0;background:#1a2332;border-top:1px solid #2d3748;padding:8px 20px;display:flex;justify-content:center;gap:16px;z-index:9999;font-size:12px">
+  <a href="index.html" style="color:#8892a4;text-decoration:none;padding:6px 12px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.background='#2d3748';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='#8892a4'"><i class="fa-solid fa-phone"></i> Prospecting</a>
+  <a href="roleplay.html" style="color:#8892a4;text-decoration:none;padding:6px 12px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.background='#2d3748';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='#8892a4'"><i class="fa-solid fa-comments"></i> Roleplay</a>
+  <a href="dashboard.html" style="color:#7c4dff;text-decoration:none;padding:6px 12px;border-radius:6px;background:rgba(124,77,255,0.15);font-weight:600"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+</div>
 </body>
 </html>
