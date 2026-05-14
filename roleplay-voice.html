@@ -223,6 +223,24 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 
 <script>
 
+var voiceMode = {
+  enabled: false,
+  speaking: false,
+  listening: false,
+  recognition: null,
+  synthesis: null,
+  voices: [],
+  customerVoice: null,
+  speakQueue: [],
+  currentUtterance: null
+};
+try { voiceMode.synthesis = window.speechSynthesis || null; } catch(e) { voiceMode.synthesis = null;
+
+
+
+
+
+
 // Global error catcher - shows errors on page for debugging
 window.onerror = function(msg, url, line, col, error) {
   var errDiv = document.createElement('div');
@@ -1600,6 +1618,10 @@ function sendMsg() {
       state.conversationHistory.push({role:'customer', text:resp});
       if(typeof generateCoachTip === 'function') generateCoachTip(resp);
       addMsg('customer', resp);
+      // Speak response if voice mode is active
+      if(typeof voiceMode !== 'undefined' && voiceMode.enabled && typeof speakResponse === 'function') {
+        try { speakResponse(resp); } catch(e) { console.error('Voice error:', e); }
+      }
       document.getElementById('userInput').focus();
     } catch(e) {
       // Show error for debugging
@@ -1622,6 +1644,9 @@ function sendMsg() {
       var fallback = personaPool[Math.floor(Math.random() * personaPool.length)];
       state.conversationHistory.push({role:'customer', text:fallback});
       addMsg('customer', fallback);
+      if(typeof voiceMode !== 'undefined' && voiceMode.enabled && typeof speakResponse === 'function') {
+        try { speakResponse(fallback); } catch(e) {}
+      }
       document.getElementById('userInput').focus();
     }
     }, delay);
@@ -3992,18 +4017,7 @@ var typingSafetyInterval = setInterval(function() {
 
 
 // ===== VOICE MODE (Enhanced Natural Speech) =====
-var voiceMode = {
-  enabled: false,
-  speaking: false,
-  listening: false,
-  recognition: null,
-  synthesis: null,
-  voices: [],
-  customerVoice: null,
-  speakQueue: [],
-  currentUtterance: null
-};
-try { voiceMode.synthesis = window.speechSynthesis || null; } catch(e) { voiceMode.synthesis = null; }
+ }
 
 function initVoiceMode() {
   var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
