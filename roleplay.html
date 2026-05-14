@@ -3095,31 +3095,57 @@ function generateContextualResponse(dgrText, scoreResult) {
 // === DEFAULT: Based on mood/patience ===
   // ============================================================
   if(patience > 65) {
-    resp = pick([
+    // ENGAGED — rich, company-specific, persona-flavored responses
+    var engagedPool = [
       "Mm-hmm. " + (pri ? "And how does this help us " + pri.toLowerCase() + "?" : "Go on. I\'m listening."),
-      "[nods] Okay. " + (echo ? "This \'" + echo + "\' thing — " : "") + "tell me more. How does it play out practically?",
-      "Interesting. " + (pain ? "Our issue is " + pain.toLowerCase().split('.')[0] + " though. Connected?" : "How does this apply to us?"),
-      "Alright. You have my attention. " + (mem.specific > 0 ? "You\'ve made some decent points." : "Don\'t lose it.") + " What else?",
-      "Keep going. " + (s(company.futurePlans) ? "We\'re trying to " + firstOf(s(company.futurePlans)).toLowerCase() + ". Connect the dots?" : "I\'m interested but not sold.")
-    ]);
+      "[nods] Okay. " + (echo ? "This \'" + echo + "\' thing — " : "") + "tell me more. How does it play out in practice?",
+      "Interesting. " + (pain ? "Because our problem is " + pain.toLowerCase().split('.')[0] + ". Is this connected or separate?" : "How does this apply to us specifically?"),
+      "Alright. You have my attention. " + (mem.specific > 0 ? "You\'ve made some decent points. Keep going." : "Don\'t lose it though. What else?"),
+      "Keep going. " + (s(company.futurePlans) ? "We\'re planning to " + firstOf(s(company.futurePlans)).toLowerCase() + ". Help me see how this fits." : "I want to see where this goes."),
+      (echo ? "You said \'" + echo + "\'. " : "") + "That\'s interesting. " + (tech ? "How does that work alongside " + tech + "?" : "What does implementation look like?"),
+      "I\'m tracking. " + (pri ? "My one filter is: does it accelerate " + pri.toLowerCase() + "? Because that\'s all my boss cares about." : "What\'s the timeline to value?"),
+      "[thinking] You know what — " + (pain ? "we\'ve been struggling with " + pain.toLowerCase().split('.')[0] + " for months. Nobody\'s had a good answer." : "this might actually be relevant.") + " Go on.",
+      "Okay I\'m going to be more open than I usually am: " + (pain ? pain.split('.')[0] + ". " : "we need help. ") + "If you can solve THAT — we should talk more.",
+      "Right. " + (s(company.name) ? "For " + s(company.name) : "For us") + " specifically — " + (pri ? "given we\'re focused on " + pri.toLowerCase() + " — " : "") + "what would the first month look like?",
+      (mem.claims.length > 0 ? "You said \'" + mem.claims[mem.claims.length-1].substring(0,35) + "\'. " : "") + "I want to believe that. " + (tech ? "But we\'re on " + tech + " — does that complicate things?" : "Give me one more proof point."),
+      (s(company.industry) ? "In " + s(company.industry).split('\u2014')[0].trim() + ", " : "In our space, ") + "everyone talks a good game. " + (echo ? "But \'" + echo + "\' — " : "") + "can you show me it actually works?",
+      "You\'re doing well here. " + (turn > 4 ? "Better than the last 5 cold calls I\'ve taken. " : "") + (pri ? "Connect this to " + pri.toLowerCase() + " and I\'ll consider a follow-up." : "One more strong point and I\'ll give you 15 minutes."),
+      "[leans forward] Actually — " + (pain ? pain.split('.')[0].toLowerCase() : "what you just described") + " is literally what we discussed in our leadership meeting last week. " + (echo ? "And \'" + echo + "\' might be the answer." : "Keep talking.")
+    ];
+    resp = pick(engagedPool);
   }
   else if(patience < 35) {
-    resp = pick([
-      "Look — I need to go. If you have a killer point, now or never.",
-      "[checks time] I\'m losing interest. Give me one reason to stay on this call.",
-      "We\'re done in about 30 seconds. Anything else or...?",
-      "I\'m going to be straight: this isn\'t working for me. Sorry.",
-      "[standing up] I really have to go. Was there something else?"
-    ]);
+    // EXITING — curt, final, but still in-character
+    var exitPool = [
+      "Look — " + (pain ? "unless you can solve " + pain.toLowerCase().split('.')[0] + " in the next 20 seconds" : "unless there\'s a punchline coming") + ", I really need to go.",
+      "[checks time] I\'ve got " + (Math.floor(Math.random()*3)+1) + " minutes. If you have ONE thing that\'s relevant to " + s(company.name, 'us') + ", say it now.",
+      "I\'m going to be direct: " + (mem.vague > mem.specific ? "you\'ve been too vague this whole call." : "this just isn\'t clicking for us right now.") + " Sorry.",
+      "[standing up] I really have to run. " + (mem.specific > 0 ? "Look — email me a one-pager. I did hear something interesting earlier." : "Send me something in writing if you think there\'s a fit."),
+      "We\'re done. But — " + (echo ? "that thing about \'" + echo + "\' — " : "") + "send me a follow-up email on that specifically. I MIGHT read it.",
+      (pri ? "Nothing you\'ve said connects to " + pri.toLowerCase() + ". " : "") + "That\'s my world. If it doesn\'t help with that, it\'s not for me. Not now anyway.",
+      "I appreciate the effort. I do. But " + (s(company.name, 'we') + " " + (s(company.recentDecisions) ? "just " + firstOf(s(company.recentDecisions)).toLowerCase() : "aren\'t ready")) + ". Try me in " + (Math.floor(Math.random()*3)+3) + " months.",
+      "[phone ringing] I actually need to take this. " + (mem.specific > 0 ? "Email me — you had one good point in there." : "Sorry. Timing\'s just not right.") + " Cheers.",
+      "I\'ll be honest — I stayed on longer than I would for most calls. " + (mem.specific > 0 ? "You\'re not terrible at this." : "But I don\'t see the fit.") + " Goodbye."
+    ];
+    resp = pick(exitPool);
   }
   else {
-    resp = pick([
-      "Mm. " + (pain ? "Our issue is " + pain.toLowerCase().split('.')[0] + ". If you can help with that — I\'ll listen." : "What\'s the value for US specifically?"),
-      "Okay... " + (turn > 3 ? "I\'m still not 100% sure what you\'re proposing to be honest." : "Go on."),
-      (echo ? "\'" + echo + "\' — okay. But what does that mean for " + s(company.name, 'us') + " specifically?" : "How does this apply to a company like ours?"),
-      "Right. " + (pri ? "My filter is: does it help with " + pri.toLowerCase() + "? Everything else is noise." : "What\'s the bottom line here?"),
-      "[half listening] Mm-hmm. And practically speaking... what would be different on Monday morning if we said yes?"
-    ]);
+    // NEUTRAL — still evaluating, company-aware, persona-specific
+    var neutralPool = [
+      "Mm. " + (pain ? "Look, our real issue is " + pain.toLowerCase().split('.')[0] + ". If you can help with THAT specifically — I\'ll listen." : "What\'s the actual value for a company like ours?"),
+      "Okay... " + (turn > 3 ? "I\'m " + (mem.specific > mem.vague ? "starting to see something here" : "still waiting for the aha moment") + ". " : "Go on. ") + (pri ? "How does this connect to " + pri.toLowerCase() + "?" : "Keep it specific."),
+      (echo ? "\'" + echo + "\' — okay. But what does that MEAN for " + s(company.name, 'us') + "? " : "Apply this to us specifically. ") + (s(company.size) ? "We\'re " + firstOf(s(company.size), ',') + ". " : "") + "Does it still work at our scale?",
+      "Right. " + (pri ? "My filter is: " + pri.toLowerCase() + ". " : "") + "Everything else is noise right now. " + (echo ? "Is \'" + echo + "\' relevant to that or not?" : "So — relevant or not?"),
+      "[half listening] " + (tech ? "We run " + tech + ". " : "") + "Where does what you\'re proposing fit in our current setup? Because we can\'t rip and replace.",
+      (s(company.futurePlans) ? "We\'re trying to " + firstOf(s(company.futurePlans)).toLowerCase() + ". " : "") + (echo ? "Does \'" + echo + "\' help with that? " : "Where does this fit? ") + "Because adding complexity without clear ROI — that\'s a hard sell internally.",
+      (mem.claims.length > 0 ? "You\'ve made some claims. \'" + mem.claims[0].substring(0,30) + "\' for example. " : "") + "But claims are easy. " + (s(company.industry) ? "In " + s(company.industry).split('\u2014')[0] + ", " : "") + "I need evidence. Who else has done this?",
+      "I\'m not sold but I\'m not hanging up. That means you have about " + (Math.floor(Math.random()*3)+2) + " more turns to convince me. " + (pri ? "Focus on " + pri.toLowerCase() + "." : "Make them count."),
+      (s(company.competitors) ? "Our competitors — " + s(company.competitors).split(',')[0] + " — " : "Companies in our space ") + "are all moving fast. " + (echo ? "Is \'" + echo + "\' the thing that gives us an edge? " : "What\'s the competitive advantage here? ") + "Because \'keeping up\' isn\'t good enough.",
+      "[directly] Here\'s where I am: " + (mem.specific > 1 ? "you\'ve said 1-2 interesting things" : "I haven\'t heard anything compelling yet") + ". " + (pain ? "If you can show me how this fixes " + pain.toLowerCase().split('.')[0] + " — I\'ll take the next meeting. " : "Give me a reason to care. A real one. ") + "What\'ve you got?",
+      (s(company.budget) ? firstOf(s(company.budget)) + ". That\'s our reality. " : "Budget is always the question. ") + (echo ? "\'" + echo + "\' is nice but — " : "") + "what\'s the investment look like vs the return? Month one, not month twelve.",
+      "You know what I keep thinking? " + (pain ? "\'Will this actually fix " + pain.toLowerCase().split('.')[0] + " or is it just another thing to manage?\'" : "\'Is this going to make my life easier or harder?\' ") + " Convince me it\'s the former."
+    ];
+    resp = pick(neutralPool);
   }
   
   // 8% chance: add human interruption
@@ -3137,7 +3163,17 @@ function generateContextualResponse(dgrText, scoreResult) {
   }
   
   // === SAVE SESSION DATA ===
-  return resp || "Mm-hmm. Go on.";
+  return resp || (function() {
+    // NEVER return a generic response — always use context
+    var fallbacks = [
+      (pri ? "Tell me more about how this connects to " + pri.toLowerCase() + "." : "How does this apply to us specifically?"),
+      (pain ? "Our challenge is " + pain.toLowerCase().split('.')[0] + ". How does what you\'re saying help?" : "What\'s the practical impact for a company our size?"),
+      (echo ? "You mentioned \'" + echo + "\'. Expand on that — what does it mean for " + s(company.name, 'us') + "?" : "Be more specific about what this looks like for us."),
+      (tech ? "We\'re on " + tech + ". How does your thing fit with that?" : "Walk me through what day one would look like."),
+      (s(company.industry) ? "In " + s(company.industry).split('\u2014')[0] + ", how does this play out differently?" : "Give me a concrete example for our space.")
+    ];
+    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  })();
 }
 function pickFromCategory(category, difficulty) {
   var pool = CONTEXT_REACTIONS[category];
