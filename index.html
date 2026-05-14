@@ -1352,6 +1352,66 @@ body {
 </div>
 
 <script>
+
+// === DGR PERFORMANCE BENCHMARKS (Real EMEA ISV Q1 2026 Data) ===
+var DGR_BENCHMARKS = {
+  team: {
+    effectiveDGRs: 14,
+    pipelinePerDGR: "$1.76M",
+    totalPipeline: "$24.6M",
+    genAIPipeline: "$4.6M",
+    pipelineAttainment: "102%",
+    avgDaysToLaunch: 12.2, // was 124.4 days — massive improvement
+    launchRate: "19.5%",
+    stalledPipeline: "23%",
+    realizedRevenue: "$3.8M (+322% YoY)"
+  },
+  calls: {
+    avgConnectedDuration: 107, // seconds
+    avgCSRDuration: 185,
+    avgCTOCallDuration: 284,
+    connectedCalls: 33,
+    missedCalls: 53,
+    connectionRate: "38%", // 33/(33+53)
+    realOutcomes: {
+      dontCallAgain: 2,
+      sendEmailInstead: 1,
+      findRightStakeholder: 1,
+      meetingBooked: 8
+    }
+  },
+  ai: {
+    aiRecommendations: 129,
+    accountsWithAIAPS: 16000,
+    fastStartAccounts: 4500,
+    genAIAcceleration: "4.6M in Q1 2026 vs 2.7M Q1 2025"
+  },
+  compete: {
+    closedLost: {
+      total: 39,
+      totalARR: "$5.5M",
+      crmHygiene: 14,
+      fellThrough: 17,
+      competitive: 8,
+      competitiveARR: "$2.2M"
+    },
+    topCompetitor: "Azure (6/11 competitive losses)",
+    largestLoss: "DeepL $1.8M → Anthropic",
+    genAICompete: "Azure + Anthropic direct = primary threats"
+  },
+  scoring: {
+    // Based on Gong 67K-call study + real team data
+    goldenTalkRatio: 0.43, // 43% talk, 57% listen
+    successfulCallAvg: "5:50 min",
+    unsuccessfulCallAvg: "3:14 min",
+    dialToMeeting: "5-10% (top performers), 2.3% (avg)",
+    timeToFirstQuestion: "within 15 seconds",
+    topOpenerConversion: "11.24% (heard your name)",
+    twoMinuteStructure: "Opener(0-15s) → Challenge(15-45s) → Value(45-75s) → Objection(75-105s) → Close(105-120s)"
+  }
+};
+
+
 // ============================================
 // OBJECTION DATABASE - Built from ISV DG data
 // ============================================
