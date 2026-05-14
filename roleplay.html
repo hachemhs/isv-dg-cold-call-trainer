@@ -3021,7 +3021,48 @@ function endSim(outcome) {
   if(state.turn >= 4 && !state.empathyShown)
     addFeedback('improve', "No empathy shown — acknowledging their situation earns more time to pitch");
 
-  var total = Math.min(100, Math.max(0,
+  
+
+  // === SAVE SESSION TO DASHBOARD ===
+  try {
+    var sessionData = {
+      date: new Date().toISOString(),
+      persona: state.persona || 'unknown',
+      difficulty: state.difficulty || 'medium',
+      rapport: Math.min(100, Math.max(0, state.scores.rapport)),
+      objection: Math.min(100, Math.max(0, state.scores.objection)),
+      discovery: Math.min(100, Math.max(0, state.scores.discovery)),
+      closing: Math.min(100, Math.max(0, state.scores.closing)),
+      totalScore: total,
+      meetingBooked: outcome === 'booked',
+      turns: state.turn,
+      duration: callStartTime ? Math.round((Date.now() - callStartTime) / 1000) : 0,
+      customerName: state.cfg ? state.cfg.name : '',
+      realCustomer: state.realCustomer ? state.realCustomer.company : null
+    };
+    
+    var sessions = [];
+    try { sessions = JSON.parse(localStorage.getItem('rpSessions')) || []; } catch(e) { sessions = []; }
+    sessions.push(sessionData);
+    // Keep last 100 sessions
+    if(sessions.length > 100) sessions = sessions.slice(-100);
+    localStorage.setItem('rpSessions', JSON.stringify(sessions));
+    
+    // Also update stats
+    var stats = {};
+    try { stats = JSON.parse(localStorage.getItem('rpStats')) || {}; } catch(e) { stats = {}; }
+    stats.totalCalls = (stats.totalCalls || 0) + 1;
+    if(outcome === 'booked') stats.totalMeetings = (stats.totalMeetings || 0) + 1;
+    if(total >= 60) { stats.streak = (stats.streak || 0) + 1; } else { stats.streak = 0; }
+    localStorage.setItem('rpStats', JSON.stringify(stats));
+    
+    // Notify dashboard if embedded
+    if(window.parent !== window) {
+      window.parent.postMessage({type:'sessionComplete', session: sessionData}, '*');
+    }
+  } catch(saveErr) { /* localStorage might not be available */ }
+
+var total = Math.min(100, Math.max(0,
     state.scores.rapport + state.scores.objection + state.scores.discovery + state.scores.closing + (outcome==='booked'?25 : outcome==='partial'?10 : 0)
   ));
 
