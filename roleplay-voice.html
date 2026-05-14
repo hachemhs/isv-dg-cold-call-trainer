@@ -1320,6 +1320,9 @@ function startSim() {
       unfinishedThreads: [] // topics that were started but not completed
     }
   };
+  // Re-select voice for new persona
+  if(voiceMode.enabled && voiceMode.voices.length > 0) selectPersonaVoice();
+
 
   
   // Gamification: reset combo for new call
@@ -4036,37 +4039,74 @@ function selectPersonaVoice() {
   if(!voices.length) return;
   var persona = state ? state.persona : 'cto';
   
-  // Voice quality ranking: Google UK > Microsoft Neural > Apple > Default
-  var quality = voices.map(function(v, idx) {
+  // === GENDER MAP: Match persona to voice gender ===
+  // Female personas: Sarah Mitchell (CFO), Maria Santos (CIO), Priya Kapoor (AI/ML), Rachel Okonkwo (Head IT)
+  // Male personas: Alex Chen (CTO), James Park (CEO), Tom Richardson (VP Eng), Marcus Wei (Head Digital)
+  var femalePersonas = ['cfo', 'cio', 'aiml', 'head_it'];
+  var malePersonas = ['cto', 'ceo', 'vp_eng', 'head_digital'];
+  var wantFemale = femalePersonas.indexOf(persona) >= 0;
+  
+  // === VOICE NAME PATTERNS for gender detection ===
+  var femaleNames = /female|woman|samantha|karen|kate|moira|fiona|victoria|zira|hazel|libby|sonia|jenny|aria|sara|susan|emma|olivia|ava|sophia|emily|nicky|joanna|kendra|ivy|nicole|celeste|amelie|martha|tessa|serena|shelley|paulina/i;
+  var maleNames = /\bmale\b|\bman\b|daniel|james|david|george|ryan|guy|thomas|rishi|oliver|william|harry|jack|noah|liam|matthew|arthur|brian|joey|stephen|russell|lee|fred|ralph|eric|aaron|adam|tony|mark|sean/i;
+  
+  // Score all English voices
+  var scored = [];
+  for(var i = 0; i < voices.length; i++) {
+    var v = voices[i];
     var score = 0;
-    // Prefer English UK/US
-    if(v.lang === 'en-GB') score += 20;
-    else if(v.lang === 'en-US') score += 15;
-    else if(v.lang.match(/^en/)) score += 10;
-    else return {voice: v, score: -100, idx: idx};
     
-    // Prefer Google and Microsoft neural voices (much higher quality)
-    if(v.name.match(/Google UK/i)) score += 30;
-    if(v.name.match(/Microsoft .+ Online/i)) score += 25;
+    // Must be English
+    if(!v.lang || !v.lang.match(/^en/)) continue;
+    
+    // Prefer UK English (EMEA context)
+    if(v.lang === 'en-GB') score += 20;
+    else if(v.lang === 'en-US') score += 12;
+    else if(v.lang === 'en-AU') score += 10;
+    else score += 5;
+    
+    // Quality: prefer neural/natural voices
+    if(v.name.match(/Google UK English/i)) score += 35;
+    if(v.name.match(/Microsoft.*Online.*Natural/i)) score += 30;
     if(v.name.match(/Natural|Neural/i)) score += 20;
     if(v.name.match(/Google/i)) score += 15;
     if(v.name.match(/Microsoft/i)) score += 10;
+    if(v.name.match(/enhanced|premium|hd/i)) score += 10;
     
-    // Gender matching per persona
-    var wantFemale = ['cfo','cio','aiml','head_it'].includes(persona);
-    var isFemale = v.name.match(/female|samantha|karen|kate|moira|fiona|victoria|zira|hazel|libby|sonia|jenny|aria|sara/i);
-    var isMale = v.name.match(/male|daniel|james|david|george|ryan|guy|thomas|rishi/i);
+    // === CRITICAL: Gender matching ===
+    var isFemale = femaleNames.test(v.name);
+    var isMale = maleNames.test(v.name);
     
-    if(wantFemale && isFemale) score += 15;
-    else if(!wantFemale && isMale) score += 15;
-    else if(wantFemale && isMale) score -= 10;
-    else if(!wantFemale && isFemale) score -= 10;
+    // Strong preference for correct gender
+    if(wantFemale) {
+      if(isFemale) score += 25;       // Correct gender = big bonus
+      else if(isMale) score -= 30;    // Wrong gender = big penalty
+      // Neutral (unknown gender) gets small penalty
+      else score -= 5;
+    } else {
+      if(isMale) score += 25;
+      else if(isFemale) score -= 30;
+      else score -= 5;
+    }
     
-    return {voice: v, score: score, idx: idx};
-  });
+    // Google UK has 2 voices: "Google UK English Female" and "Google UK English Male"
+    // These are the best quality — give extra bonus for exact match
+    if(v.name === 'Google UK English Female' && wantFemale) score += 50;
+    if(v.name === 'Google UK English Male' && !wantFemale) score += 50;
+    
+    scored.push({voice: v, score: score});
+  }
   
-  quality.sort(function(a, b) { return b.score - a.score; });
-  voiceMode.customerVoice = quality[0].voice;
+  if(scored.length === 0) {
+    voiceMode.customerVoice = voices[0];
+    return;
+  }
+  
+  scored.sort(function(a, b) { return b.score - a.score; });
+  voiceMode.customerVoice = scored[0].voice;
+  
+  // Debug: log selected voice
+  console.log('Voice selected for ' + persona + ' (' + (wantFemale ? 'female' : 'male') + '): ' + scored[0].voice.name + ' (score: ' + scored[0].score + ')');
 }
 
 // === PERSONA VOICE PROFILES ===
