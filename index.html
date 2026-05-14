@@ -1524,7 +1524,121 @@ const OBJECTION_DB = {
       awsProof: "ISV-specific programs provide credits and technical resources. SageMaker Sprint Campaign leverages HyperPod (88.3% win rate). Builder Labs provide hands-on integration guidance."
     }
   ]
-};
+,
+  compete_azure: [
+    {
+      category: "Compete — Azure",
+      objection: "We're a Microsoft shop — Azure is the natural choice",
+      response: "AWS and Azure are architected differently. AWS multi-AZ design is Gartner-recommended for enterprise HA. Netflix, Disney, Instacart run on AWS when business is on the line. Plus: AWS has 200+ services vs Azure's fewer, purpose-built for cloud-native.",
+      triggers: ['discovery', 'demo', 'reengagement'],
+      personas: ['cto', 'cio', 'all'],
+      severity: 'high'
+    },
+    {
+      category: "Compete — Azure",
+      objection: "Microsoft offered us generous EA bundle pricing and credits",
+      response: "Credits expire. Partnerships don't. AWS ISV Accelerate delivers 65% higher close rates, 54% larger deals sustainably. Plus AWS Marketplace lets customers draw down EDP — that's pre-approved budget. No new procurement cycle.",
+      triggers: ['cosell', 'discovery'],
+      personas: ['cfo', 'ceo', 'all'],
+      severity: 'high'
+    },
+    {
+      category: "Compete — Azure",
+      objection: "Azure AI Studio is integrated with our Microsoft stack",
+      response: "Integration ≠ best-in-class. Bedrock gives you model CHOICE (Claude, Nova, Llama, Mistral) — not lock-in to one provider. 73% of Bedrock initiatives reach production vs ~30% industry average. AWS has 2x more production-ready AI capabilities.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cto', 'aiml', 'all'],
+      severity: 'high'
+    }
+  ],
+  compete_gcp: [
+    {
+      category: "Compete — GCP",
+      objection: "GCP is cheaper and easier to use",
+      response: "GCP is simpler at small scale. But AWS gives choice and depth — 200+ services vs 100. When you scale, you need breadth. TCO analysis consistently shows AWS competitive on total cost when you factor in Savings Plans and the ecosystem.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cto', 'cfo', 'all'],
+      severity: 'medium'
+    },
+    {
+      category: "Compete — GCP",
+      objection: "Google is the AI/ML leader — they invented Transformers",
+      response: "Inventing research ≠ production platform. AWS has 2x more production-ready AI capabilities. 73% POC-to-production rate on Bedrock. Google's strength is research; AWS's strength is making AI WORK in production at scale.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cto', 'aiml', 'all'],
+      severity: 'high'
+    },
+    {
+      category: "Compete — GCP",
+      objection: "GCP offered more flexible funding mechanisms",
+      response: "Short-term funding vs long-term revenue growth. AWS co-sell delivers 65% higher close rates, 54% larger deals. ISV Accelerate means AWS account teams actively bring you pipeline. That's sustainable growth, not a one-time credit.",
+      triggers: ['cosell', 'discovery'],
+      personas: ['cfo', 'ceo', 'all'],
+      severity: 'medium'
+    }
+  ],
+  compete_anthropic: [
+    {
+      category: "Compete — Direct Model Providers",
+      objection: "Why use Bedrock when we can go direct to Anthropic/OpenAI?",
+      response: "Direct = one model, one API. Bedrock = model choice + Guardrails + Knowledge Bases + Agents + fine-tuning + monitoring — all managed. Keep your AWS security posture, billing, and compliance. 75% reduction in infrastructure development time.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cto', 'aiml', 'all'],
+      severity: 'high'
+    },
+    {
+      category: "Compete — Direct Model Providers",
+      objection: "Anthropic/OpenAI APIs are simpler to integrate",
+      response: "Simpler for POC. Production needs guardrails, monitoring, RAG, multi-model routing, cost controls. Bedrock gives you all of that without building it. 2.1x faster development, 5.2x faster deployment.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cto', 'aiml', 'devlead'],
+      severity: 'medium'
+    }
+  ],
+  agentic_ai: [
+    {
+      category: "Agentic AI",
+      objection: "We're not ready for agentic AI — it's too early",
+      response: "Gartner: 33% of enterprise apps will incorporate agentic AI by 2028. That's 2 years. Companies starting NOW are building the foundation. AWS gives you Strands, LangGraph, CrewAI framework flexibility + Bedrock Agents for production-ready orchestration.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cto', 'ceo', 'aiml'],
+      severity: 'medium'
+    },
+    {
+      category: "Agentic AI",
+      objection: "We tried AI agents but they're not reliable enough for production",
+      response: "That's the old generation. AgentCore provides sandboxed runtime, guardrails, and IAM-level controls. 73% of AWS GenAI initiatives move from POC to production — vs ~30% industry average. The reliability layer is what makes it production-ready.",
+      triggers: ['discovery', 'followup'],
+      personas: ['cto', 'aiml', 'cio'],
+      severity: 'medium'
+    },
+    {
+      category: "Agentic AI",
+      objection: "How does agentic AI change our SaaS commercial model?",
+      response: "It shifts you from seat-based to outcome-based pricing — which means higher value per customer. AWS helps you build this with Bedrock Agents + Marketplace for distribution. Early movers are seeing 2-3x revenue per customer vs traditional SaaS.",
+      triggers: ['discovery', 'demo', 'cosell'],
+      personas: ['ceo', 'cfo', 'pm'],
+      severity: 'low'
+    }
+  ],
+  data_sovereignty: [
+    {
+      category: "Data Sovereignty",
+      objection: "AWS is a US company — our data needs to stay in Europe",
+      response: "AWS has 8 European regions (Ireland, Frankfurt, Paris, Stockholm, Milan, Spain, Zurich, London) with full data residency guarantees. AWS European Sovereign Cloud launching 2025. Data NEVER leaves your chosen region unless YOU configure it to.",
+      triggers: ['discovery', 'demo'],
+      personas: ['cio', 'cto', 'cfo', 'all'],
+      severity: 'high'
+    },
+    {
+      category: "Data Sovereignty",
+      objection: "US CLOUD Act means US government can access our data",
+      response: "AWS disputes every request that conflicts with EU law. AWS Nitro architecture makes it physically impossible for AWS employees to access customer data. Plus: encryption with customer-managed keys means only YOU hold the key.",
+      triggers: ['discovery'],
+      personas: ['cio', 'cto', 'all'],
+      severity: 'high'
+    }
+  ]};
 
 // COMPETE & HIGHSPOT ENRICHMENT - Azure, GCP, AI Maturity, Marketplace
 const COMPETE_DB = {
@@ -1674,7 +1788,57 @@ const DISCOVERY_QUESTIONS = {
     "What would meaningful revenue from a co-sell partnership look like for you?",
     "Are you seeing demand from enterprise buyers who have committed cloud spend?"
   ]
-};
+,
+  persona_cto: [
+    "What are your biggest technical challenges with your current architecture?",
+    "How much engineering time goes to undifferentiated work vs product features?",
+    "What does your deployment pipeline look like? What's the cycle time?",
+    "If you could eliminate one technical bottleneck tomorrow, what would it be?",
+    "What's your AI strategy? Build vs buy — where do you land?",
+    "How do you handle observability and incident response today?",
+    "What's your biggest scaling concern for the next 12 months?"
+  ],
+  persona_cfo: [
+    "How does your IT spend break down between run vs grow?",
+    "What's your cloud cost trajectory? Is it predictable?",
+    "How do you measure ROI on technology investments?",
+    "What would a 20% infrastructure cost reduction mean for your P&L?",
+    "Are procurement bottlenecks slowing your buying process?",
+    "How do you think about vendor consolidation vs best-of-breed?",
+    "What's the board's appetite for technology investment right now?"
+  ],
+  persona_ceo: [
+    "What's your growth strategy for the next 18 months?",
+    "Where do you see AI changing your industry in 2-3 years?",
+    "What are your competitors doing with technology that concerns you?",
+    "If you could accelerate one initiative, what would it be?",
+    "What does your board ask about when it comes to technology?",
+    "Where is your biggest go-to-market bottleneck?"
+  ],
+  persona_cio: [
+    "What's your biggest compliance challenge right now?",
+    "How do you handle data residency across European markets?",
+    "What does your security assessment process look like for new vendors?",
+    "How many point solutions are you managing? Is consolidation a goal?",
+    "What's your DR/BC strategy? When was it last tested?",
+    "How do you balance innovation speed vs governance?"
+  ],
+  compete: [
+    "Are you evaluating other cloud providers for this workload?",
+    "What's your experience been with [competitor] so far? Any gaps?",
+    "If you could change one thing about your current cloud provider, what would it be?",
+    "How important is multi-cloud vs consolidation in your strategy?",
+    "What criteria matter most in your vendor evaluation? Price? Performance? Support?",
+    "Have you calculated the true TCO including training, integration, and operations?"
+  ],
+  marketplace: [
+    "How do your customers typically procure your solution today?",
+    "Are procurement cycles slowing down your sales velocity?",
+    "What percentage of your revenue comes through channel vs direct?",
+    "Have you explored listing on a cloud marketplace? What held you back?",
+    "How do your enterprise customers handle budget approval for new tools?",
+    "Would faster procurement (70% time savings) impact your close rates?"
+  ]};
 
 // ============================================
 // GENERATION LOGIC
@@ -1845,14 +2009,26 @@ function selectQuestions(maturity, objective, persona) {
   } else if (maturity === 'experimenting') {
     selected = [...DISCOVERY_QUESTIONS.ai_readiness.slice(0, 3), ...DISCOVERY_QUESTIONS.technical.slice(0, 2)];
   } else {
-    selected = [...DISCOVERY_QUESTIONS.technical.slice(0, 3), ...DISCOVERY_QUESTIONS.isv_specific.slice(0, 2)];
+    selected = [...DISCOVERY_QUESTIONS.technical.slice(0, 3), ...DISCOVERY_QUESTIONS.business.slice(0, 2)];
   }
 
+  // Add persona-specific questions
+  const personaKey = 'persona_' + persona;
+  if (DISCOVERY_QUESTIONS[personaKey]) {
+    selected = [...selected, ...DISCOVERY_QUESTIONS[personaKey].slice(0, 3)];
+  }
+  
+  // Add compete questions if relevant
+  if (objective === 'reengagement' || objective === 'discovery') {
+    selected = [...selected, ...DISCOVERY_QUESTIONS.compete.slice(0, 2)];
+  }
+  
+  // Add marketplace questions for co-sell objective
   if (objective === 'cosell') {
-    selected = [...DISCOVERY_QUESTIONS.isv_specific, ...DISCOVERY_QUESTIONS.business.slice(0, 2)];
+    selected = [...selected, ...DISCOVERY_QUESTIONS.marketplace.slice(0, 3)];
   }
 
-  return selected.slice(0, 6);
+  return selected;
 }
 
 // ============================================
@@ -1915,14 +2091,27 @@ function generateOutreachEmail(company, industry, persona, objective, maturity, 
   // Value proposition — ties to their maturity
   let value = "";
   if(maturity === 'greenfield') {
-    value = "We\'re seeing " + (industry || 'ISV') + " companies build on AWS from day one to avoid the costly re-architecture later. A few in your space launched 3-4 months faster by starting cloud-native.";
+    value = "We\'re seeing " + (industry || 'ISV') + " companies build on AWS from day one to avoid costly re-architecture later. A few in your space launched 3-4 months faster by starting cloud-native. AWS also gives you immediate access to 200+ services and 100K+ partners in AWS Marketplace.";
   } else if(maturity === 'observing') {
-    value = hook + ". Specifically, " + (industry || 'ISV') + " companies are finding that starting with a focused use case (not a full transformation) delivers ROI within 8-12 weeks.";
+    value = hook + ". Specifically, " + (industry || 'ISV') + " companies are finding that starting with a focused use case delivers ROI within 8-12 weeks. One data point: partners co-selling through AWS Marketplace see 65% higher close rates and 54% larger deals — without changing their product.";
   } else if(maturity === 'experimenting') {
-    value = "The pattern we see with " + (industry || 'ISV') + " companies at your stage: the ones that move from experimentation to production fastest are the ones who solve the orchestration problem early. That\'s where most stall.";
+    value = "The pattern we see: companies at your stage stall when they can\'t move from experiment to production. 73% of AWS Bedrock initiatives make that jump (vs ~30% industry average). The difference is usually orchestration and governance — which is where we help.";
   } else {
-    value = "You\'re already on the journey — the question is usually \'what\'s the next multiplier?\' For companies like " + company + ", we\'re seeing 2-3x impact when they bring in marketplace co-sell or Bedrock for their AI layer.";
+    value = "You\'re already on the journey. For companies like " + company + ", the next multiplier is usually distribution (Marketplace co-sell: 65% higher close rates, 40% faster sales cycles) or AI features (Bedrock: 2.1x faster development, 75% less infra time). Which matters more to you right now?";
   }
+  
+  // Add industry-specific proof point
+  const proofPoints = {
+    fintech: "Stripe, Wise, and Checkout.com run on AWS. In regulated fintech, compliance + speed matters.",
+    security: "CrowdStrike, Palo Alto Networks, and Wiz chose AWS. Security vendors trust AWS infrastructure.",
+    healthcare: "Moderna and Philips Health run on AWS. When data privacy is existential, enterprises choose AWS.",
+    saas: "ISVs on AWS Marketplace see 54% larger deals and 40% faster procurement. 70% procurement time savings (Forrester 2025).",
+    ecommerce: "Shopify, Zalando, and ASOS run on AWS. Peak performance at scale is non-negotiable.",
+    gaming: "Epic Games, Riot, and EA run on AWS. Low-latency global infrastructure is the differentiator.",
+    logistics: "DHL and Maersk run logistics on AWS. Real-time optimization at global scale.",
+    edtech: "Coursera and Duolingo run on AWS. Adaptive learning at 100M+ user scale."
+  };
+  if(proofPoints[industry]) value += " " + proofPoints[industry];
   
   // CTA — low-friction
   let cta = "";
