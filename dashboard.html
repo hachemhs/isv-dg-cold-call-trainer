@@ -102,7 +102,7 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:va
   <div style="display:flex;gap:12px;align-items:center">
     <span class="badge"><i class="fa-solid fa-robot"></i> Gong-Style Analytics</span>
     <select id="dgrSelect" onchange="loadDGR(this.value)" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px">
-      <option value="me">My Performance</option>
+      <option value="all">All DGRs (Team View)</option>
     </select>
   </div>
 </div>
@@ -118,10 +118,13 @@ function safeGet(key) {
   catch(e) { return null; }
 }
 
-function getAllSessions() {
-  // The roleplay simulator stores: rpStats (overall), rpSessions (array of session results)
+function getAllSessions(filterName) {
   var stats = safeGet('rpStats') || {level:1, xp:0, totalCalls:0, totalMeetings:0, streak:0, badges:[]};
   var sessions = safeGet('rpSessions') || [];
+  // Filter by DGR name if specified
+  if(filterName) {
+    sessions = sessions.filter(function(s) { return s.dgrName === filterName; });
+  }
   return {stats: stats, sessions: sessions};
 }
 
@@ -141,11 +144,11 @@ function formatDate(ts) {
 // === DEMO DATA: Sample sessions for first-time visitors ===
 function loadDemoData() {
   var demoSessions = [
-    {date:new Date(Date.now()-86400000*14).toISOString(),persona:'cto',difficulty:'medium',rapport:45,objection:55,discovery:60,closing:30,totalScore:48,meetingBooked:false,turns:6,duration:95,customerName:'Alex Chen'},
-    {date:new Date(Date.now()-86400000*12).toISOString(),persona:'cfo',difficulty:'easy',rapport:60,objection:40,discovery:50,closing:55,totalScore:51,meetingBooked:false,turns:5,duration:78,customerName:'Sarah Mitchell'},
-    {date:new Date(Date.now()-86400000*10).toISOString(),persona:'ceo',difficulty:'medium',rapport:55,objection:60,discovery:65,closing:45,totalScore:56,meetingBooked:false,turns:7,duration:110,customerName:'James Park'},
+    {date:new Date(Date.now()-86400000*14).toISOString(),dgrName:'Hachem',persona:'cto',difficulty:'medium',rapport:45,objection:55,discovery:60,closing:30,totalScore:48,meetingBooked:false,turns:6,duration:95,customerName:'Alex Chen'},
+    {date:new Date(Date.now()-86400000*12).toISOString(),dgrName:'Laura',persona:'cfo',difficulty:'easy',rapport:60,objection:40,discovery:50,closing:55,totalScore:51,meetingBooked:false,turns:5,duration:78,customerName:'Sarah Mitchell'},
+    {date:new Date(Date.now()-86400000*10).toISOString(),dgrName:'Freddy',persona:'ceo',difficulty:'medium',rapport:55,objection:60,discovery:65,closing:45,totalScore:56,meetingBooked:false,turns:7,duration:110,customerName:'James Park'},
     {date:new Date(Date.now()-86400000*8).toISOString(),persona:'cto',difficulty:'hard',rapport:50,objection:70,discovery:55,closing:40,totalScore:54,meetingBooked:false,turns:8,duration:130,customerName:'Alex Chen'},
-    {date:new Date(Date.now()-86400000*6).toISOString(),persona:'cio',difficulty:'medium',rapport:65,objection:60,discovery:70,closing:60,totalScore:64,meetingBooked:true,turns:7,duration:145,customerName:'Maria Santos'},
+    {date:new Date(Date.now()-86400000*6).toISOString(),dgrName:'Hachem',persona:'cio',difficulty:'medium',rapport:65,objection:60,discovery:70,closing:60,totalScore:64,meetingBooked:true,turns:7,duration:145,customerName:'Maria Santos'},
     {date:new Date(Date.now()-86400000*5).toISOString(),persona:'cfo',difficulty:'medium',rapport:70,objection:55,discovery:65,closing:70,totalScore:65,meetingBooked:true,turns:6,duration:120,customerName:'Sarah Mitchell'},
     {date:new Date(Date.now()-86400000*3).toISOString(),persona:'cto',difficulty:'hard',rapport:60,objection:75,discovery:70,closing:55,totalScore:65,meetingBooked:false,turns:8,duration:150,customerName:'Alex Chen'},
     {date:new Date(Date.now()-86400000*2).toISOString(),persona:'ceo',difficulty:'medium',rapport:75,objection:65,discovery:80,closing:70,totalScore:73,meetingBooked:true,turns:7,duration:160,customerName:'James Park'},
@@ -160,8 +163,29 @@ function loadDemoData() {
   renderDashboard();
 }
 
-function renderDashboard() {
-  var data = getAllSessions();
+function populateDGRDropdown() {
+  var sessions = [];
+  try { sessions = JSON.parse(localStorage.getItem('rpSessions')) || []; } catch(e) {}
+  var names = {};
+  sessions.forEach(function(s) { if(s.dgrName) names[s.dgrName] = true; });
+  var select = document.getElementById('dgrSelect');
+  // Keep first option (All DGRs)
+  while(select.options.length > 1) select.remove(1);
+  Object.keys(names).sort().forEach(function(n) {
+    var opt = document.createElement('option');
+    opt.value = n;
+    opt.textContent = n;
+    select.appendChild(opt);
+  });
+}
+
+function loadDGR(val) {
+  renderDashboard(val === 'all' ? null : val);
+}
+
+function renderDashboard(filterName) {
+  populateDGRDropdown();
+  var data = getAllSessions(filterName);
   var container = document.getElementById('mainContent');
   
   if(!data.sessions || data.sessions.length === 0) {
@@ -270,11 +294,12 @@ function renderDashboard() {
   
   // Recent Sessions Table
   html += '<div class="chart-card" style="margin-top:20px"><h3><i class="fa-solid fa-list"></i>Recent Sessions</h3>';
-  html += '<table class="sessions-table"><thead><tr><th>Date</th><th>Persona</th><th>Difficulty</th><th>Rapport</th><th>Objection</th><th>Discovery</th><th>Closing</th><th>Avg</th><th>Meeting?</th></tr></thead><tbody>';
+  html += '<table class="sessions-table"><thead><tr><th>DGR</th><th>Date</th><th>Persona</th><th>Difficulty</th><th>Rapport</th><th>Objection</th><th>Discovery</th><th>Closing</th><th>Avg</th><th>Meeting?</th></tr></thead><tbody>';
   
   data.sessions.slice(-10).reverse().forEach(function(s) {
     var avg = Math.round(((s.rapport||0)+(s.objection||0)+(s.discovery||0)+(s.closing||0))/4);
     html += '<tr>';
+    html += '<td style="font-weight:600;color:var(--accent)">' + (s.dgrName || '—') + '</td>';
     html += '<td>' + formatDate(s.date) + '</td>';
     html += '<td>' + (s.persona||'—') + '</td>';
     html += '<td>' + (s.difficulty||'medium') + '</td>';
@@ -313,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if(!sessions || sessions.length === 0) {
     loadDemoData();
   } else {
-    renderDashboard();
+    renderDashboard(null);
   }
 });
 

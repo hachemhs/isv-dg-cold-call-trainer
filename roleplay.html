@@ -146,6 +146,11 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
   <div class="setup" id="setup">
     <h2><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Roleplay Simulator</h2>
     <p class="subtitle">Practice cold calling against a context-aware AI customer. They react to what you actually say.</p>
+    <div style="margin-bottom:20px;padding:16px;background:rgba(124,77,255,0.08);border:1px solid rgba(124,77,255,0.25);border-radius:12px">
+      <label style="font-weight:700;font-size:14px;color:#7c4dff;display:block;margin-bottom:8px"><i class="fa-solid fa-user" style="margin-right:6px"></i>Your Name (DGR)</label>
+      <input type="text" id="dgrName" placeholder="e.g. Hachem, Laura, Freddy..." style="width:100%;padding:12px 16px;border:1px solid #2d3748;border-radius:8px;font-size:15px;background:#1a2332;color:#e2e8f0;outline:none" required>
+      <p style="font-size:11px;color:#8892a4;margin-top:6px">Your name is used for coaching analytics and manager dashboard tracking.</p>
+    </div>
     <div class="form-row">
       <div><label>Industry</label><select id="rpIndustry"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option><option value="ecommerce">E-Commerce</option><option value="aiml">AI/ML Company</option></select></div>
       <div><label>Customer Persona</label><select id="rpPersona"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option><option value="aiml">AI/ML Lead — Priya Kapoor</option><option value="vpe">VP Engineering — Tom Richardson</option><option value="headit">Head of IT — Rachel Okonkwo</option><option value="headdigital">Head of Digital — Marcus Wei</option></select></div>
@@ -1201,6 +1206,19 @@ var CONTEXT_REACTIONS = {
 var state = null;
 
 function startSim() {
+  // === DGR NAME VALIDATION ===
+  var dgrNameInput = document.getElementById('dgrName');
+  var dgrName = dgrNameInput ? dgrNameInput.value.trim() : '';
+  if(!dgrName) {
+    dgrNameInput.style.border = '2px solid #ff1744';
+    dgrNameInput.focus();
+    dgrNameInput.placeholder = '⚠️ Please enter your name to start';
+    return;
+  }
+  dgrNameInput.style.border = '1px solid #2d3748';
+  // Save DGR name for session tracking
+  try { localStorage.setItem('rpDgrName', dgrName); } catch(e) {}
+  
   var p = document.getElementById('rpPersona').value;
   var d = document.getElementById('rpDifficulty').value;
   var ind = document.getElementById('rpIndustry').value;
@@ -3008,7 +3026,10 @@ function endSim(outcome) {
 
   // === SAVE SESSION TO DASHBOARD ===
   try {
+    var dgrName = '';
+    try { dgrName = localStorage.getItem('rpDgrName') || ''; } catch(e) {}
     var sessionData = {
+      dgrName: dgrName,
       date: new Date().toISOString(),
       persona: state.persona || 'unknown',
       difficulty: state.difficulty || 'medium',
