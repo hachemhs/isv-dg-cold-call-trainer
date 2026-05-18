@@ -188,6 +188,14 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
     
     
     <!-- Voice mode removed -->
+    <div style="margin:16px 0;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border:2px solid #6366f1;border-radius:12px;text-align:center">
+      <label style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;font-size:15px;font-weight:600;color:#e2e8f0">
+        <input type="checkbox" id="voiceModeCheckbox" style="width:20px;height:20px;accent-color:#6366f1">
+        <i class="fa-solid fa-microphone" style="color:#6366f1;font-size:18px"></i>
+        Enable Voice Mode
+      </label>
+      <p style="font-size:11px;color:#94a3b8;margin-top:8px">Customer speaks aloud. You speak to respond. Requires microphone access.</p>
+    </div>
     <button class="start-btn" onclick="startSim()"><i class="fa-solid fa-phone"></i> Start Simulation</button>
   </div>
 
@@ -195,7 +203,9 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
     
     <div class="chat-header">
       <img class="avatar" id="avatarImg" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgcng9Ijc1IiBmaWxsPSIjM2I4MmY2Ii8+PHRleHQgeD0iNzUiIHk9Ijc1IiBkeT0iLjM1ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjU2IiBmb250LXdlaWdodD0iNzAwIj5BQzwvdGV4dD48L3N2Zz4=" style="width:40px;height:40px;border-radius:50%;border:2px solid #6366f1;" />
-      <div class="info"><div class="name" id="custName">Alex Chen</div><div class="role" id="custRole">CTO · SaaS · Medium</div></div>
+      <div class="info"><div class="name" id="custName">Alex Chen</div>
+<div id="voiceStatus" style="display:none;padding:8px 16px;background:#1e1b4b;color:#a5b4fc;font-size:12px;text-align:center;font-weight:600"></div>
+<div class="role" id="custRole">CTO · SaaS · Medium</div></div>
       <div style="text-align:right"><div style="font-size:10px;opacity:0.6;margin-bottom:2px">Patience</div><div class="patience-bar"><div class="patience-fill" id="patienceBar" style="width:100%"></div></div></div>
     </div>
     <div class="messages" id="messages"></div>
@@ -1382,7 +1392,9 @@ function startSim() {
     return;
   }
   dgrNameInput.style.border = '1px solid #2d3748';
-  var startWithVoice = false;
+  var voiceCheckbox = document.getElementById('voiceModeCheckbox');
+  var startWithVoice = voiceCheckbox && voiceCheckbox.checked;
+  if(startWithVoice) { if(!initVoice()) { alert('Voice mode could not be initialized.'); return; } }
 
   // Save DGR name for session tracking
   try { localStorage.setItem('rpDgrName', dgrName); } catch(e) {}
@@ -4484,6 +4496,122 @@ var typingSafetyInterval = setInterval(function() {
     <div id="coachingText">Waiting for conversation to start...</div>
   </div>
 </div>
+
+
+<script>
+// ===== VOICE MODULE (Lazy-init — only activates when user opts in) =====
+var _voice = { on: false, speaking: false, synth: null, recog: null, selectedVoice: null };
+
+function initVoice() {
+  if(_voice.on) return true;
+  try {
+    _voice.synth = window.speechSynthesis;
+    if(!_voice.synth) { alert('Speech synthesis not supported in this browser.'); return false; }
+    
+    // Only request mic when user explicitly enables voice
+    var SpeechRecog = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(SpeechRecog) {
+      _voice.recog = new SpeechRecog();
+      _voice.recog.continuous = false;
+      _voice.recog.interimResults = false;
+      _voice.recog.lang = 'en-GB';
+      _voice.recog.onresult = function(e) {
+        var text = e.results[0][0].transcript;
+        var input = document.getElementById('userInput');
+        if(input) { input.value = text; setTimeout(function(){ sendMsg(); }, 400); }
+      };
+      _voice.recog.onend = function() {
+        if(_voice.on && state && state.active && !_voice.speaking) {
+          setTimeout(function(){ startListening(); }, 300);
+        }
+      };
+      _voice.recog.onerror = function(e) {
+        if(e.error === 'no-speech') { setTimeout(function(){ startListening(); }, 500); }
+      };
+    }
+    _voice.on = true;
+    pickVoiceForPersona();
+    return true;
+  } catch(e) { console.warn('Voice init failed:', e); return false; }
+}
+
+function pickVoiceForPersona() {
+  if(!_voice.synth) return;
+  var voices = _voice.synth.getVoices();
+  if(!voices.length) { setTimeout(pickVoiceForPersona, 200); return; }
+  var persona = (window.state && window.state.persona) || 'cto';
+  var wantFemale = (persona==='cfo'||persona==='cio'||persona==='aiml'||persona==='head_it');
+  
+  var best = null;
+  for(var i = 0; i < voices.length; i++) {
+    var v = voices[i];
+    if(v.lang.indexOf('en') !== 0) continue;
+    var isFemale = /female|zira|hazel|susan|kate|moira|samantha|karen|tessa|fiona/i.test(v.name);
+    var isMale = /male|david|daniel|james|george|alex|fred|thomas|oliver/i.test(v.name);
+    if(wantFemale && isFemale) { best = v; break; }
+    if(!wantFemale && isMale) { best = v; break; }
+    if(!best && v.lang.indexOf('en-GB') === 0) best = v;
+    if(!best) best = v;
+  }
+  _voice.selectedVoice = best;
+}
+
+function voiceSpeak(text) {
+  if(!_voice.on || !_voice.synth) return;
+  _voice.synth.cancel();
+  _voice.speaking = true;
+  updateVoiceStatus('speaking');
+  
+  // Clean text of stage directions
+  var clean = text.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+  if(!clean) { _voice.speaking = false; startListening(); return; }
+  
+  // Split into sentences for natural delivery
+  var sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+  var i = 0;
+  
+  function speakNext() {
+    if(i >= sentences.length) {
+      _voice.speaking = false;
+      updateVoiceStatus('listening');
+      startListening();
+      return;
+    }
+    var utt = new SpeechSynthesisUtterance(sentences[i].trim());
+    if(_voice.selectedVoice) utt.voice = _voice.selectedVoice;
+    utt.rate = state && state.patience < 40 ? 1.15 : 0.95;
+    utt.pitch = sentences[i].indexOf('?') >= 0 ? 1.1 : 1.0;
+    utt.onend = function() { i++; setTimeout(speakNext, 250 + Math.random()*200); };
+    _voice.synth.speak(utt);
+  }
+  speakNext();
+}
+
+function startListening() {
+  if(!_voice.on || !_voice.recog || _voice.speaking) return;
+  try { _voice.recog.start(); updateVoiceStatus('listening'); } catch(e) {}
+}
+
+function updateVoiceStatus(status) {
+  var el = document.getElementById('voiceStatus');
+  if(!el) return;
+  el.style.display = 'block';
+  if(status === 'speaking') el.innerHTML = '<i class="fa-solid fa-volume-high"></i> Customer speaking...';
+  else if(status === 'listening') el.innerHTML = '<i class="fa-solid fa-microphone"></i> Your turn — speak now';
+  else el.style.display = 'none';
+}
+
+// Hook into the main addMsg function to trigger voice
+(function() {
+  var origAddMsg = window.addMsg;
+  if(origAddMsg) {
+    window.addMsg = function(role, text) {
+      origAddMsg(role, text);
+      if(role === 'customer' && _voice.on) voiceSpeak(text);
+    };
+  }
+})();
+</script>
 
 </body>
 </html>
