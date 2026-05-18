@@ -1322,11 +1322,11 @@ body {
 
 
 <!-- LIVE OBJECTION COACH - Floating Panel -->
-<div class="coach-panel" id="coachPanel">
+<div class="coach-panel minimized" id="coachPanel">
   <div class="coach-header" onclick="toggleCoach()">
     <span class="pulse-dot"></span>
     <h4><i class="fa-solid fa-headset"></i> Live Objection Coach</h4>
-    <button class="minimize-btn" id="minimizeBtn"><i class="fa-solid fa-chevron-down"></i></button>
+    <button class="minimize-btn" id="minimizeBtn"><i class="fa-solid fa-chevron-up"></i></button>
   </div>
   <div class="coach-body">
     <div style="font-size:12px; color:var(--color-text-muted); margin-bottom:4px;">
@@ -1352,6 +1352,7 @@ body {
 </div>
 
 <script>
+// v1779097949
 
 // === DGR PERFORMANCE BENCHMARKS (Real EMEA ISV Q1 2026 Data) ===
 var DGR_BENCHMARKS = {
@@ -1415,7 +1416,7 @@ var DGR_BENCHMARKS = {
 // ============================================
 // OBJECTION DATABASE - Built from ISV DG data
 // ============================================
-const OBJECTION_DB = {
+var OBJECTION_DB = {
   // DISMISSIVE OBJECTIONS (~50% of all calls per Gong data)
   dismissive: [
     {
@@ -1701,7 +1702,7 @@ const OBJECTION_DB = {
   ]};
 
 // COMPETE & HIGHSPOT ENRICHMENT - Azure, GCP, AI Maturity, Marketplace
-const COMPETE_DB = {
+var COMPETE_DB = {
   azure: [
     {
       objection: "We're already on Azure and it works fine for us",
@@ -1801,7 +1802,7 @@ Object.keys(COMPETE_DB).forEach(key => {
 // ============================================
 // CALL SCRIPT TEMPLATES
 // ============================================
-const SCRIPT_TEMPLATES = {
+var SCRIPT_TEMPLATES = {
   discovery: {
     opener: "Hi {persona_name}, this is {dgr_name} from AWS. I work with ISVs in the {industry} space and noticed {personalized_hook}. I'm calling because we're helping similar companies {outcome_teaser}. Do you have 2 minutes so I can see if it's relevant?",
     value_prop: "The reason I reached out specifically is that {industry} ISVs working with us are seeing {specific_metric}. We've helped companies like {reference_customer} achieve this through {solution_approach}.",
@@ -1823,7 +1824,7 @@ const SCRIPT_TEMPLATES = {
 // ============================================
 // DISCOVERY QUESTIONS
 // ============================================
-const DISCOVERY_QUESTIONS = {
+var DISCOVERY_QUESTIONS = {
   ai_readiness: [
     "What's your current approach to integrating AI into your product roadmap?",
     "Are your customers asking for AI-powered features or capabilities?",
@@ -1904,14 +1905,14 @@ const DISCOVERY_QUESTIONS = {
 // GENERATION LOGIC
 // ============================================
 function generateInsights() {
-  const company = document.getElementById('companyName').value || 'this company';
-  const industry = document.getElementById('industry').value;
-  const size = document.getElementById('companySize').value;
-  const persona = document.getElementById('persona').value;
-  const maturity = document.getElementById('awsMaturity').value;
-  const region = document.getElementById('region').value;
-  const objective = document.getElementById('callObjective').value;
-  const context = document.getElementById('context').value;
+  var company = document.getElementById('companyName').value || 'this company';
+  var industry = document.getElementById('industry').value;
+  var size = document.getElementById('companySize').value;
+  var persona = document.getElementById('persona').value;
+  var maturity = document.getElementById('awsMaturity').value;
+  var region = document.getElementById('region').value;
+  var objective = document.getElementById('callObjective').value;
+  var context = document.getElementById('context').value;
 
   if (!industry || !persona || !objective) {
     alert('Please fill in at least Industry, Target Persona, and Call Objective.');
@@ -1922,25 +1923,25 @@ function generateInsights() {
   document.getElementById('welcomeState').style.display = 'none';
 
   // Score and rank objections
-  const scoredObjections = scoreObjections(industry, size, persona, maturity, objective, context);
-  const topObjections = scoredObjections.slice(0, 6);
+  var scoredObjections = scoreObjections(industry, size, persona, maturity, objective, context);
+  var topObjections = scoredObjections.slice(0, 6);
 
   // Generate call script
-  const script = generateScript(company, industry, persona, objective, maturity, region, context);
+  var script = generateScript(company, industry, persona, objective, maturity, region, context);
 
   // Select relevant discovery questions
-  const questions = selectQuestions(maturity, objective, persona);
+  var questions = selectQuestions(maturity, objective, persona);
 
   // Render results
   // Generate outreach email
-  const email = generateOutreachEmail(company, industry, persona, objective, maturity, context, script);
+  var email = generateOutreachEmail(company, industry, persona, objective, maturity, context, script);
   lastEmailParams = {company, industry, persona, objective, maturity, context};
   
   renderResults(topObjections, script, questions, company, industry, persona, maturity, objective, email);
 }
 
 function scoreObjections(industry, size, persona, maturity, objective, context) {
-  const allObjections = [
+  var allObjections = [
     ...OBJECTION_DB.dismissive,
     ...OBJECTION_DB.budget,
     ...OBJECTION_DB.timing,
@@ -1949,7 +1950,7 @@ function scoreObjections(industry, size, persona, maturity, objective, context) 
     ...OBJECTION_DB.isv_specific
   ];
 
-  const scored = allObjections.map(obj => {
+  var scored = allObjections.map(obj => {
     let score = 0;
 
     // Match on call objective
@@ -1970,7 +1971,7 @@ function scoreObjections(industry, size, persona, maturity, objective, context) 
     if (size === 'smb' && obj.category === 'Budget') score += 10;
 
     // Context keywords
-    const contextLower = context.toLowerCase();
+    var contextLower = context.toLowerCase();
     if (contextLower.includes('azure') && obj.objection.toLowerCase().includes('competitor')) score += 20;
     if (contextLower.includes('azure') && obj.objection.toLowerCase().includes('provider')) score += 20;
     if (contextLower.includes('budget') && obj.category === 'Budget') score += 15;
@@ -1989,9 +1990,9 @@ function scoreObjections(industry, size, persona, maturity, objective, context) 
 }
 
 function generateScript(company, industry, persona, objective, maturity, region, context) {
-  const template = SCRIPT_TEMPLATES[objective] || SCRIPT_TEMPLATES.discovery;
+  var template = SCRIPT_TEMPLATES[objective] || SCRIPT_TEMPLATES.discovery;
 
-  const industryHooks = {
+  var industryHooks = {
     fintech: "regulatory compliance and fraud detection are top AI use cases",
     security: "threat detection and response automation are accelerating with AI agents",
     healthtech: "clinical decision support and patient engagement are being transformed by AI",
@@ -2004,7 +2005,7 @@ function generateScript(company, industry, persona, objective, maturity, region,
     devtools: "AI-assisted development and code generation are the fastest-growing segment"
   };
 
-  const personaNames = {
+  var personaNames = {
     cto: "the technical leadership",
     cio: "IT leadership",
     cfo: "finance teams",
@@ -2014,8 +2015,8 @@ function generateScript(company, industry, persona, objective, maturity, region,
     datasci: "data teams"
   };
 
-  const hook = industryHooks[industry] || "AI adoption is accelerating across your space";
-  const personaLabel = personaNames[persona] || "leadership";
+  var hook = industryHooks[industry] || "AI adoption is accelerating across your space";
+  var personaLabel = personaNames[persona] || "leadership";
 
   return {
     opener: `Hi [Name], this is [Your Name] from AWS. I work with ${industry} ISVs across EMEA and noticed ${company} is ${context ? context.substring(0, 80) + '...' : 'scaling rapidly in this space'}. I'm calling because ${hook}. Do you have 2 minutes?`,
@@ -2073,7 +2074,7 @@ function selectQuestions(maturity, objective, persona) {
   }
 
   // Add persona-specific questions
-  const personaKey = 'persona_' + persona;
+  var personaKey = 'persona_' + persona;
   if (DISCOVERY_QUESTIONS[personaKey]) {
     selected = [...selected, ...DISCOVERY_QUESTIONS[personaKey].slice(0, 3)];
   }
@@ -2096,13 +2097,13 @@ function selectQuestions(maturity, objective, persona) {
 // ============================================
 
 function generateOutreachEmail(company, industry, persona, objective, maturity, context, script) {
-  const personaTitles = {
+  var personaTitles = {
     cto: 'CTO', cio: 'CIO', cfo: 'CFO', ceo: 'CEO/Founder',
     pm: 'Head of Product', devlead: 'Engineering Lead', datasci: 'Data Lead'
   };
-  const personaTitle = personaTitles[persona] || 'Leader';
+  var personaTitle = personaTitles[persona] || 'Leader';
   
-  const industryHooks = {
+  var industryHooks = {
     fintech: "regulatory compliance and real-time fraud detection are becoming table-stakes AI use cases",
     security: "threat detection and automated response are the fastest-growing AI categories",
     healthcare: "clinical workflow automation and diagnostics AI are moving from pilot to production",
@@ -2115,14 +2116,14 @@ function generateOutreachEmail(company, industry, persona, objective, maturity, 
     media: "content recommendation and automated production AI are driving subscriber growth"
   };
   
-  const maturitySubjects = {
+  var maturitySubjects = {
     greenfield: "Quick thought on your cloud strategy",
     observing: "How " + (industry || 'ISVs') + " leaders are approaching AI",
     experimenting: "From experiment to production — a pattern we\'re seeing",
     adopting: "Accelerating what you\'ve already started"
   };
   
-  const objectiveSubjects = {
+  var objectiveSubjects = {
     discovery: "Quick question about " + company + "\'s roadmap",
     demo: company + " + AWS — 15 min overview",
     cosell: "Co-selling with AWS — opportunity for " + company,
@@ -2130,17 +2131,17 @@ function generateOutreachEmail(company, industry, persona, objective, maturity, 
     reengagement: "Checking in — things have changed since we last spoke"
   };
   
-  const hook = industryHooks[industry] || "AI adoption is accelerating, and we\'re seeing " + (industry || 'ISVs') + " move fast";
+  var hook = industryHooks[industry] || "AI adoption is accelerating, and we\'re seeing " + (industry || 'ISVs') + " move fast";
   
   // Subject line
-  const subject = objectiveSubjects[objective] || maturitySubjects[maturity] || "Quick thought for " + company;
+  var subject = objectiveSubjects[objective] || maturitySubjects[maturity] || "Quick thought for " + company;
   
   // Opening line — context-aware
   let opening = "";
   if(context && context.length > 10) {
     opening = "I came across " + company + " and noticed " + context.substring(0, 100) + (context.length > 100 ? "..." : "") + " — thought it was worth reaching out.";
   } else {
-    const openings = [
+    var openings = [
       "I work with " + (industry || 'ISV') + " companies across EMEA and " + company + " caught my attention.",
       "I\'ve been following " + company + " — the growth in your space is impressive. Quick thought below.",
       "A few " + (industry || 'ISV') + " companies similar to " + company + " have been exploring something I thought might be relevant."
@@ -2161,7 +2162,7 @@ function generateOutreachEmail(company, industry, persona, objective, maturity, 
   }
   
   // Add industry-specific proof point
-  const proofPoints = {
+  var proofPoints = {
     fintech: "Stripe, Wise, and Checkout.com run on AWS. In regulated fintech, compliance + speed matters.",
     security: "CrowdStrike, Palo Alto Networks, and Wiz chose AWS. Security vendors trust AWS infrastructure.",
     healthcare: "Moderna and Philips Health run on AWS. When data privacy is existential, enterprises choose AWS.",
@@ -2188,22 +2189,22 @@ function generateOutreachEmail(company, industry, persona, objective, maturity, 
   }
   
   // PS line — social proof
-  const psLines = [
+  var psLines = [
     "P.S. We recently helped a similar " + (industry || 'ISV') + " company reduce their time-to-market by 40% — happy to share details.",
     "P.S. " + (industry ? industry.charAt(0).toUpperCase() + industry.slice(1) : 'ISV') + " companies on AWS Marketplace are seeing 54% larger deal sizes. Thought that might be relevant.",
     "P.S. If email isn\'t your thing, I\'m also on LinkedIn. Whatever\'s easiest.",
     "P.S. No pressure at all — if now isn\'t the right time, when should I check back?"
   ];
-  const ps = psLines[Math.floor(Math.random() * psLines.length)];
+  var ps = psLines[Math.floor(Math.random() * psLines.length)];
   
   return { subject, opening, value, cta, ps };
 }
 
 function renderResults(objections, script, questions, company, industry, persona, maturity, objective, email) {
-  const panel = document.getElementById('resultsPanel');
+  var panel = document.getElementById('resultsPanel');
 
-  const maturityLabels = { observing: 'Observing', experimenting: 'Experimenting', adopting: 'Adopting', greenfield: 'Greenfield' };
-  const objectiveLabels = { discovery: 'Discovery', demo: 'Demo Invite', cosell: 'Co-Sell', followup: 'Follow-up', reengagement: 'Re-engagement' };
+  var maturityLabels = { observing: 'Observing', experimenting: 'Experimenting', adopting: 'Adopting', greenfield: 'Greenfield' };
+  var objectiveLabels = { discovery: 'Discovery', demo: 'Demo Invite', cosell: 'Co-Sell', followup: 'Follow-up', reengagement: 'Re-engagement' };
 
   panel.innerHTML = `
     <!-- Stats Row -->
@@ -2363,41 +2364,41 @@ function renderResults(objections, script, questions, company, industry, persona
 }
 
 function toggleObjection(index) {
-  const body = document.getElementById(`body-${index}`);
-  const icon = document.getElementById(`icon-${index}`);
+  var body = document.getElementById(`body-${index}`);
+  var icon = document.getElementById(`icon-${index}`);
   body.classList.toggle('visible');
   icon.style.transform = body.classList.contains('visible') ? 'rotate(180deg)' : 'rotate(0)';
 }
 
 function copyScript() {
-  const scriptEl = document.getElementById('scriptContent');
-  const text = scriptEl.innerText;
+  var scriptEl = document.getElementById('scriptContent');
+  var text = scriptEl.innerText;
   navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('.copy-btn');
+    var btn = document.querySelector('.copy-btn');
     btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy All'; }, 2000);
   });
 }
 
 function copyEmail() {
-  const subject = document.getElementById('emailSubject').innerText;
-  const body = document.getElementById('emailBody').innerText;
-  const fullEmail = "Subject: " + subject + "\n\n" + body;
+  var subject = document.getElementById('emailSubject').innerText;
+  var body = document.getElementById('emailBody').innerText;
+  var fullEmail = "Subject: " + subject + "\n\n" + body;
   navigator.clipboard.writeText(fullEmail).then(() => {
-    const btns = document.querySelectorAll('.copy-btn');
-    const btn = btns[btns.length > 1 ? 1 : 0];
+    var btns = document.querySelectorAll('.copy-btn');
+    var btn = btns[btns.length > 1 ? 1 : 0];
     if(btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Email'; }, 2000); }
   });
 }
 
 function showOutreachEmail() {
-  const email = generateOutreachEmail(
+  var email = generateOutreachEmail(
     lastEmailParams.company, lastEmailParams.industry, lastEmailParams.persona,
     lastEmailParams.objective, lastEmailParams.maturity, lastEmailParams.context
   );
   
-  const section = document.getElementById('emailSection');
-  const placeholder = document.getElementById('emailPlaceholder');
+  var section = document.getElementById('emailSection');
+  var placeholder = document.getElementById('emailPlaceholder');
   
   section.style.display = 'block';
   placeholder.style.display = 'none';
@@ -2442,7 +2443,7 @@ var lastEmailParams = {};
 
 function regenerateEmail() {
   if(lastEmailParams.company) {
-    const email = generateOutreachEmail(
+    var email = generateOutreachEmail(
       lastEmailParams.company, lastEmailParams.industry, lastEmailParams.persona,
       lastEmailParams.objective, lastEmailParams.maturity, lastEmailParams.context
     );
@@ -2453,51 +2454,51 @@ function regenerateEmail() {
 }
 
 function shortenEmail() {
-  const body = document.getElementById('emailBody');
-  const subject = document.getElementById('emailSubject');
-  const company = lastEmailParams.company || '[Company]';
-  const industry = lastEmailParams.industry || 'ISV';
+  var body = document.getElementById('emailBody');
+  var subject = document.getElementById('emailSubject');
+  var company = lastEmailParams.company || '[Company]';
+  var industry = lastEmailParams.industry || 'ISV';
   
-  const shortSubjects = [
+  var shortSubjects = [
     "Quick thought for " + company,
     company + " + AWS?",
     "15 min — " + company + " & AI",
     "Worth a chat?"
   ];
   
-  const shortBodies = [
+  var shortBodies = [
     "Hi [First Name],\n\nI work with " + industry + " companies on AWS. Noticed " + company + " — thought there might be a fit.\n\n15 minutes to compare notes?\n\nBest,\n[Your Name]",
     "Hi [First Name],\n\nQuick one: we\'re helping " + industry + " ISVs in EMEA grow faster with AWS (Marketplace, co-sell, AI). Relevant for " + company + "?\n\nHappy to share specifics in a short call.\n\n[Your Name]",
     "Hi [First Name],\n\n" + industry.charAt(0).toUpperCase() + industry.slice(1) + " companies similar to " + company + " are seeing 54% larger deals through AWS Marketplace. Worth exploring?\n\n15 min next week?\n\n[Your Name]",
     "Hi [First Name],\n\nI help " + industry + " ISVs scale across EMEA. Curious if " + company + " is exploring AI or marketplace opportunities.\n\nWorth a brief chat?\n\nBest,\n[Your Name]"
   ];
   
-  const idx = Math.floor(Math.random() * shortSubjects.length);
+  var idx = Math.floor(Math.random() * shortSubjects.length);
   subject.textContent = shortSubjects[idx];
   body.textContent = shortBodies[idx];
 }
 
 function makeFollowUp() {
-  const body = document.getElementById('emailBody');
-  const subject = document.getElementById('emailSubject');
-  const company = lastEmailParams.company || '[Company]';
-  const industry = lastEmailParams.industry || 'ISV';
+  var body = document.getElementById('emailBody');
+  var subject = document.getElementById('emailSubject');
+  var company = lastEmailParams.company || '[Company]';
+  var industry = lastEmailParams.industry || 'ISV';
   
-  const followUpSubjects = [
+  var followUpSubjects = [
     "Re: " + company + " + AWS",
     "Circling back — " + company,
     "One more thought for " + company,
     "Bumping this — worth 10 min?"
   ];
   
-  const followUpBodies = [
+  var followUpBodies = [
     "Hi [First Name],\n\nJust circling back on my note last week. I know things get buried.\n\nThe short version: we\'re helping " + industry + " companies like " + company + " [grow faster / reduce costs / accelerate AI] and I think there\'s a fit.\n\nWorth a quick 10-minute conversation? No pressure either way.\n\nBest,\n[Your Name]",
     "Hi [First Name],\n\nI reached out last week — appreciate you\'re busy.\n\nOne new data point: a " + industry + " company similar to " + company + " just launched on AWS Marketplace and saw 65% faster deal cycles. Thought that might be worth exploring.\n\nHappy to share details in 10 minutes if useful. If not, no worries at all.\n\n[Your Name]",
     "Hi [First Name],\n\nFollowing up — I\'ll keep it short.\n\nI work with " + industry + " ISVs and the ones growing fastest in EMEA are leveraging [Marketplace co-sell / AI services / specific thing]. Would " + company + " benefit from a quick intro to see if there\'s a fit?\n\nEither way, happy to share a relevant case study if useful.\n\nBest,\n[Your Name]",
     "Hi [First Name],\n\nLast note from me — I promise!\n\nIf the timing isn\'t right, just let me know and I\'ll check back in [Q3 / 6 months / next year]. But if there\'s even a small chance this is relevant for " + company + ", a 10-minute call could save you hours of research.\n\nNo pressure.\n\n[Your Name]"
   ];
   
-  const idx = Math.floor(Math.random() * followUpSubjects.length);
+  var idx = Math.floor(Math.random() * followUpSubjects.length);
   subject.textContent = followUpSubjects[idx];
   body.textContent = followUpBodies[idx];
 }
@@ -2507,8 +2508,8 @@ function makeFollowUp() {
 // LIVE OBJECTION COACH
 // ============================================
 function toggleCoach() {
-  const panel = document.getElementById('coachPanel');
-  const btn = document.getElementById('minimizeBtn');
+  var panel = document.getElementById('coachPanel');
+  var btn = document.getElementById('minimizeBtn');
   panel.classList.toggle('minimized');
   btn.innerHTML = panel.classList.contains('minimized')
     ? '<i class="fa-solid fa-chevron-up"></i>'
@@ -2521,17 +2522,17 @@ function quickObjection(text) {
 }
 
 function handleCoachSubmit() {
-  const input = document.getElementById('coachInput');
-  const objection = input.value.trim();
+  var input = document.getElementById('coachInput');
+  var objection = input.value.trim();
   if (!objection) return;
 
-  const response = analyzeObjection(objection);
+  var response = analyzeObjection(objection);
   renderCoachResponse(objection, response);
   input.value = '';
 }
 
 function analyzeObjection(text) {
-  const lower = text.toLowerCase();
+  var lower = text.toLowerCase();
 
   // Classify the objection
   let category = 'General';
@@ -2571,13 +2572,13 @@ function analyzeObjection(text) {
   }
 
   // Generate structured PACRA response
-  const responses = generatePACRA(lower, category);
+  var responses = generatePACRA(lower, category);
 
   return { category, color, bgColor, ...responses };
 }
 
 function generatePACRA(text, category) {
-  const responseBank = {
+  var responseBank = {
     'Dismissive': {
       acknowledge: "Totally fair — I appreciate you being direct.",
       clarify: "Quick question so I'm not wasting your time: is it that you've already solved this, or it's just not on the radar right now?",
@@ -2703,7 +2704,7 @@ function generatePACRA(text, category) {
 }
 
 function renderCoachResponse(objection, response) {
-  const el = document.getElementById('coachResponse');
+  var el = document.getElementById('coachResponse');
   el.classList.add('visible');
 
   el.innerHTML = `
@@ -2773,11 +2774,11 @@ function goHome() {
 // CALL NOTES ANALYZER
 // ============================================
 function analyzeCallNotes() {
-  const notes = document.getElementById('callNotesInput').value.trim();
+  var notes = document.getElementById('callNotesInput').value.trim();
   if (!notes) { alert('Please paste call notes to analyze.'); return; }
   
-  const lower = notes.toLowerCase();
-  const results = {
+  var lower = notes.toLowerCase();
+  var results = {
     objections: [],
     nextSteps: [],
     emailPoints: [],
@@ -2794,7 +2795,7 @@ function analyzeCallNotes() {
   }
   
   if (lower.match(/azure|microsoft|gcp|google cloud|competitor|alternative/)) {
-    const competitor = lower.includes('azure') ? 'Azure' : lower.includes('gcp') || lower.includes('google') ? 'GCP' : 'competitor';
+    var competitor = lower.includes('azure') ? 'Azure' : lower.includes('gcp') || lower.includes('google') ? 'GCP' : 'competitor';
     results.objections.push({
       type: `Competitor Mention (${competitor})`,
       response: `Don't bash ${competitor}. Instead: 'Many ISVs run multi-cloud not to replace ${competitor}, but to unlock new revenue channels. AWS Marketplace gives access to 310K+ buyers with pre-committed spend. Would a GTM comparison be worthwhile?'`,
@@ -2934,7 +2935,7 @@ function analyzeCallNotes() {
 }
 
 function renderNotesAnalysis(results) {
-  const el = document.getElementById('notesResults');
+  var el = document.getElementById('notesResults');
   el.classList.add('visible');
   
   let objectionHtml = '';
@@ -2974,10 +2975,10 @@ function renderNotesAnalysis(results) {
 }
 
 function copySection(id) {
-  const el = document.getElementById(id);
-  const text = el.innerText;
+  var el = document.getElementById(id);
+  var text = el.innerText;
   navigator.clipboard.writeText(text).then(() => {
-    const btn = el.previousElementSibling;
+    var btn = el.previousElementSibling;
     btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
     setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy'; }, 2000);
   });
@@ -2987,8 +2988,8 @@ function copySection(id) {
 // SOLUTIONS PANEL TOGGLE
 // ============================================
 function toggleSolutions() {
-  const body = document.getElementById('solutionsBody');
-  const chevron = document.getElementById('solutionsChevron');
+  var body = document.getElementById('solutionsBody');
+  var chevron = document.getElementById('solutionsChevron');
   body.classList.toggle('visible');
   chevron.style.transform = body.classList.contains('visible') ? 'rotate(0)' : 'rotate(-90deg)';
 }
@@ -3014,1953 +3015,6 @@ function launchRoleplay() {
   if (iframe) iframe.src = url;
 }
 
-
-</script>
-
-</body>
-</html><div class="header" style="display:flex;align-items:center;gap:12px;padding:14px 24px">
-  <i class="fa-brands fa-aws" style="font-size:24px;color:#ff9900"></i>
-  <h1 style="margin:0;font-size:18px;font-weight:700">ISV DG Prospecting</h1>
-  <span style="margin-left:auto;background:#7c4dff;color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">EMEA</span>
-</div>
-
-
-
-<!-- ROLEPLAY SIMULATOR -->
-<div style="max-width:600px;margin:20px auto;padding:0 24px;">
-  <div style="background:#ffffff;border:2px solid #7b2d8b;border-radius:12px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-    <h3 style="font-size:17px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a2e;"><i class="fa-solid fa-user-group" style="color:#7b2d8b"></i> Cold Call Roleplay Simulator</h3>
-    <p style="font-size:13px;color:#8993a4;margin-bottom:18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Practice cold calling against an AI customer. Handle objections and book a meeting.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Industry</label><select id="rpIndustryMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="saas">SaaS / Platform</option><option value="fintech">FinTech</option><option value="security">Cybersecurity</option><option value="healthtech">HealthTech</option><option value="devtools">Developer Tools</option></select></div>
-      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Customer Persona</label><select id="rpPersonaMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="cto">CTO — Alex Chen</option><option value="cfo">CFO — Sarah Mitchell</option><option value="ceo">CEO — James Park</option><option value="cio">CIO — Maria Santos</option></select></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Difficulty</label><select id="rpDifficultyMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div>
-      <div><label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;color:#44546f;display:block;margin-bottom:5px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Objective</label><select id="rpObjectiveMain" style="width:100%;padding:10px;border:1px solid #dfe1e6;border-radius:4px;font-size:13px;background:#f8f9fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><option value="discovery">Discovery Call</option><option value="demo">Demo Invite</option><option value="cosell">Co-Sell Intro</option></select></div>
-    </div>
-    <p style="background:#e6f0ff;padding:10px;border-radius:8px;font-size:12px;color:#44546f;margin:12px 0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><strong>How it works:</strong> AI plays a resistant customer. 6-8 exchanges. Score + coaching at the end.</p>
-    <a href="roleplay.html" target="_blank" style="display:block;width:100%;padding:13px;background:#7b2d8b;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">▶ Launch Roleplay Simulator</a>
-  </div>
-</div>
-
-<div class="container">
-  <!-- Mode Tabs -->
-  <div class="mode-tabs">
-    <button class="mode-tab active" data-mode="prospecting" onclick="switchMode('prospecting', this)"><i class="fa-solid fa-phone"></i> Prospecting</button>
-    <button class="mode-tab" data-mode="notes" onclick="switchMode('notes', this)"><i class="fa-solid fa-clipboard-list"></i> Call Notes Analyzer</button>
-    <button class="mode-tab" data-mode="solutions" onclick="switchMode('solutions', this)"><i class="fa-solid fa-cube"></i> AWS Solutions</button>
-  </div>
-
-  <!-- NOTES ANALYZER MODE -->
-  <div class="mode-content" id="mode-notes" style="display:none">
-    <div class="notes-analyzer">
-      <h3><i class="fa-solid fa-clipboard-list" style="color:#7b2d8b"></i> Call Notes Analyzer</h3>
-      <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:12px;">Paste call notes, meeting summaries, or Zoom transcripts from any customer interaction. The AI will extract objections, recommend next steps, and generate follow-up talking points.</p>
-      <textarea class="notes-textarea" id="callNotesInput" placeholder="Paste your call notes here...&#10;&#10;Example:&#10;Called John at Acme Corp. He said they're evaluating Azure for their ML workloads. Budget is tight this quarter but interested in learning more about marketplace. Mentioned the CTO needs to sign off. Asked to send materials and reconnect in Q3. They had a bad experience with a cloud migration 2 years ago."></textarea>
-      <button class="btn-analyze" onclick="analyzeCallNotes()"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Notes</button>
-      <div class="analysis-results" id="notesResults"></div>
-    </div>
-  </div>
-
-  <!-- AWS SOLUTIONS REFERENCE MODE -->
-  <div class="mode-content" id="mode-solutions" style="display:none">
-    <div class="solutions-panel">
-      <div class="solutions-header" onclick="toggleSolutions()">
-        <span><i class="fa-solid fa-cube"></i> AWS Solutions & Value Propositions — Quick Reference</span>
-        <i class="fa-solid fa-chevron-down" id="solutionsChevron"></i>
-      </div>
-      <div class="solutions-body visible" id="solutionsBody">
-        <div class="solutions-grid">
-          <div class="solution-card">
-            <h5><i class="fa-solid fa-brain" style="color:#7b2d8b"></i> GenAI / AI</h5>
-            <ul>
-              <li><strong>Bedrock:</strong> Broadest model selection (Claude, Llama, Mistral, Cohere, Stability, Amazon). Single API. Production-grade.</li>
-              <li><strong>AgentCore:</strong> Deploy AI agents at scale. Framework-agnostic. Sandboxed runtime. Built-in guardrails. Production in weeks, not months.</li>
-              <li><strong>SageMaker/HyperPod:</strong> ML training with 88.3% win rate. 230+ Graviton instance types. 50K+ customers.</li>
-              <li><strong>AI Services:</strong> Transcribe, Textract, Rekognition, Comprehend, Translate, Polly — all managed, all production-ready.</li>
-            </ul>
-          </div>
-          <div class="solution-card">
-            <h5><i class="fa-solid fa-store" style="color:var(--aws-orange)"></i> Marketplace / Co-Sell</h5>
-            <ul>
-              <li><strong>310K+</strong> active enterprise buyers with committed spend</li>
-              <li><strong>100%</strong> of purchases apply toward customer EDP (up to 25% annual)</li>
-              <li><strong>70%</strong> procurement discovery time savings</li>
-              <li><strong>60%</strong> streamlined procurement savings</li>
-              <li><strong>ISV Accelerate:</strong> 65% higher close, 54% larger deals, 51% revenue growth, 30% faster TTM</li>
-            </ul>
-          </div>
-          <div class="solution-card">
-            <h5><i class="fa-solid fa-coins" style="color:var(--color-success)"></i> Cost / Infrastructure</h5>
-            <ul>
-              <li><strong>160+</strong> price reductions since 2006</li>
-              <li><strong>258%</strong> three-year ROI for managed databases. 5-month payback period.</li>
-              <li><strong>43%</strong> lower three-year total cost of operations</li>
-              <li><strong>Graviton:</strong> 50K+ customers, 230+ instance types, 20+ managed services</li>
-              <li><strong>Nitro System:</strong> Purpose-built hardware for security and performance isolation</li>
-            </ul>
-          </div>
-          <div class="solution-card">
-            <h5><i class="fa-solid fa-shield-halved" style="color:var(--color-error)"></i> Security & Compliance</h5>
-            <ul>
-              <li>Customer data <strong>never leaves your VPC</strong>. Never trains AWS models.</li>
-              <li>Holistic security: authentication, monitoring, data protection, deployment</li>
-              <li>Enterprise-grade compliance certifications (SOC, ISO, HIPAA, GDPR, etc.)</li>
-              <li>Region/AZ model recommended by Gartner for HA enterprise applications</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- MEDDPICC Framework -->
-        <div style="margin-top:16px; padding:14px; background:var(--color-bg); border:1px solid var(--color-border-light); border-radius:var(--radius-md);">
-          <h5 style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-            <i class="fa-solid fa-list-check" style="color:var(--color-primary)"></i> MEDDPICC Qualification Framework
-          </h5>
-          <div class="meddpicc-grid">
-            <div class="meddpicc-item"><div class="letter">M</div><div class="label">Metrics</div><div class="desc">Business impact of problems</div></div>
-            <div class="meddpicc-item"><div class="letter">E</div><div class="label">Economic Buyer</div><div class="desc">Who funds the initiative</div></div>
-            <div class="meddpicc-item"><div class="letter">D</div><div class="label">Decision Criteria</div><div class="desc">Requirements confirmed</div></div>
-            <div class="meddpicc-item"><div class="letter">D</div><div class="label">Decision Process</div><div class="desc">Steps and players</div></div>
-            <div class="meddpicc-item"><div class="letter">P</div><div class="label">Paper Process</div><div class="desc">Budget and timeline</div></div>
-            <div class="meddpicc-item"><div class="letter">I</div><div class="label">Implicate Pain</div><div class="desc">Problems being solved</div></div>
-            <div class="meddpicc-item"><div class="letter">C</div><div class="label">Champion</div><div class="desc">Who owns solving it</div></div>
-            <div class="meddpicc-item"><div class="letter">C</div><div class="label">Competition</div><div class="desc">Competitive landscape</div></div>
-          </div>
-        </div>
-
-        <!-- Cold Calling Stats -->
-        <div style="margin-top:16px; padding:14px; background:var(--color-bg); border:1px solid var(--color-border-light); border-radius:var(--radius-md);">
-          <h5 style="font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-            <i class="fa-solid fa-chart-bar" style="color:var(--color-warning)"></i> Cold Calling Benchmarks (2025-2026)
-          </h5>
-          <div class="cold-stats">
-            <div class="cold-stat"><div class="stat-num">2-5%</div><div class="stat-desc">B2B cold call conversion rate</div></div>
-            <div class="cold-stat"><div class="stat-num">8</div><div class="stat-desc">Avg attempts to reach decision-maker</div></div>
-            <div class="cold-stat"><div class="stat-num">4-5pm</div><div class="stat-desc">Best time (midweek, prospect TZ)</div></div>
-            <div class="cold-stat"><div class="stat-num">50-60%</div><div class="stat-desc">B2B buyers prefer phone</div></div>
-            <div class="cold-stat"><div class="stat-num">80%</div><div class="stat-desc">Sales close after 5th contact</div></div>
-            <div class="cold-stat"><div class="stat-num">38%</div><div class="stat-desc">Conversion boost from coaching</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROSPECTING MODE (original content) -->
-  <div class="mode-content active" id="mode-prospecting" style="display:block">
-  <div class="main-grid">
-    <!-- LEFT: Customer Input Panel -->
-    <div class="input-panel">
-      <h2><i class="fa-solid fa-user-tie"></i> Customer Profile</h2>
-      <p class="subtitle">Enter customer details to generate predicted objections and real-time talking points</p>
-
-      <div class="form-group">
-        <label>Company Name</label>
-        <input type="text" id="companyName" placeholder="e.g., Acme Corp">
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Industry</label>
-          <select id="industry">
-            <option value="">Select...</option>
-            <option value="fintech">FinTech</option>
-            <option value="security">Cybersecurity</option>
-            <option value="healthtech">HealthTech</option>
-            <option value="martech">MarTech / AdTech</option>
-            <option value="saas">SaaS / Platform</option>
-            <option value="iot">IoT / Industrial</option>
-            <option value="gaming">Gaming</option>
-            <option value="edtech">EdTech</option>
-            <option value="ecommerce">E-Commerce</option>
-            <option value="devtools">Developer Tools</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Company Size</label>
-          <select id="companySize">
-            <option value="">Select...</option>
-            <option value="startup">Startup (1-50)</option>
-            <option value="smb">SMB (51-500)</option>
-            <option value="mid">Mid-Market (500-2000)</option>
-            <option value="enterprise">Enterprise (2000+)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Target Persona</label>
-          <select id="persona">
-            <option value="">Select...</option>
-            <option value="cto">CTO / VP Engineering</option>
-            <option value="cio">CIO / IT Director</option>
-            <option value="cfo">CFO / Finance</option>
-            <option value="ceo">CEO / Founder</option>
-            <option value="pm">Product Manager</option>
-            <option value="devlead">Dev Lead / Architect</option>
-            <option value="datasci">Data Science Lead</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>AWS Maturity</label>
-          <select id="awsMaturity">
-            <option value="">Select...</option>
-            <option value="observing">Observing (AI-aware)</option>
-            <option value="experimenting">Experimenting (Pilots)</option>
-            <option value="adopting">Adopting (Production)</option>
-            <option value="greenfield">Greenfield (New to AWS)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Region / Country</label>
-        <select id="region">
-          <option value="">Select...</option>
-          <option value="uki">UKI (UK & Ireland)</option>
-          <option value="dach">DACH (DE/AT/CH)</option>
-          <option value="france">France</option>
-          <option value="iberia">Iberia (ES/PT)</option>
-          <option value="nordics">Nordics</option>
-          <option value="benelux">Benelux</option>
-          <option value="italy">Italy</option>
-          <option value="cee">CEE</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Call Objective</label>
-        <select id="callObjective">
-          <option value="">Select...</option>
-          <option value="discovery">Discovery Call (First Touch)</option>
-          <option value="demo">Demo / Workshop Invite</option>
-          <option value="cosell">Co-Sell ISV Introduction</option>
-          <option value="followup">Follow-up (No Response)</option>
-          <option value="reengagement">Re-engagement (Lapsed)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Known Context (Optional)</label>
-        <textarea id="context" placeholder="e.g., Using Azure for ML, recently raised Series B, mentioned AI in earnings call, competitor of X..."></textarea>
-      </div>
-
-      <button class="btn-generate" onclick="generateInsights()">
-        <i class="fa-solid fa-bolt"></i> Generate Talking Points
-      </button>
-    </div>
-
-    <!-- RIGHT: Results Panel -->
-    <div class="results-panel" id="resultsPanel">
-      <div class="welcome-state" id="welcomeState">
-        <div class="icon-large"><i class="fa-solid fa-headset"></i></div>
-        <h2>Ready to Train</h2>
-        <p>Fill in the customer details on the left and hit "Generate Talking Points" to get predicted objections, call scripts, and discovery questions tailored to this prospect.</p>
-      </div>
-    </div>
-  </div><!-- end mode-prospecting -->
-
-  <!-- ROLEPLAY MODE -->
-  </div><!-- end container -->
-
-
-
-
-<!-- LIVE OBJECTION COACH - Floating Panel -->
-<div class="coach-panel" id="coachPanel">
-  <div class="coach-header" onclick="toggleCoach()">
-    <span class="pulse-dot"></span>
-    <h4><i class="fa-solid fa-headset"></i> Live Objection Coach</h4>
-    <button class="minimize-btn" id="minimizeBtn"><i class="fa-solid fa-chevron-down"></i></button>
-  </div>
-  <div class="coach-body">
-    <div style="font-size:12px; color:var(--color-text-muted); margin-bottom:4px;">
-      Type any objection you're hearing from a customer and get an instant response:
-    </div>
-    <div class="coach-input-area">
-      <textarea id="coachInput" placeholder="e.g., 'We're locked into Azure for 2 more years...'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleCoachSubmit()}"></textarea>
-      <button class="coach-send-btn" onclick="handleCoachSubmit()"><i class="fa-solid fa-paper-plane"></i></button>
-    </div>
-    <div class="quick-objections">
-      <span style="font-size:11px;color:var(--color-text-muted);margin-right:4px;">Quick:</span>
-      <button class="quick-obj-btn" onclick="quickObjection('Not interested')">Not interested</button>
-      <button class="quick-obj-btn" onclick="quickObjection('No budget')">No budget</button>
-      <button class="quick-obj-btn" onclick="quickObjection('Send me an email')">Send email</button>
-      <button class="quick-obj-btn" onclick="quickObjection('We use Azure')">We use Azure</button>
-      <button class="quick-obj-btn" onclick="quickObjection('Not a priority')">Not a priority</button>
-      <button class="quick-obj-btn" onclick="quickObjection('Need to check with my boss')">Check with boss</button>
-    </div>
-    <div class="coach-response" id="coachResponse">
-      <!-- Response will be injected here -->
-    </div>
-  </div>
-</div>
-
-<script>
-
-// === DGR PERFORMANCE BENCHMARKS (Real EMEA ISV Q1 2026 Data) ===
-var DGR_BENCHMARKS = {
-  team: {
-    effectiveDGRs: 14,
-    pipelinePerDGR: "$1.76M",
-    totalPipeline: "$24.6M",
-    genAIPipeline: "$4.6M",
-    pipelineAttainment: "102%",
-    avgDaysToLaunch: 12.2, // was 124.4 days — massive improvement
-    launchRate: "19.5%",
-    stalledPipeline: "23%",
-    realizedRevenue: "$3.8M (+322% YoY)"
-  },
-  calls: {
-    avgConnectedDuration: 107, // seconds
-    avgCSRDuration: 185,
-    avgCTOCallDuration: 284,
-    connectedCalls: 33,
-    missedCalls: 53,
-    connectionRate: "38%", // 33/(33+53)
-    realOutcomes: {
-      dontCallAgain: 2,
-      sendEmailInstead: 1,
-      findRightStakeholder: 1,
-      meetingBooked: 8
-    }
-  },
-  ai: {
-    aiRecommendations: 129,
-    accountsWithAIAPS: 16000,
-    fastStartAccounts: 4500,
-    genAIAcceleration: "4.6M in Q1 2026 vs 2.7M Q1 2025"
-  },
-  compete: {
-    closedLost: {
-      total: 39,
-      totalARR: "$5.5M",
-      crmHygiene: 14,
-      fellThrough: 17,
-      competitive: 8,
-      competitiveARR: "$2.2M"
-    },
-    topCompetitor: "Azure (6/11 competitive losses)",
-    largestLoss: "DeepL $1.8M → Anthropic",
-    genAICompete: "Azure + Anthropic direct = primary threats"
-  },
-  scoring: {
-    // Based on Gong 67K-call study + real team data
-    goldenTalkRatio: 0.43, // 43% talk, 57% listen
-    successfulCallAvg: "5:50 min",
-    unsuccessfulCallAvg: "3:14 min",
-    dialToMeeting: "5-10% (top performers), 2.3% (avg)",
-    timeToFirstQuestion: "within 15 seconds",
-    topOpenerConversion: "11.24% (heard your name)",
-    twoMinuteStructure: "Opener(0-15s) → Challenge(15-45s) → Value(45-75s) → Objection(75-105s) → Close(105-120s)"
-  }
-};
-
-
-// ============================================
-// OBJECTION DATABASE - Built from ISV DG data
-// ============================================
-const OBJECTION_DB = {
-  // DISMISSIVE OBJECTIONS (~50% of all calls per Gong data)
-  dismissive: [
-    {
-      objection: "I'm not interested / We're all set",
-      likelihood: "high",
-      category: "Dismissive",
-      triggers: ["discovery", "followup", "reengagement"],
-      personas: ["all"],
-      response: "Totally fair — I hear that a lot. Quick question so I don't waste your time: is it more that you've already solved [specific pain for their industry], or that it's just not on the radar this quarter?",
-      followUp: "The reason I'm calling is that ISVs like yours in [industry] are seeing [specific metric — e.g., 40% faster time-to-market / 30% infra cost reduction] by leveraging [relevant AWS service]. Would it be crazy to explore that for 15 minutes?",
-      awsProof: "ISV customers using AWS Marketplace + co-sell motions see 3.2x faster deal velocity. GenAI Builder Labs engaged 235 ISV customers, creating 470 opportunities worth $21M ARR in 2025."
-    },
-    {
-      objection: "Just send me an email / some materials",
-      likelihood: "high",
-      category: "Dismissive",
-      triggers: ["discovery", "cosell"],
-      personas: ["all"],
-      response: "Happy to — so I'm not spamming you with generic content, can I ask one quick thing? What's the #1 challenge you're working on this quarter with your [cloud/AI/product] strategy?",
-      followUp: "Perfect. I'll send something specific to that. If it resonates, would you be open to a 15-minute call next week to walk through how [similar ISV] tackled the same challenge?",
-      awsProof: "DGRs who tailor follow-up emails based on a single qualifying question see 22% higher meeting conversion (based on APS Outbound data across 11,370 accounts)."
-    },
-    {
-      objection: "Now's not a good time / I'm busy",
-      likelihood: "medium",
-      category: "Dismissive",
-      triggers: ["discovery", "followup"],
-      personas: ["all"],
-      response: "Completely understand — I'll be brief. In 30 seconds: we're helping ISVs in [industry] [specific outcome]. If that's relevant, I'd love 15 minutes next week. If not, I'll get out of your hair. Fair?",
-      followUp: "When would be a better time for a quick 15-minute call? I can work around your schedule.",
-      awsProof: "80% of B2B sales happen after the 5th contact (ZipDo). ISV DG connected calls + persistent outreach yield 44% greenfield-to-engaged conversion."
-    }
-  ],
-  // BUDGET / PRICE OBJECTIONS
-  budget: [
-    {
-      objection: "We don't have budget for this right now",
-      likelihood: "high",
-      category: "Budget",
-      triggers: ["demo", "cosell", "discovery"],
-      personas: ["cfo", "ceo", "cio"],
-      response: "Completely understand — almost everyone is tight right now. Just to clarify: are you saying no changes this year regardless of ROI, or would you need a really strong business case to justify it?",
-      followUp: "Let's look at this from an ROI perspective. Many ISV customers see productivity gains that translate to significant cost savings. We can start with a targeted pilot in a high-impact area — no upfront commitment, draw down from existing EDP/commit.",
-      awsProof: "AWS Marketplace transactions draw down existing EDP commitments — no new budget line needed. ISVs on Marketplace see 26% faster procurement cycles."
-    },
-    {
-      objection: "Your competitor offered a lower price / Azure is cheaper",
-      likelihood: "medium",
-      category: "Budget",
-      triggers: ["demo", "discovery"],
-      personas: ["cto", "cfo", "cio"],
-      response: "That's helpful context. For clarity — does their proposal include the same level of ISV-specific support, go-to-market benefits, and co-sell access? Those make a big difference in long-term revenue growth.",
-      followUp: "ISVs who build on AWS access 310,000+ active Marketplace buyers and our co-sell program which drives measurable pipeline. The question isn't just infra cost — it's total revenue opportunity. Would a 20-minute comparison be worth your time?",
-      awsProof: "AWS Marketplace has 310K+ active buyers. ISV partners in co-sell see 3.2x deal velocity. HyperPod achieves 88.3% win rate for ML workloads vs. alternatives."
-    }
-  ],
-  // TIMING OBJECTIONS
-  timing: [
-    {
-      objection: "This isn't a priority right now / Maybe next quarter",
-      likelihood: "high",
-      category: "Timing",
-      triggers: ["discovery", "demo", "reengagement"],
-      personas: ["all"],
-      response: "Understood. Can you share what is the top priority today? There might be more overlap than it seems — especially with the pace of AI adoption in [industry].",
-      followUp: "The reason I mention timing is that ISVs who started their AI integration in the pilot stage are now 6-9 months ahead of competitors. If there's a way to explore this without disrupting your current roadmap, would a 15-minute discovery be worth it?",
-      awsProof: "Only 27% of expected AI pipeline was created in H1 2025 by teams that delayed. ISVs in 'Experimenting' stage who accelerate to production see 2x downstream consumption growth."
-    },
-    {
-      objection: "We're in the middle of a migration / other project",
-      likelihood: "medium",
-      category: "Timing",
-      triggers: ["discovery", "demo"],
-      personas: ["cto", "devlead"],
-      response: "Let's sync your timelines. Some ISV teams actually onboard AI capabilities in parallel with their migration — it avoids having to re-architect later. Would it help to see how others sequenced this?",
-      followUp: "We have a Data Readiness Workshop specifically designed for ISVs mid-migration. It takes 2 hours, creates a clear sequencing plan, and ensures your data foundation supports AI workloads post-migration.",
-      awsProof: "Data Readiness Workshops created $15M ARR in 2025 with $6.5M already launched. They sequence modernization ahead of AI deployment to avoid stalling deals."
-    }
-  ],
-  // AUTHORITY OBJECTIONS
-  authority: [
-    {
-      objection: "I need to check with my team / leadership first",
-      likelihood: "medium",
-      category: "Authority",
-      triggers: ["demo", "cosell"],
-      personas: ["pm", "devlead", "datasci"],
-      response: "Totally makes sense. What would they need to see to say yes? I can put together a brief tailored to their priorities — whether that's technical architecture, cost savings, or revenue growth.",
-      followUp: "Would it be helpful if I joined a short call with them? I can address their specific questions directly and share how [similar ISV in their space] made the case internally.",
-      awsProof: "AI Roadmap Prioritization Workshops with C-level engagement achieved 74% conversion rate (300 workshops, $55.5M ARR pipeline). Executive alignment accelerates decisions."
-    },
-    {
-      objection: "The CTO/CEO makes these decisions, not me",
-      likelihood: "medium",
-      category: "Authority",
-      triggers: ["discovery"],
-      personas: ["pm", "devlead", "datasci"],
-      response: "Appreciate you being upfront. Would you be the right person to introduce me, or would it be better if I reached out directly? I can keep it super brief and reference our conversation.",
-      followUp: "What I'd love to do is equip you with a one-page summary that positions this as [revenue growth / cost savings / competitive advantage] — whichever resonates most with your leadership. Can I send that over?",
-      awsProof: "CFOs hold final decision-making power in 42% of software purchases (G2). Position ISV marketplace revenue and EDP draw-down for finance conversations."
-    }
-  ],
-  // NEED / VALUE OBJECTIONS
-  need: [
-    {
-      objection: "We already have a solution for this / We use Azure/GCP",
-      likelihood: "high",
-      category: "Need",
-      triggers: ["discovery", "cosell"],
-      personas: ["cto", "devlead", "cio"],
-      response: "That's great — most ISVs we work with weren't starting from scratch either. If you had to rate your current setup on a scale of 1-10, where 10 is 'perfect, don't touch it,' where would you put it?",
-      followUp: "Got it. The reason we see multi-cloud ISVs expanding to AWS is the marketplace revenue opportunity and co-sell access to enterprise buyers. Even running a secondary workload here gives you access to 310K+ active marketplace buyers. Worth a 20-minute exploration?",
-      awsProof: "ISV customers on AWS Marketplace access 310K+ buyers. Co-sell programs generate measurable pipeline. Multi-cloud ISVs who add AWS see avg. 26% revenue uplift from marketplace channel."
-    },
-    {
-      objection: "We don't see how AI/GenAI is relevant to our product",
-      likelihood: "medium",
-      category: "Need",
-      triggers: ["discovery", "demo"],
-      personas: ["ceo", "cto", "pm"],
-      response: "Fair question. Let me ask it differently: are your customers asking for AI-powered features? Or are your competitors shipping them? Because what we're seeing is that ISVs who embed AI into their product roadmap are capturing market share 2x faster.",
-      followUp: "There are specific patterns that work for [industry] ISVs — from RAG-powered support automation to agentic workflows. Our GenAI Builder Lab is a 2-hour hands-on session where your team can test these patterns with your own data. No commitment beyond the 2 hours.",
-      awsProof: "GenAI Builder Labs engaged 235 customers, creating 470 opportunities worth $21M ARR. ISV/SUP segments achieve 46-50% win rates — highest across all segments."
-    },
-    {
-      objection: "We tried something similar before and it didn't work",
-      likelihood: "medium",
-      category: "Need",
-      triggers: ["reengagement", "discovery"],
-      personas: ["cto", "devlead", "cio"],
-      response: "I appreciate that. What specifically didn't work — was it the technology, the implementation, or the ROI didn't materialise? Understanding that helps me tell you honestly whether we'd be different.",
-      followUp: "The landscape has changed significantly — especially with Agentic AI and managed services that didn't exist when you last tried. Would a 20-minute show-and-tell of what's new be worth it, even if you decide nothing has changed?",
-      awsProof: "Bedrock AgentCore and managed orchestration reduce implementation complexity by 60%. Amazon Q Business deployment from pilot to production takes 4-6 weeks vs. 4-6 months previously."
-    }
-  ],
-  // ISV-SPECIFIC OBJECTIONS
-  isv_specific: [
-    {
-      objection: "We're happy with our current cloud provider's partner program",
-      likelihood: "high",
-      category: "ISV-Specific",
-      triggers: ["cosell", "discovery"],
-      personas: ["ceo", "cto", "cio"],
-      response: "That's great they're supporting you. Quick question: what percentage of your new pipeline comes directly from their co-sell program? Because that's where we see the biggest differentiation.",
-      followUp: "Our ISV co-sell program directly connects your sales team to AWS account teams covering your target customers. DGRs like me actively bring your solution to qualified end-customers. It's not passive listing — it's active pipeline generation.",
-      awsProof: "EMEA ISV DG co-sell motions: DGRs proactively match ISV solutions to end-customers. Buyer-seller matching covers 1,112 accounts across 44 DGRs, each matched to 3 ISV solutions (scores 81-130)."
-    },
-    {
-      objection: "Marketplace listing won't drive meaningful revenue for us",
-      likelihood: "medium",
-      category: "ISV-Specific",
-      triggers: ["cosell", "demo"],
-      personas: ["ceo", "cfo"],
-      response: "I hear that concern. Let me share what's changed: enterprise buyers now have committed AWS spend (EDP) they need to draw down. When they buy through Marketplace, it counts against their commit. This creates pull demand that didn't exist 2 years ago.",
-      followUp: "ISVs who enable Private Offers on Marketplace see transactions that draw down customers' existing AWS EDP — meaning procurement is already pre-approved and budgeted. Would a 15-minute walkthrough of how this works be valuable?",
-      awsProof: "Marketplace Private Offers draw down existing EDP commitments. Procurement is pre-approved. ISVs see 26% faster procurement cycles through this motion."
-    },
-    {
-      objection: "We don't have resources to integrate with another cloud",
-      likelihood: "medium",
-      category: "ISV-Specific",
-      triggers: ["discovery", "demo"],
-      personas: ["cto", "devlead"],
-      response: "Makes sense — engineering bandwidth is precious. What if I told you there's a path that requires minimal engineering lift? For many ISVs, it starts with listing what you already have, then gradually deepening integration as revenue justifies it.",
-      followUp: "We have ISV-specific programs that provide technical resources and credits to offset integration work. Would it be worth 20 minutes to explore what's available for [industry] ISVs like you?",
-      awsProof: "ISV-specific programs provide credits and technical resources. SageMaker Sprint Campaign leverages HyperPod (88.3% win rate). Builder Labs provide hands-on integration guidance."
-    }
-  ]
-,
-  compete_azure: [
-    {
-      category: "Compete — Azure",
-      objection: "We're a Microsoft shop — Azure is the natural choice",
-      response: "AWS and Azure are architected differently. AWS multi-AZ design is Gartner-recommended for enterprise HA. Netflix, Disney, Instacart run on AWS when business is on the line. Plus: AWS has 200+ services vs Azure's fewer, purpose-built for cloud-native.",
-      triggers: ['discovery', 'demo', 'reengagement'],
-      personas: ['cto', 'cio', 'all'],
-      severity: 'high'
-    },
-    {
-      category: "Compete — Azure",
-      objection: "Microsoft offered us generous EA bundle pricing and credits",
-      response: "Credits expire. Partnerships don't. AWS ISV Accelerate delivers 65% higher close rates, 54% larger deals sustainably. Plus AWS Marketplace lets customers draw down EDP — that's pre-approved budget. No new procurement cycle.",
-      triggers: ['cosell', 'discovery'],
-      personas: ['cfo', 'ceo', 'all'],
-      severity: 'high'
-    },
-    {
-      category: "Compete — Azure",
-      objection: "Azure AI Studio is integrated with our Microsoft stack",
-      response: "Integration ≠ best-in-class. Bedrock gives you model CHOICE (Claude, Nova, Llama, Mistral) — not lock-in to one provider. 73% of Bedrock initiatives reach production vs ~30% industry average. AWS has 2x more production-ready AI capabilities.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cto', 'aiml', 'all'],
-      severity: 'high'
-    }
-  ],
-  compete_gcp: [
-    {
-      category: "Compete — GCP",
-      objection: "GCP is cheaper and easier to use",
-      response: "GCP is simpler at small scale. But AWS gives choice and depth — 200+ services vs 100. When you scale, you need breadth. TCO analysis consistently shows AWS competitive on total cost when you factor in Savings Plans and the ecosystem.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cto', 'cfo', 'all'],
-      severity: 'medium'
-    },
-    {
-      category: "Compete — GCP",
-      objection: "Google is the AI/ML leader — they invented Transformers",
-      response: "Inventing research ≠ production platform. AWS has 2x more production-ready AI capabilities. 73% POC-to-production rate on Bedrock. Google's strength is research; AWS's strength is making AI WORK in production at scale.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cto', 'aiml', 'all'],
-      severity: 'high'
-    },
-    {
-      category: "Compete — GCP",
-      objection: "GCP offered more flexible funding mechanisms",
-      response: "Short-term funding vs long-term revenue growth. AWS co-sell delivers 65% higher close rates, 54% larger deals. ISV Accelerate means AWS account teams actively bring you pipeline. That's sustainable growth, not a one-time credit.",
-      triggers: ['cosell', 'discovery'],
-      personas: ['cfo', 'ceo', 'all'],
-      severity: 'medium'
-    }
-  ],
-  compete_anthropic: [
-    {
-      category: "Compete — Direct Model Providers",
-      objection: "Why use Bedrock when we can go direct to Anthropic/OpenAI?",
-      response: "Direct = one model, one API. Bedrock = model choice + Guardrails + Knowledge Bases + Agents + fine-tuning + monitoring — all managed. Keep your AWS security posture, billing, and compliance. 75% reduction in infrastructure development time.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cto', 'aiml', 'all'],
-      severity: 'high'
-    },
-    {
-      category: "Compete — Direct Model Providers",
-      objection: "Anthropic/OpenAI APIs are simpler to integrate",
-      response: "Simpler for POC. Production needs guardrails, monitoring, RAG, multi-model routing, cost controls. Bedrock gives you all of that without building it. 2.1x faster development, 5.2x faster deployment.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cto', 'aiml', 'devlead'],
-      severity: 'medium'
-    }
-  ],
-  agentic_ai: [
-    {
-      category: "Agentic AI",
-      objection: "We're not ready for agentic AI — it's too early",
-      response: "Gartner: 33% of enterprise apps will incorporate agentic AI by 2028. That's 2 years. Companies starting NOW are building the foundation. AWS gives you Strands, LangGraph, CrewAI framework flexibility + Bedrock Agents for production-ready orchestration.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cto', 'ceo', 'aiml'],
-      severity: 'medium'
-    },
-    {
-      category: "Agentic AI",
-      objection: "We tried AI agents but they're not reliable enough for production",
-      response: "That's the old generation. AgentCore provides sandboxed runtime, guardrails, and IAM-level controls. 73% of AWS GenAI initiatives move from POC to production — vs ~30% industry average. The reliability layer is what makes it production-ready.",
-      triggers: ['discovery', 'followup'],
-      personas: ['cto', 'aiml', 'cio'],
-      severity: 'medium'
-    },
-    {
-      category: "Agentic AI",
-      objection: "How does agentic AI change our SaaS commercial model?",
-      response: "It shifts you from seat-based to outcome-based pricing — which means higher value per customer. AWS helps you build this with Bedrock Agents + Marketplace for distribution. Early movers are seeing 2-3x revenue per customer vs traditional SaaS.",
-      triggers: ['discovery', 'demo', 'cosell'],
-      personas: ['ceo', 'cfo', 'pm'],
-      severity: 'low'
-    }
-  ],
-  data_sovereignty: [
-    {
-      category: "Data Sovereignty",
-      objection: "AWS is a US company — our data needs to stay in Europe",
-      response: "AWS has 8 European regions (Ireland, Frankfurt, Paris, Stockholm, Milan, Spain, Zurich, London) with full data residency guarantees. AWS European Sovereign Cloud launching 2025. Data NEVER leaves your chosen region unless YOU configure it to.",
-      triggers: ['discovery', 'demo'],
-      personas: ['cio', 'cto', 'cfo', 'all'],
-      severity: 'high'
-    },
-    {
-      category: "Data Sovereignty",
-      objection: "US CLOUD Act means US government can access our data",
-      response: "AWS disputes every request that conflicts with EU law. AWS Nitro architecture makes it physically impossible for AWS employees to access customer data. Plus: encryption with customer-managed keys means only YOU hold the key.",
-      triggers: ['discovery'],
-      personas: ['cio', 'cto', 'all'],
-      severity: 'high'
-    }
-  ]};
-
-// COMPETE & HIGHSPOT ENRICHMENT - Azure, GCP, AI Maturity, Marketplace
-const COMPETE_DB = {
-  azure: [
-    {
-      objection: "We're already on Azure and it works fine for us",
-      likelihood: "high", category: "Compete - Azure",
-      triggers: ["discovery", "cosell", "reengagement"], personas: ["cto", "cio", "devlead"],
-      response: "That makes sense — Azure is a solid platform. Quick question: when you evaluate your cloud, is it just about infra, or are you factoring in go-to-market reach and customer acquisition too?",
-      followUp: "Many ISVs run multi-cloud not to replace Azure, but to unlock new revenue channels. AWS Marketplace gives you access to 310K+ enterprise buyers with pre-committed spend. You don't need to migrate — just extend your reach. Would a 15-minute comparison of the GTM opportunity be worthwhile?",
-      awsProof: "AWS Highspot Compete: Azure Compete Guide — AWS Region/AZ model recommended by Gartner for HA. Custom silicon (Graviton: 230+ instance types, 20+ managed services, 50K+ customers). Marketplace revenue channel differentiation. Engage #aws_cloud_intelligence for 1:1 support."
-    },
-    {
-      objection: "Microsoft gives us a bundled deal / Azure credits as part of our EA",
-      likelihood: "high", category: "Compete - Azure",
-      triggers: ["discovery", "demo"], personas: ["cfo", "cio", "ceo"],
-      response: "I hear that a lot. Let me ask: are those credits truly free, or are they part of a larger EA commitment? And more importantly — are they driving your product revenue, or just reducing your infra bill?",
-      followUp: "The question isn't which cloud is cheaper — it's which drives more revenue for your business. ISVs co-selling on AWS see 65% higher close rates, 54% larger deals, and 51% higher average revenue growth vs. going alone. That ROI tends to dwarf any credit bundle.",
-      awsProof: "AWS Highspot (ISV Accelerate): 65% higher close rates, 54% larger deals, 51% higher avg revenue growth through co-selling. Marketplace purchases apply 100% toward customer EDP commits (up to 25% of annual commitment)."
-    },
-    {
-      objection: "Azure has better AI/OpenAI integration since they own it",
-      likelihood: "medium", category: "Compete - Azure",
-      triggers: ["discovery", "demo"], personas: ["cto", "devlead", "datasci"],
-      response: "That's a common perception. But let me ask: do you want to be locked into a single model provider, or do you want the flexibility to choose the best model for each use case?",
-      followUp: "AWS Bedrock gives you access to Anthropic Claude, Meta Llama, Mistral, Cohere, Stability AI, and Amazon's own models — all through a single API. Plus Bedrock AgentCore lets you build production-grade agents that are framework-agnostic. The ISVs winning in AI are those who avoid single-vendor lock-in.",
-      awsProof: "AWS Highspot (Azure Compete): AWS offers broadest model selection via Bedrock. Bedrock AgentCore: production in weeks not months, framework-agnostic, built-in guardrails. 75% of orgs meet/exceed GenAI ROI expectations on AWS."
-    }
-  ],
-  gcp: [
-    {
-      objection: "Google/GCP is cheaper for our ML/AI workloads",
-      likelihood: "medium", category: "Compete - GCP",
-      triggers: ["discovery", "demo"], personas: ["cto", "devlead", "datasci"],
-      response: "Pricing is one factor for sure. Beyond the per-hour cost, are you evaluating the full picture — resiliency, business agility, staff productivity, and the ecosystem around the workload?",
-      followUp: "GCP often leads with pricing on specific SKUs, but ISVs running production AI on AWS benefit from HyperPod (88.3% win rate for ML training), Bedrock AgentCore for production-grade agents, and 310K+ marketplace buyers. Would a workload-specific TCO comparison be useful?",
-      awsProof: "AWS Highspot (GCP Compete Guide): Evaluate cloud value beyond pricing — resiliency, agility, productivity, sustainability. AWS leads in overall service portfolio breadth. Engage #gcp-compete or Cloud Intelligence team for 1:1 support."
-    },
-    {
-      objection: "Google's data/analytics stack is more modern and integrated",
-      likelihood: "medium", category: "Compete - GCP",
-      triggers: ["discovery"], personas: ["cto", "datasci", "devlead"],
-      response: "BigQuery is a good product, no question. But are you building your ISV's data layer just for analytics, or do you need it to power AI workloads, customer-facing features, and marketplace revenue too?",
-      followUp: "AWS's data stack — Redshift, Athena, Lake Formation — is purpose-built for ISVs who need both internal analytics AND customer-facing data products. Combined with Bedrock for AI and Marketplace for distribution, it's a full revenue platform. Worth a 20-minute architecture comparison?",
-      awsProof: "AWS Highspot (GCP Compete): AWS leads in Data & Analytics, AI/ML, Infrastructure, and Security domains. Focus on overall service portfolio rather than feature-level comparisons. GCP Mastering Differentiation Deck available for deep technical comparison."
-    }
-  ],
-  ai_maturity: [
-    {
-      objection: "AI is too risky for production / not mature enough for our use case",
-      likelihood: "high", category: "AI Readiness",
-      triggers: ["discovery", "demo"], personas: ["cto", "cio", "ceo"],
-      response: "That's a smart concern — production readiness is critical. Is the worry more about the AI models themselves, or about governance, security, and reliability around them?",
-      followUp: "75% of organisations report GenAI initiatives meeting or exceeding ROI. The 46% that stall do so because of missing infrastructure and governance — not technology. Bedrock AgentCore provides built-in security, guardrails, sandboxed runtime, and observability from day one. Agents go to production in weeks, not months. Would a 20-minute production architecture walkthrough be useful?",
-      awsProof: "AWS Highspot (AI Path to Production): 75% meet/exceed GenAI ROI. 46% stall due to infrastructure gaps, not tech. 77% execs say AI benefits require trust foundation. Bedrock AgentCore: production in weeks, built-in governance, framework-agnostic."
-    },
-    {
-      objection: "We don't have the data foundation for AI yet",
-      likelihood: "high", category: "AI Readiness",
-      triggers: ["discovery", "demo"], personas: ["cto", "datasci", "devlead"],
-      response: "That's the most common starting point. The good news: foundation work and AI work happen in parallel — you don't need to wait until everything is perfect.",
-      followUp: "Our AI Maturity Assessment identifies gaps and creates a roadmap in about 2 hours. Data Readiness Workshops created $15M ARR in 2025 by sequencing modernisation ahead of AI deployment. Would that assessment be a useful starting point for your team?",
-      awsProof: "AWS Highspot (AI GTM HQ): AI/GenAI Maturity (AIM) Assessment identifies gaps. Foundation + AI work happen together. Data Readiness Workshops: 60 workshops, $15M ARR, $6.5M launched. Position as trusted partner helping them build on solid ground."
-    },
-    {
-      objection: "We're worried about AI security and compliance / data privacy",
-      likelihood: "medium", category: "AI Readiness",
-      triggers: ["discovery", "demo"], personas: ["cto", "cio"],
-      response: "That's exactly the right concern — it's why we built security into the foundation of our AI services rather than bolting it on afterward.",
-      followUp: "AWS provides holistic AI security: authentication, monitoring, data protection, sandboxed runtime, and built-in guardrails. Your data never leaves your VPC, never trains our models. Bedrock AgentCore deploys with enterprise-grade governance from day one. Would a security-focused architecture overview be valuable?",
-      awsProof: "AWS Highspot (AI Security Play): Holistic security — auth, monitoring, data protection, deployment. Bedrock AgentCore: sandboxed runtime, integrated observability. 77% of execs say AI benefits only possible with trust foundation. Customer data never trains AWS models."
-    }
-  ],
-  marketplace: [
-    {
-      objection: "AWS Marketplace is just a listing — it won't drive real revenue",
-      likelihood: "high", category: "Marketplace/Co-Sell",
-      triggers: ["cosell", "demo"], personas: ["ceo", "cfo", "cto"],
-      response: "I totally get that concern — a passive listing alone doesn't move the needle. That's exactly why we have co-sell: AWS DGRs like me actively bring your solution to qualified end-customers. It's pipeline generation, not just a storefront.",
-      followUp: "The numbers: 65% higher close rates, 54% larger deals, 30% faster time-to-market. Customers apply 100% of purchases toward their committed spend — procurement is pre-approved. 70% time savings on procurement discovery. Would a 15-minute walkthrough of how this works for your product be valuable?",
-      awsProof: "AWS Highspot (ISV Sales Enablement): 70% procurement discovery savings. 60% streamlined procurement savings. 30% faster TTM. 100% purchases apply toward EDP (up to 25% annual). ISV Accelerate: 65% higher close, 54% larger deals, 51% revenue growth."
-    },
-    {
-      objection: "The revenue share / channel fee doesn't make economic sense for us",
-      likelihood: "medium", category: "Marketplace/Co-Sell",
-      triggers: ["cosell"], personas: ["cfo", "ceo"],
-      response: "Fair point — let's look at the maths. Does the fee make sense relative to the pipeline it generates? Most ISVs find incremental revenue far outweighs the fee.",
-      followUp: "Marketplace doesn't change your support or product relationship — only procurement and billing. You remain the primary contact. AWS seller compensation via SaaS Co-Sell Benefit means our field teams are actively incentivised to bring your deals across the line. Would it help to model the ROI for your average deal size?",
-      awsProof: "AWS Highspot: Marketplace doesn't change support/product relationships. Partner remains primary contact. AWS seller compensation via SaaS Co-Sell Benefit motivates field teams. Enhanced compensation drives field prioritisation of ISV solutions."
-    }
-  ]
-};
-
-// Merge COMPETE_DB into OBJECTION_DB for scoring
-Object.keys(COMPETE_DB).forEach(key => {
-  if (!OBJECTION_DB[key]) OBJECTION_DB[key] = [];
-  OBJECTION_DB[key] = [...(OBJECTION_DB[key] || []), ...COMPETE_DB[key]];
-});
-
-// ============================================
-// CALL SCRIPT TEMPLATES
-// ============================================
-const SCRIPT_TEMPLATES = {
-  discovery: {
-    opener: "Hi {persona_name}, this is {dgr_name} from AWS. I work with ISVs in the {industry} space and noticed {personalized_hook}. I'm calling because we're helping similar companies {outcome_teaser}. Do you have 2 minutes so I can see if it's relevant?",
-    value_prop: "The reason I reached out specifically is that {industry} ISVs working with us are seeing {specific_metric}. We've helped companies like {reference_customer} achieve this through {solution_approach}.",
-    discovery_bridge: "To see if this could work for {company}, let me ask: {discovery_question}",
-    close: "Based on what you've shared, I think there's a real opportunity to {specific_outcome}. Would it make sense to set up a 20-minute deep dive where I can walk you through exactly how {reference} did this? I have slots on {day1} or {day2} — what works?"
-  },
-  demo: {
-    opener: "Hi {persona_name}, this is {dgr_name} from AWS. We spoke briefly about {previous_context}. I'm following up because we've put together a {workshop_type} specifically designed for ISVs tackling {their_challenge}.",
-    value_prop: "This is a hands-on {duration} session where your team can {specific_activity} with your own data/use case. No slides, no sales pitch — just practical outputs you can use immediately.",
-    close: "We're running the next cohort on {date}. Would it be worth reserving a spot for your team? It's {duration} and you'll walk away with {specific_deliverable}."
-  },
-  cosell: {
-    opener: "Hi {persona_name}, this is {dgr_name} from AWS. I'm reaching out because we have {num_customers} enterprise customers in {region} who've specifically asked for solutions like yours in {pain_area}.",
-    value_prop: "Our co-sell program directly connects your sales team to qualified end-customer conversations. This isn't a passive listing — I'm actively bringing {company}'s solution to customers who have budget and need.",
-    close: "Would it make sense to set up a 15-minute intro where I can walk you through the specific accounts we have in mind and how the co-sell motion works? I'm thinking {day}."
-  }
-};
-
-// ============================================
-// DISCOVERY QUESTIONS
-// ============================================
-const DISCOVERY_QUESTIONS = {
-  ai_readiness: [
-    "What's your current approach to integrating AI into your product roadmap?",
-    "Are your customers asking for AI-powered features or capabilities?",
-    "Do you have a data strategy in place that could support AI workloads?",
-    "What AI tools or models are your engineering team currently evaluating?"
-  ],
-  business: [
-    "What are the top 2-3 business outcomes you're trying to drive this quarter?",
-    "How are you measuring the success of your cloud infrastructure decisions?",
-    "What's the biggest bottleneck preventing your product team from shipping faster?",
-    "Where are you seeing the most competitive pressure right now?"
-  ],
-  technical: [
-    "What does your current cloud architecture look like at a high level?",
-    "Are you using any managed AI/ML services today, or building custom?",
-    "How are you handling data processing and analytics at scale?",
-    "What's your approach to security and compliance in your cloud environment?"
-  ],
-  isv_specific: [
-    "What percentage of your revenue comes through cloud marketplaces today?",
-    "How does your current partner program support your go-to-market?",
-    "What would meaningful revenue from a co-sell partnership look like for you?",
-    "Are you seeing demand from enterprise buyers who have committed cloud spend?"
-  ]
-,
-  persona_cto: [
-    "What are your biggest technical challenges with your current architecture?",
-    "How much engineering time goes to undifferentiated work vs product features?",
-    "What does your deployment pipeline look like? What's the cycle time?",
-    "If you could eliminate one technical bottleneck tomorrow, what would it be?",
-    "What's your AI strategy? Build vs buy — where do you land?",
-    "How do you handle observability and incident response today?",
-    "What's your biggest scaling concern for the next 12 months?"
-  ],
-  persona_cfo: [
-    "How does your IT spend break down between run vs grow?",
-    "What's your cloud cost trajectory? Is it predictable?",
-    "How do you measure ROI on technology investments?",
-    "What would a 20% infrastructure cost reduction mean for your P&L?",
-    "Are procurement bottlenecks slowing your buying process?",
-    "How do you think about vendor consolidation vs best-of-breed?",
-    "What's the board's appetite for technology investment right now?"
-  ],
-  persona_ceo: [
-    "What's your growth strategy for the next 18 months?",
-    "Where do you see AI changing your industry in 2-3 years?",
-    "What are your competitors doing with technology that concerns you?",
-    "If you could accelerate one initiative, what would it be?",
-    "What does your board ask about when it comes to technology?",
-    "Where is your biggest go-to-market bottleneck?"
-  ],
-  persona_cio: [
-    "What's your biggest compliance challenge right now?",
-    "How do you handle data residency across European markets?",
-    "What does your security assessment process look like for new vendors?",
-    "How many point solutions are you managing? Is consolidation a goal?",
-    "What's your DR/BC strategy? When was it last tested?",
-    "How do you balance innovation speed vs governance?"
-  ],
-  compete: [
-    "Are you evaluating other cloud providers for this workload?",
-    "What's your experience been with [competitor] so far? Any gaps?",
-    "If you could change one thing about your current cloud provider, what would it be?",
-    "How important is multi-cloud vs consolidation in your strategy?",
-    "What criteria matter most in your vendor evaluation? Price? Performance? Support?",
-    "Have you calculated the true TCO including training, integration, and operations?"
-  ],
-  marketplace: [
-    "How do your customers typically procure your solution today?",
-    "Are procurement cycles slowing down your sales velocity?",
-    "What percentage of your revenue comes through channel vs direct?",
-    "Have you explored listing on a cloud marketplace? What held you back?",
-    "How do your enterprise customers handle budget approval for new tools?",
-    "Would faster procurement (70% time savings) impact your close rates?"
-  ]};
-
-// ============================================
-// GENERATION LOGIC
-// ============================================
-function generateInsights() {
-  const company = document.getElementById('companyName').value || 'this company';
-  const industry = document.getElementById('industry').value;
-  const size = document.getElementById('companySize').value;
-  const persona = document.getElementById('persona').value;
-  const maturity = document.getElementById('awsMaturity').value;
-  const region = document.getElementById('region').value;
-  const objective = document.getElementById('callObjective').value;
-  const context = document.getElementById('context').value;
-
-  if (!industry || !persona || !objective) {
-    alert('Please fill in at least Industry, Target Persona, and Call Objective.');
-    return;
-  }
-
-  // Hide welcome, show results
-  document.getElementById('welcomeState').style.display = 'none';
-
-  // Score and rank objections
-  const scoredObjections = scoreObjections(industry, size, persona, maturity, objective, context);
-  const topObjections = scoredObjections.slice(0, 6);
-
-  // Generate call script
-  const script = generateScript(company, industry, persona, objective, maturity, region, context);
-
-  // Select relevant discovery questions
-  const questions = selectQuestions(maturity, objective, persona);
-
-  // Render results
-  // Generate outreach email
-  const email = generateOutreachEmail(company, industry, persona, objective, maturity, context, script);
-  lastEmailParams = {company, industry, persona, objective, maturity, context};
-  
-  renderResults(topObjections, script, questions, company, industry, persona, maturity, objective, email);
-}
-
-function scoreObjections(industry, size, persona, maturity, objective, context) {
-  const allObjections = [
-    ...OBJECTION_DB.dismissive,
-    ...OBJECTION_DB.budget,
-    ...OBJECTION_DB.timing,
-    ...OBJECTION_DB.authority,
-    ...OBJECTION_DB.need,
-    ...OBJECTION_DB.isv_specific
-  ];
-
-  const scored = allObjections.map(obj => {
-    let score = 0;
-
-    // Match on call objective
-    if (obj.triggers.includes(objective)) score += 30;
-
-    // Match on persona
-    if (obj.personas.includes('all') || obj.personas.includes(persona)) score += 20;
-
-    // Maturity-based scoring
-    if (maturity === 'greenfield' && obj.category === 'Need') score += 15;
-    if (maturity === 'observing' && obj.category === 'Need') score += 10;
-    if (maturity === 'experimenting' && obj.category === 'Timing') score += 10;
-    if (maturity === 'adopting' && obj.category === 'Budget') score += 10;
-
-    // Size-based scoring
-    if (size === 'enterprise' && obj.category === 'Authority') score += 15;
-    if (size === 'startup' && obj.category === 'Budget') score += 15;
-    if (size === 'smb' && obj.category === 'Budget') score += 10;
-
-    // Context keywords
-    const contextLower = context.toLowerCase();
-    if (contextLower.includes('azure') && obj.objection.toLowerCase().includes('competitor')) score += 20;
-    if (contextLower.includes('azure') && obj.objection.toLowerCase().includes('provider')) score += 20;
-    if (contextLower.includes('budget') && obj.category === 'Budget') score += 15;
-    if (contextLower.includes('busy') && obj.category === 'Dismissive') score += 10;
-    if (contextLower.includes('no response') && obj.category === 'Dismissive') score += 15;
-
-    // Likelihood boost
-    if (obj.likelihood === 'high') score += 10;
-    if (obj.likelihood === 'medium') score += 5;
-
-    return { ...obj, score };
-  });
-
-  scored.sort((a, b) => b.score - a.score);
-  return scored;
-}
-
-function generateScript(company, industry, persona, objective, maturity, region, context) {
-  const template = SCRIPT_TEMPLATES[objective] || SCRIPT_TEMPLATES.discovery;
-
-  const industryHooks = {
-    fintech: "regulatory compliance and fraud detection are top AI use cases",
-    security: "threat detection and response automation are accelerating with AI agents",
-    healthtech: "clinical decision support and patient engagement are being transformed by AI",
-    martech: "personalization and campaign optimization with GenAI is driving 3x engagement",
-    saas: "customers expect embedded AI features — it's becoming table stakes",
-    iot: "predictive maintenance and edge AI are reducing downtime by 40%+",
-    gaming: "player experience and content generation are the AI battleground",
-    edtech: "adaptive learning and automated content creation are reshaping the market",
-    ecommerce: "search, recommendations, and customer service are all going agentic",
-    devtools: "AI-assisted development and code generation are the fastest-growing segment"
-  };
-
-  const personaNames = {
-    cto: "the technical leadership",
-    cio: "IT leadership",
-    cfo: "finance teams",
-    ceo: "founders and CEOs",
-    pm: "product leaders",
-    devlead: "engineering leads",
-    datasci: "data teams"
-  };
-
-  const hook = industryHooks[industry] || "AI adoption is accelerating across your space";
-  const personaLabel = personaNames[persona] || "leadership";
-
-  return {
-    opener: `Hi [Name], this is [Your Name] from AWS. I work with ${industry} ISVs across EMEA and noticed ${company} is ${context ? context.substring(0, 80) + '...' : 'scaling rapidly in this space'}. I'm calling because ${hook}. Do you have 2 minutes?`,
-    valueHook: getValueHook(industry, maturity, objective),
-    discoveryBridge: getDiscoveryBridge(persona, maturity, industry),
-    close: getClose(objective, industry)
-  };
-}
-
-function getValueHook(industry, maturity, objective) {
-  if (objective === 'cosell') {
-    return `We have enterprise customers actively looking for ${industry} solutions on AWS Marketplace. Our co-sell program directly connects your sales team to qualified end-customer meetings — not just a listing, but active pipeline generation.`;
-  }
-  if (maturity === 'observing') {
-    return `ISVs in ${industry} who start embedding AI now are capturing market share 2x faster. We have a structured approach — from a 2-hour Builder Lab to production-ready patterns — that doesn't require your team to become AI experts.`;
-  }
-  if (maturity === 'experimenting') {
-    return `I see you're already experimenting with AI. The biggest challenge ISVs face at this stage is moving from pilot to production efficiently. We've built specific accelerators (Roadmap Workshops, HyperPod for training) that cut that timeline in half.`;
-  }
-  return `ISVs building on AWS are seeing measurable advantages: faster time-to-market, access to 310K+ enterprise marketplace buyers, and co-sell support that actively generates pipeline. The question is whether there's a fit worth 15 minutes to explore.`;
-}
-
-function getDiscoveryBridge(persona, maturity, industry) {
-  if (persona === 'cto' || persona === 'devlead') {
-    return "To see if there's a fit: what does your current AI/ML stack look like, and where are you seeing the biggest engineering bottlenecks?";
-  }
-  if (persona === 'ceo' || persona === 'cfo') {
-    return "To see if this is relevant: what are your top 2 growth priorities this year, and how is your cloud strategy supporting them?";
-  }
-  if (persona === 'pm') {
-    return "Quick question: are your customers asking for AI-powered features in your product? And if so, how are you thinking about building vs. buying that capability?";
-  }
-  return "To make sure this is relevant: what's the biggest challenge you're trying to solve in your product/infrastructure this quarter?";
-}
-
-function getClose(objective, industry) {
-  if (objective === 'demo') {
-    return "Based on what you've shared, our GenAI Builder Lab would be a perfect fit. It's a 2-hour hands-on session where your team works with their own data. Would next Tuesday or Thursday work to reserve spots?";
-  }
-  if (objective === 'cosell') {
-    return "I'd love to set up a 15-minute intro where I can share the specific customer accounts we have in mind for co-sell and walk through how the motion works. Would [day] at [time] work?";
-  }
-  return "Would it make sense to set up a focused 20-minute session where I can show you exactly how [similar ISV] achieved this? I have time on [day1] or [day2] — what works better?";
-}
-
-function selectQuestions(maturity, objective, persona) {
-  let selected = [];
-
-  if (maturity === 'observing' || maturity === 'greenfield') {
-    selected = [...DISCOVERY_QUESTIONS.business.slice(0, 3), ...DISCOVERY_QUESTIONS.ai_readiness.slice(0, 2)];
-  } else if (maturity === 'experimenting') {
-    selected = [...DISCOVERY_QUESTIONS.ai_readiness.slice(0, 3), ...DISCOVERY_QUESTIONS.technical.slice(0, 2)];
-  } else {
-    selected = [...DISCOVERY_QUESTIONS.technical.slice(0, 3), ...DISCOVERY_QUESTIONS.business.slice(0, 2)];
-  }
-
-  // Add persona-specific questions
-  const personaKey = 'persona_' + persona;
-  if (DISCOVERY_QUESTIONS[personaKey]) {
-    selected = [...selected, ...DISCOVERY_QUESTIONS[personaKey].slice(0, 3)];
-  }
-  
-  // Add compete questions if relevant
-  if (objective === 'reengagement' || objective === 'discovery') {
-    selected = [...selected, ...DISCOVERY_QUESTIONS.compete.slice(0, 2)];
-  }
-  
-  // Add marketplace questions for co-sell objective
-  if (objective === 'cosell') {
-    selected = [...selected, ...DISCOVERY_QUESTIONS.marketplace.slice(0, 3)];
-  }
-
-  return selected;
-}
-
-// ============================================
-// RENDER RESULTS
-// ============================================
-
-function generateOutreachEmail(company, industry, persona, objective, maturity, context, script) {
-  const personaTitles = {
-    cto: 'CTO', cio: 'CIO', cfo: 'CFO', ceo: 'CEO/Founder',
-    pm: 'Head of Product', devlead: 'Engineering Lead', datasci: 'Data Lead'
-  };
-  const personaTitle = personaTitles[persona] || 'Leader';
-  
-  const industryHooks = {
-    fintech: "regulatory compliance and real-time fraud detection are becoming table-stakes AI use cases",
-    security: "threat detection and automated response are the fastest-growing AI categories",
-    healthcare: "clinical workflow automation and diagnostics AI are moving from pilot to production",
-    saas: "AI-native features are driving 40% higher retention for early adopters",
-    ecommerce: "personalisation and demand forecasting AI is delivering 15-30% revenue lift",
-    gaming: "procedural content generation and player behaviour AI are reshaping development cycles",
-    martech: "predictive audiences and creative optimisation AI are outperforming rules-based approaches",
-    edtech: "adaptive learning and automated assessment AI are seeing 3x engagement improvements",
-    logistics: "route optimisation and demand forecasting AI are cutting costs 12-25%",
-    media: "content recommendation and automated production AI are driving subscriber growth"
-  };
-  
-  const maturitySubjects = {
-    greenfield: "Quick thought on your cloud strategy",
-    observing: "How " + (industry || 'ISVs') + " leaders are approaching AI",
-    experimenting: "From experiment to production — a pattern we\'re seeing",
-    adopting: "Accelerating what you\'ve already started"
-  };
-  
-  const objectiveSubjects = {
-    discovery: "Quick question about " + company + "\'s roadmap",
-    demo: company + " + AWS — 15 min overview",
-    cosell: "Co-selling with AWS — opportunity for " + company,
-    followup: "Following up — " + company + " + AWS",
-    reengagement: "Checking in — things have changed since we last spoke"
-  };
-  
-  const hook = industryHooks[industry] || "AI adoption is accelerating, and we\'re seeing " + (industry || 'ISVs') + " move fast";
-  
-  // Subject line
-  const subject = objectiveSubjects[objective] || maturitySubjects[maturity] || "Quick thought for " + company;
-  
-  // Opening line — context-aware
-  let opening = "";
-  if(context && context.length > 10) {
-    opening = "I came across " + company + " and noticed " + context.substring(0, 100) + (context.length > 100 ? "..." : "") + " — thought it was worth reaching out.";
-  } else {
-    const openings = [
-      "I work with " + (industry || 'ISV') + " companies across EMEA and " + company + " caught my attention.",
-      "I\'ve been following " + company + " — the growth in your space is impressive. Quick thought below.",
-      "A few " + (industry || 'ISV') + " companies similar to " + company + " have been exploring something I thought might be relevant."
-    ];
-    opening = openings[Math.floor(Math.random() * openings.length)];
-  }
-  
-  // Value proposition — ties to their maturity
-  let value = "";
-  if(maturity === 'greenfield') {
-    value = "We\'re seeing " + (industry || 'ISV') + " companies build on AWS from day one to avoid costly re-architecture later. A few in your space launched 3-4 months faster by starting cloud-native. AWS also gives you immediate access to 200+ services and 100K+ partners in AWS Marketplace.";
-  } else if(maturity === 'observing') {
-    value = hook + ". Specifically, " + (industry || 'ISV') + " companies are finding that starting with a focused use case delivers ROI within 8-12 weeks. One data point: partners co-selling through AWS Marketplace see 65% higher close rates and 54% larger deals — without changing their product.";
-  } else if(maturity === 'experimenting') {
-    value = "The pattern we see: companies at your stage stall when they can\'t move from experiment to production. 73% of AWS Bedrock initiatives make that jump (vs ~30% industry average). The difference is usually orchestration and governance — which is where we help.";
-  } else {
-    value = "You\'re already on the journey. For companies like " + company + ", the next multiplier is usually distribution (Marketplace co-sell: 65% higher close rates, 40% faster sales cycles) or AI features (Bedrock: 2.1x faster development, 75% less infra time). Which matters more to you right now?";
-  }
-  
-  // Add industry-specific proof point
-  const proofPoints = {
-    fintech: "Stripe, Wise, and Checkout.com run on AWS. In regulated fintech, compliance + speed matters.",
-    security: "CrowdStrike, Palo Alto Networks, and Wiz chose AWS. Security vendors trust AWS infrastructure.",
-    healthcare: "Moderna and Philips Health run on AWS. When data privacy is existential, enterprises choose AWS.",
-    saas: "ISVs on AWS Marketplace see 54% larger deals and 40% faster procurement. 70% procurement time savings (Forrester 2025).",
-    ecommerce: "Shopify, Zalando, and ASOS run on AWS. Peak performance at scale is non-negotiable.",
-    gaming: "Epic Games, Riot, and EA run on AWS. Low-latency global infrastructure is the differentiator.",
-    logistics: "DHL and Maersk run logistics on AWS. Real-time optimization at global scale.",
-    edtech: "Coursera and Duolingo run on AWS. Adaptive learning at 100M+ user scale."
-  };
-  if(proofPoints[industry]) value += " " + proofPoints[industry];
-  
-  // CTA — low-friction
-  let cta = "";
-  if(objective === 'discovery') {
-    cta = "Would a 15-minute call make sense to see if there\'s a fit? Happy to share what we\'re seeing in " + (industry || 'your space') + " — no pitch, just patterns.";
-  } else if(objective === 'demo') {
-    cta = "I can show you in 15 minutes what this looks like for a " + (industry || 'ISV') + " company your size. Would [day] or [day] work?";
-  } else if(objective === 'cosell') {
-    cta = "We have a co-sell programme that\'s generating 65% higher close rates for ISVs. 15 minutes to see if " + company + " qualifies?";
-  } else if(objective === 'followup') {
-    cta = "Based on our last conversation, I pulled together a few specific ideas. Worth a quick 10-minute catch-up?";
-  } else {
-    cta = "Things have moved on since we last connected. Worth 15 minutes to see what\'s changed?";
-  }
-  
-  // PS line — social proof
-  const psLines = [
-    "P.S. We recently helped a similar " + (industry || 'ISV') + " company reduce their time-to-market by 40% — happy to share details.",
-    "P.S. " + (industry ? industry.charAt(0).toUpperCase() + industry.slice(1) : 'ISV') + " companies on AWS Marketplace are seeing 54% larger deal sizes. Thought that might be relevant.",
-    "P.S. If email isn\'t your thing, I\'m also on LinkedIn. Whatever\'s easiest.",
-    "P.S. No pressure at all — if now isn\'t the right time, when should I check back?"
-  ];
-  const ps = psLines[Math.floor(Math.random() * psLines.length)];
-  
-  return { subject, opening, value, cta, ps };
-}
-
-function renderResults(objections, script, questions, company, industry, persona, maturity, objective, email) {
-  const panel = document.getElementById('resultsPanel');
-
-  const maturityLabels = { observing: 'Observing', experimenting: 'Experimenting', adopting: 'Adopting', greenfield: 'Greenfield' };
-  const objectiveLabels = { discovery: 'Discovery', demo: 'Demo Invite', cosell: 'Co-Sell', followup: 'Follow-up', reengagement: 'Re-engagement' };
-
-  panel.innerHTML = `
-    <!-- Stats Row -->
-    <div class="stats-row">
-      <div class="stat-chip"><i class="fa-solid fa-building" style="color:var(--color-primary)"></i> <span class="stat-value">${company}</span></div>
-      <div class="stat-chip"><i class="fa-solid fa-industry" style="color:var(--color-info)"></i> ${industry || 'N/A'}</div>
-      <div class="stat-chip"><i class="fa-solid fa-signal" style="color:var(--color-warning)"></i> ${maturityLabels[maturity] || 'N/A'}</div>
-      <div class="stat-chip"><i class="fa-solid fa-phone" style="color:var(--color-success)"></i> ${objectiveLabels[objective] || 'N/A'}</div>
-    </div>
-
-    <!-- Call Script -->
-    <div class="result-card">
-      <h3><span class="icon" style="background:var(--color-success-light);color:var(--color-success)"><i class="fa-solid fa-phone"></i></span> Call Script</h3>
-      <button class="copy-btn" onclick="copyScript()"><i class="fa-solid fa-copy"></i> Copy All</button>
-      <div id="scriptContent">
-        <div class="script-block">
-          <span class="step-badge" style="background:var(--color-primary-light);color:var(--color-primary)">Step 1: Opener</span>
-          <div class="script-text">${script.opener}</div>
-        </div>
-        <div class="script-block">
-          <span class="step-badge" style="background:var(--color-success-light);color:#006644">Step 2: Value Hook</span>
-          <div class="script-text">${script.valueHook}</div>
-        </div>
-        <div class="script-block">
-          <span class="step-badge" style="background:var(--color-warning-light);color:#7a4d00">Step 3: Discovery Bridge</span>
-          <div class="script-text">${script.discoveryBridge}</div>
-        </div>
-        <div class="script-block">
-          <span class="step-badge" style="background:var(--color-info-light);color:var(--color-info)">Step 4: Close for Meeting</span>
-          <div class="script-text">${script.close}</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Outreach Email (on-demand) -->
-    <div id="emailPlaceholder" style="text-align:center;padding:20px">
-      <button onclick="showOutreachEmail()" style="padding:14px 28px;background:linear-gradient(135deg,#5E35B1,#7C4DFF);color:white;border:none;border-radius:12px;cursor:pointer;font-size:14px;font-weight:700;box-shadow:0 4px 15px rgba(94,53,177,0.3);transition:all 0.2s">
-        <i class="fa-solid fa-envelope" style="margin-right:8px"></i> Generate Outreach Email from Talking Points
-      </button>
-      <p style="font-size:12px;color:var(--color-text-muted);margin-top:8px">Translate your call script into a cold email</p>
-    </div>
-    <div id="emailSection" style="display:none"></div>
-
-
-    
-    \${objective === 'discovery' ? \`
-    <!-- Pure Cold Call Openers (No Prior Engagement) -->
-    <div class="result-card" style="border-left:3px solid var(--aws-orange)">
-      <h3><span class="icon" style="background:var(--color-warning-light);color:var(--color-warning)"><i class="fa-solid fa-bolt"></i></span> Pure Cold Call Openers (No Prior Engagement)</h3>
-      <p style="font-size:11px;color:var(--color-text-muted);margin-bottom:12px;">Use these when calling without any prior contact or relationship. Each is designed to earn 30 seconds of attention.</p>
-      <div class="opener-card">
-        <div class="opener-label">1. Permission-Based Opener</div>
-        <div class="opener-text">"Hi [Name], this is [Your Name] from AWS. I know I'm calling out of the blue — do you have 30 seconds so I can tell you why, and then you can decide if it's worth continuing?"</div>
-      </div>
-      <div class="opener-card">
-        <div class="opener-label">2. Pattern Interrupt</div>
-        <div class="opener-text">"Hi [Name], this is [Your Name] from AWS — we haven't spoken before. I'm not going to pretend we have a meeting. I saw \${document.getElementById('context').value || '[specific trigger about their company]'} and thought of one thing that might be relevant. Can I share it in 20 seconds?"</div>
-      </div>
-      <div class="opener-card">
-        <div class="opener-label">3. Curiosity Hook</div>
-        <div class="opener-text">"Hi [Name], this is [Your Name]. Quick question — if I could show you how ISVs in ${industry} are generating new revenue from a channel they're currently ignoring, would that be worth 2 minutes?"</div>
-      </div>
-      <div class="opener-card">
-        <div class="opener-label">4. Referral Pattern</div>
-        <div class="opener-text">"Hi [Name], I've been working with several ${industry} companies in \${document.getElementById('region').value ? document.getElementById('region').selectedOptions[0].text : 'EMEA'} and your name kept coming up as someone who'd find this relevant. Do you have 30 seconds?"</div>
-      </div>
-      <div class="opener-card">
-        <div class="opener-label">5. Data-Led Opener</div>
-        <div class="opener-text">"Hi [Name], I noticed \${document.getElementById('context').value || '[specific data about their company — hiring, product launch, funding]'}. That's usually a sign of [relevant business challenge]. Am I off base?"</div>
-      </div>
-      <div class="cold-stats">
-        <div class="cold-stat"><div class="stat-num">2-5%</div><div class="stat-desc">Cold call conversion</div></div>
-        <div class="cold-stat"><div class="stat-num">8</div><div class="stat-desc">Attempts to reach DM</div></div>
-        <div class="cold-stat"><div class="stat-num">4-5pm</div><div class="stat-desc">Best call time</div></div>
-        <div class="cold-stat"><div class="stat-num">80%</div><div class="stat-desc">Close after 5th touch</div></div>
-      </div>
-    </div>
-    \` : ''}
-
-    <!-- Predicted Objections -->
-    <div class="result-card">
-      <h3><span class="icon" style="background:var(--color-error-light);color:var(--color-error)"><i class="fa-solid fa-shield-halved"></i></span> Predicted Objections & Responses</h3>
-      <div class="objection-list">
-        ${objections.map((obj, i) => `
-          <div class="objection-item">
-            <div class="objection-header" onclick="toggleObjection(${i})">
-              <span class="likelihood likelihood-${obj.likelihood}">${obj.likelihood.toUpperCase()}</span>
-              <span class="objection-text">"${obj.objection}"</span>
-              <i class="fa-solid fa-chevron-down expand-icon" id="icon-${i}"></i>
-            </div>
-            <div class="objection-body" id="body-${i}">
-              <div class="response-section">
-                <div class="label">Immediate Response (Acknowledge + Clarify)</div>
-                <div class="response-text">${obj.response}</div>
-              </div>
-              <div class="response-section" style="margin-top:10px">
-                <div class="label">Follow-up (Reframe + Advance)</div>
-                <div class="response-text">${obj.followUp}</div>
-              </div>
-              <div class="response-section">
-                <div class="aws-proof"><i class="fa-solid fa-chart-line"></i> <strong>Data Point:</strong> ${obj.awsProof}</div>
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- Discovery Questions -->
-    <div class="result-card">
-      <h3><span class="icon" style="background:var(--color-info-light);color:var(--color-info)"><i class="fa-solid fa-comments"></i></span> Discovery Questions</h3>
-      <div class="question-grid">
-        ${questions.map(q => `
-          <div class="question-chip">
-            <i class="fa-solid fa-circle-question"></i>
-            <span>${q}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- Framework Reminder -->
-    <div class="result-card" style="border-left: 3px solid var(--aws-orange)">
-      <h3><span class="icon" style="background:var(--color-warning-light);color:var(--color-warning)"><i class="fa-solid fa-lightbulb"></i></span> Objection Handling Framework (PACRA)</h3>
-      <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; text-align:center; font-size:12px;">
-        <div style="background:var(--color-bg); padding:10px; border-radius:var(--radius-sm)">
-          <div style="font-weight:700; color:var(--color-primary); font-size:16px; margin-bottom:4px">P</div>
-          <div style="font-weight:600">Pause</div>
-          <div style="color:var(--color-text-muted);font-size:11px">Half-second beat</div>
-        </div>
-        <div style="background:var(--color-bg); padding:10px; border-radius:var(--radius-sm)">
-          <div style="font-weight:700; color:var(--color-primary); font-size:16px; margin-bottom:4px">A</div>
-          <div style="font-weight:600">Acknowledge</div>
-          <div style="color:var(--color-text-muted);font-size:11px">"Totally fair"</div>
-        </div>
-        <div style="background:var(--color-bg); padding:10px; border-radius:var(--radius-sm)">
-          <div style="font-weight:700; color:var(--color-primary); font-size:16px; margin-bottom:4px">C</div>
-          <div style="font-weight:600">Clarify</div>
-          <div style="color:var(--color-text-muted);font-size:11px">Ask why</div>
-        </div>
-        <div style="background:var(--color-bg); padding:10px; border-radius:var(--radius-sm)">
-          <div style="font-weight:700; color:var(--color-primary); font-size:16px; margin-bottom:4px">R</div>
-          <div style="font-weight:600">Reframe</div>
-          <div style="color:var(--color-text-muted);font-size:11px">Value + proof</div>
-        </div>
-        <div style="background:var(--color-bg); padding:10px; border-radius:var(--radius-sm)">
-          <div style="font-weight:700; color:var(--color-primary); font-size:16px; margin-bottom:4px">A</div>
-          <div style="font-weight:600">Advance</div>
-          <div style="color:var(--color-text-muted);font-size:11px">Low-friction ask</div>
-        </div>
-      </div>
-      <p style="font-size:12px; color:var(--color-text-muted); margin-top:12px; text-align:center">
-        Based on Gong's 67,149-call study. Top 5 objections = 74% of all pushback. 80% of sales happen after 5th contact. Only sell the <strong>next step</strong> (a meeting), never the whole solution.
-      </p>
-    </div>
-  `;
-}
-
-function toggleObjection(index) {
-  const body = document.getElementById(`body-${index}`);
-  const icon = document.getElementById(`icon-${index}`);
-  body.classList.toggle('visible');
-  icon.style.transform = body.classList.contains('visible') ? 'rotate(180deg)' : 'rotate(0)';
-}
-
-function copyScript() {
-  const scriptEl = document.getElementById('scriptContent');
-  const text = scriptEl.innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('.copy-btn');
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-    setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy All'; }, 2000);
-  });
-}
-
-function copyEmail() {
-  const subject = document.getElementById('emailSubject').innerText;
-  const body = document.getElementById('emailBody').innerText;
-  const fullEmail = "Subject: " + subject + "\n\n" + body;
-  navigator.clipboard.writeText(fullEmail).then(() => {
-    const btns = document.querySelectorAll('.copy-btn');
-    const btn = btns[btns.length > 1 ? 1 : 0];
-    if(btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy Email'; }, 2000); }
-  });
-}
-
-function showOutreachEmail() {
-  const email = generateOutreachEmail(
-    lastEmailParams.company, lastEmailParams.industry, lastEmailParams.persona,
-    lastEmailParams.objective, lastEmailParams.maturity, lastEmailParams.context
-  );
-  
-  const section = document.getElementById('emailSection');
-  const placeholder = document.getElementById('emailPlaceholder');
-  
-  section.style.display = 'block';
-  placeholder.style.display = 'none';
-  
-  section.innerHTML = `
-    <div class="result-card" style="border:2px solid #7C4DFF;animation:fadeIn 0.3s ease">
-      <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1"><i class="fa-solid fa-envelope"></i></span> Cold Outreach Email</h3>
-      <button class="copy-btn" onclick="copyEmail()"><i class="fa-solid fa-copy"></i> Copy Email</button>
-      <div id="emailContent" style="background:var(--color-bg-elevated);border-radius:12px;padding:20px;border:1px solid var(--color-border)">
-        <div style="margin-bottom:16px">
-          <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--color-text-muted);letter-spacing:0.5px">Subject Line</span>
-          <div style="font-weight:600;font-size:15px;margin-top:4px;color:var(--color-text-primary)" id="emailSubject">${email.subject}</div>
-        </div>
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:12px 0">
-        <div style="font-size:14px;line-height:1.7;color:var(--color-text-primary);white-space:pre-line" id="emailBody">Hi [First Name],
-
-${email.opening}
-
-${email.value}
-
-${email.cta}
-
-Best,
-[Your Name]
-AWS — ISV Team, EMEA
-
-${email.ps}</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button onclick="regenerateEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-rotate"></i> Regenerate</button>
-        <button onclick="shortenEmail()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-compress"></i> Shorter Version</button>
-        <button onclick="makeFollowUp()" style="padding:8px 16px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--color-text-secondary)"><i class="fa-solid fa-reply"></i> Follow-up Version</button>
-      </div>
-    </div>`;
-  
-  section.scrollIntoView({behavior: 'smooth', block: 'center'});
-}
-
-
-// Store last email params for regeneration
-var lastEmailParams = {};
-
-function regenerateEmail() {
-  if(lastEmailParams.company) {
-    const email = generateOutreachEmail(
-      lastEmailParams.company, lastEmailParams.industry, lastEmailParams.persona,
-      lastEmailParams.objective, lastEmailParams.maturity, lastEmailParams.context
-    );
-    document.getElementById('emailSubject').textContent = email.subject;
-    document.getElementById('emailBody').textContent = 
-      "Hi [First Name],\n\n" + email.opening + "\n\n" + email.value + "\n\n" + email.cta + "\n\nBest,\n[Your Name]\nAWS — ISV Team, EMEA\n\n" + email.ps;
-  }
-}
-
-function shortenEmail() {
-  const body = document.getElementById('emailBody');
-  const subject = document.getElementById('emailSubject');
-  const company = lastEmailParams.company || '[Company]';
-  const industry = lastEmailParams.industry || 'ISV';
-  
-  const shortSubjects = [
-    "Quick thought for " + company,
-    company + " + AWS?",
-    "15 min — " + company + " & AI",
-    "Worth a chat?"
-  ];
-  
-  const shortBodies = [
-    "Hi [First Name],\n\nI work with " + industry + " companies on AWS. Noticed " + company + " — thought there might be a fit.\n\n15 minutes to compare notes?\n\nBest,\n[Your Name]",
-    "Hi [First Name],\n\nQuick one: we\'re helping " + industry + " ISVs in EMEA grow faster with AWS (Marketplace, co-sell, AI). Relevant for " + company + "?\n\nHappy to share specifics in a short call.\n\n[Your Name]",
-    "Hi [First Name],\n\n" + industry.charAt(0).toUpperCase() + industry.slice(1) + " companies similar to " + company + " are seeing 54% larger deals through AWS Marketplace. Worth exploring?\n\n15 min next week?\n\n[Your Name]",
-    "Hi [First Name],\n\nI help " + industry + " ISVs scale across EMEA. Curious if " + company + " is exploring AI or marketplace opportunities.\n\nWorth a brief chat?\n\nBest,\n[Your Name]"
-  ];
-  
-  const idx = Math.floor(Math.random() * shortSubjects.length);
-  subject.textContent = shortSubjects[idx];
-  body.textContent = shortBodies[idx];
-}
-
-function makeFollowUp() {
-  const body = document.getElementById('emailBody');
-  const subject = document.getElementById('emailSubject');
-  const company = lastEmailParams.company || '[Company]';
-  const industry = lastEmailParams.industry || 'ISV';
-  
-  const followUpSubjects = [
-    "Re: " + company + " + AWS",
-    "Circling back — " + company,
-    "One more thought for " + company,
-    "Bumping this — worth 10 min?"
-  ];
-  
-  const followUpBodies = [
-    "Hi [First Name],\n\nJust circling back on my note last week. I know things get buried.\n\nThe short version: we\'re helping " + industry + " companies like " + company + " [grow faster / reduce costs / accelerate AI] and I think there\'s a fit.\n\nWorth a quick 10-minute conversation? No pressure either way.\n\nBest,\n[Your Name]",
-    "Hi [First Name],\n\nI reached out last week — appreciate you\'re busy.\n\nOne new data point: a " + industry + " company similar to " + company + " just launched on AWS Marketplace and saw 65% faster deal cycles. Thought that might be worth exploring.\n\nHappy to share details in 10 minutes if useful. If not, no worries at all.\n\n[Your Name]",
-    "Hi [First Name],\n\nFollowing up — I\'ll keep it short.\n\nI work with " + industry + " ISVs and the ones growing fastest in EMEA are leveraging [Marketplace co-sell / AI services / specific thing]. Would " + company + " benefit from a quick intro to see if there\'s a fit?\n\nEither way, happy to share a relevant case study if useful.\n\nBest,\n[Your Name]",
-    "Hi [First Name],\n\nLast note from me — I promise!\n\nIf the timing isn\'t right, just let me know and I\'ll check back in [Q3 / 6 months / next year]. But if there\'s even a small chance this is relevant for " + company + ", a 10-minute call could save you hours of research.\n\nNo pressure.\n\n[Your Name]"
-  ];
-  
-  const idx = Math.floor(Math.random() * followUpSubjects.length);
-  subject.textContent = followUpSubjects[idx];
-  body.textContent = followUpBodies[idx];
-}
-
-
-// ============================================
-// LIVE OBJECTION COACH
-// ============================================
-function toggleCoach() {
-  const panel = document.getElementById('coachPanel');
-  const btn = document.getElementById('minimizeBtn');
-  panel.classList.toggle('minimized');
-  btn.innerHTML = panel.classList.contains('minimized')
-    ? '<i class="fa-solid fa-chevron-up"></i>'
-    : '<i class="fa-solid fa-chevron-down"></i>';
-}
-
-function quickObjection(text) {
-  document.getElementById('coachInput').value = text;
-  handleCoachSubmit();
-}
-
-function handleCoachSubmit() {
-  const input = document.getElementById('coachInput');
-  const objection = input.value.trim();
-  if (!objection) return;
-
-  const response = analyzeObjection(objection);
-  renderCoachResponse(objection, response);
-  input.value = '';
-}
-
-function analyzeObjection(text) {
-  const lower = text.toLowerCase();
-
-  // Classify the objection
-  let category = 'General';
-  let color = 'var(--color-text-muted)';
-  let bgColor = 'var(--color-bg)';
-
-  if (lower.match(/not interested|no thanks|don't need|all set|we're good|go away|stop calling/)) {
-    category = 'Dismissive'; color = 'var(--color-error)'; bgColor = 'var(--color-error-light)';
-  } else if (lower.match(/budget|expensive|cost|price|afford|money|cheaper|discount/)) {
-    category = 'Budget'; color = 'var(--color-warning)'; bgColor = 'var(--color-warning-light)';
-  } else if (lower.match(/later|not now|next quarter|next year|timing|priority|busy|roadmap|project/)) {
-    category = 'Timing'; color = '#7a4d00'; bgColor = 'var(--color-warning-light)';
-  } else if (lower.match(/boss|manager|team|leadership|cto|ceo|decision|authority|approve|stakeholder/)) {
-    category = 'Authority'; color = 'var(--color-info)'; bgColor = 'var(--color-info-light)';
-  } else if (lower.match(/azure|google|gcp|competitor|already have|existing|current provider|locked|contract/)) {
-    category = 'Competitor/Lock-in'; color = '#5243aa'; bgColor = '#ede7f6';
-  } else if (lower.match(/openai|microsoft ai|copilot|azure ai/)) {
-    category = 'Compete - Azure AI'; color = '#5243aa'; bgColor = '#ede7f6';
-  } else if (lower.match(/bigquery|vertex|google ai|gemini/)) {
-    category = 'Compete - GCP'; color = '#5243aa'; bgColor = '#ede7f6';
-  } else if (lower.match(/mature|production|risk|risky|governance|compliance|security|trust|safe/)) {
-    category = 'AI Production Risk'; color = 'var(--color-error)'; bgColor = 'var(--color-error-light)';
-  } else if (lower.match(/data foundation|data ready|data quality|data strategy|data lake/)) {
-    category = 'Data Readiness'; color = 'var(--color-info)'; bgColor = 'var(--color-info-light)';
-  } else if (lower.match(/credit|ea |enterprise agreement|bundled|free tier/)) {
-    category = 'Compete - Bundling'; color = '#5243aa'; bgColor = '#ede7f6';
-  } else if (lower.match(/don't see|how|why|relevance|what's the point|don't understand|not for us/)) {
-    category = 'Need/Value'; color = 'var(--color-primary)'; bgColor = 'var(--color-primary-light)';
-  } else if (lower.match(/send|email|material|info|brochure|deck|link/)) {
-    category = 'Deflection'; color = 'var(--color-error)'; bgColor = 'var(--color-error-light)';
-  } else if (lower.match(/tried|failed|didn't work|bad experience|burned/)) {
-    category = 'Past Experience'; color = '#5243aa'; bgColor = '#ede7f6';
-  } else if (lower.match(/resource|bandwidth|team|capacity|integrate|engineer|developer/)) {
-    category = 'Resource/Capacity'; color = 'var(--color-info)'; bgColor = 'var(--color-info-light)';
-  } else if (lower.match(/marketplace|listing|partner|co-sell/)) {
-    category = 'ISV-Specific'; color = 'var(--aws-orange)'; bgColor = '#fff7e6';
-  }
-
-  // Generate structured PACRA response
-  const responses = generatePACRA(lower, category);
-
-  return { category, color, bgColor, ...responses };
-}
-
-function generatePACRA(text, category) {
-  const responseBank = {
-    'Dismissive': {
-      acknowledge: "Totally fair — I appreciate you being direct.",
-      clarify: "Quick question so I'm not wasting your time: is it that you've already solved this, or it's just not on the radar right now?",
-      reframe: "The reason I called is that ISVs in your space are seeing measurable results — [specific metric]. If there's even a chance that's relevant, would 15 minutes be worth it?",
-      advance: "How about this — I'll send one specific thing. If it resonates, you give me 15 minutes. If not, I'll leave you alone. Fair?",
-      dataPoint: "74% of cold call objections are dismissive brush-offs, not real rejection (Gong, 67K calls). 80% of sales close after the 5th touch."
-    },
-    'Budget': {
-      acknowledge: "Completely understand — budget is tight everywhere right now.",
-      clarify: "Just so I understand: is it that there's genuinely zero flexibility, or would you need a really strong ROI case to justify an exception?",
-      reframe: "Many ISVs we work with started the same way. The unlock was that AWS Marketplace transactions draw down existing EDP commitments — so it's not new budget, it's spend they've already committed. Would it help to see how that works?",
-      advance: "What if I showed you a 5-minute cost comparison specifically for your workload? No commitment — just clarity on the numbers.",
-      dataPoint: "AWS Marketplace transactions draw down existing EDP/commit — no new budget line needed. ISVs see 26% faster procurement through Private Offers."
-    },
-    'Timing': {
-      acknowledge: "Makes total sense — you've got a lot on your plate.",
-      clarify: "Can I ask what's consuming most of your bandwidth right now? There might be more overlap than you'd expect.",
-      reframe: "The ISVs who started their AI/cloud strategy 6 months early are now significantly ahead of competitors. This doesn't have to be disruptive — even a 15-minute discovery helps clarify where it fits in your roadmap.",
-      advance: "Would it make sense to do a quick 15-minute call next week — not to start anything now, but so when timing is right, you've already got the lay of the land?",
-      dataPoint: "Only 27% of expected AI pipeline was created by teams that delayed in H1 2025. First-mover ISVs see 2x downstream consumption growth."
-    },
-    'Authority': {
-      acknowledge: "Totally get it — these decisions rarely happen with one person.",
-      clarify: "What would your [CTO/leadership] need to see to give this a green light? Is it more about technical fit, cost savings, or revenue growth?",
-      reframe: "What I can do is put together a one-page summary tailored to their priorities — whether that's architecture, cost, or competitive positioning. That way you can forward something substantive rather than just a meeting invite.",
-      advance: "Would it be helpful if I joined a short call with them directly? I can keep it to 15 minutes and address their specific questions.",
-      dataPoint: "AI Roadmap Workshops with C-level attendance achieve 74% conversion rate. Executive alignment accelerates decisions by 3x (300 workshops, $55.5M ARR pipeline)."
-    },
-    'Competitor/Lock-in': {
-      acknowledge: "That's helpful context — appreciate you sharing that.",
-      clarify: "Got it. On a scale of 1-10, where 10 is 'perfect, don't touch it' — how would you rate your current setup? And is the lock-in contractual or more of a technical dependency?",
-      reframe: "Most ISVs we work with aren't replacing their existing provider — they're expanding reach. Building on AWS gives you access to 310K+ Marketplace buyers and enterprise co-sell pipeline that doesn't exist elsewhere. Even a secondary workload here opens that channel.",
-      advance: "Would a 20-minute comparison be useful? Not to bash your current provider — but to show what the marketplace revenue opportunity looks like specifically for your product.",
-      dataPoint: "ISVs who add AWS as a secondary platform see avg. 26% revenue uplift from Marketplace channel. 310K+ active buyers. Co-sell drives 3.2x deal velocity."
-    },
-    'Need/Value': {
-      acknowledge: "Fair question — let me make sure I'm being relevant to you.",
-      clarify: "Can I ask: are your customers asking for AI-powered features? Or are you seeing competitors ship them? Because that's usually the trigger that makes this urgent.",
-      reframe: "ISVs in your space who embed AI into their product are capturing market share 2x faster. We have specific patterns — from RAG-powered automation to agentic workflows — tested with 235 ISV customers. The Builder Lab is 2 hours, hands-on, with your own data.",
-      advance: "Would a 2-hour GenAI Builder Lab be worth your team's time? It's hands-on with your actual use case — you'll walk out with a working prototype, not a slide deck.",
-      dataPoint: "GenAI Builder Labs: 235 ISV customers, 470 opportunities, $21M ARR. ISV/SUP segments achieve 46-50% win rate — highest across all segments."
-    },
-    'Deflection': {
-      acknowledge: "Happy to send something over — I want to make sure it's actually useful though.",
-      clarify: "So I'm not spamming you with generic content: what's the #1 challenge you're working on this quarter? That way I can send something specifically relevant.",
-      reframe: "I'll send a one-pager tailored to that. But quick question — if what I send genuinely resonates, would you be open to 15 minutes next week to discuss?",
-      advance: "I'll follow up with something specific by end of day. If it resonates, I'll suggest a time. If not, no hard feelings.",
-      dataPoint: "DGRs who ask one qualifying question before sending materials see 22% higher meeting conversion (APS Outbound data, 11,370 accounts)."
-    },
-    'Past Experience': {
-      acknowledge: "I appreciate you being upfront about that — nobody wants to repeat a bad experience.",
-      clarify: "Can I ask: what specifically didn't work? Was it the technology, the implementation, or the ROI that didn't materialise?",
-      reframe: "The landscape has changed massively — especially with Agentic AI and fully managed services that didn't exist before. Bedrock AgentCore and managed orchestration reduce implementation complexity by 60%. Would a 20-minute show-and-tell of what's new be worth it?",
-      advance: "Tell you what — I'll show you specifically what's changed since your last experience. If you still don't see the difference in 15 minutes, I'll be the first to say it might not be the right time.",
-      dataPoint: "Bedrock AgentCore reduces implementation complexity by 60%. Amazon Q Business: pilot to production in 4-6 weeks vs. 4-6 months previously."
-    },
-    'Resource/Capacity': {
-      acknowledge: "Makes sense — engineering bandwidth is precious.",
-      clarify: "Is the concern more about ongoing maintenance, or the initial integration effort? Because those are very different conversations.",
-      reframe: "What if there's a path that requires minimal engineering lift? Many ISVs start with listing what they already have — no re-architecture. Then gradually deepen integration as revenue justifies it. We also provide credits and technical resources to offset the work.",
-      advance: "Would 20 minutes be worth it to explore what minimal-lift options exist? I can also connect you with our ISV solutions architect who specialises in low-friction onboarding.",
-      dataPoint: "ISV-specific programs provide credits and technical resources. SageMaker Sprint Campaign leverages HyperPod (88.3% win rate). Builder Labs provide hands-on integration guidance."
-    },
-    'ISV-Specific': {
-      acknowledge: "Good question — lots of ISVs wonder about the real value here.",
-      clarify: "When you think about marketplace and co-sell: is the concern about effort to list, or about whether it'll actually drive meaningful revenue?",
-      reframe: "Here's what's changed: enterprise buyers have committed AWS spend (EDP) they need to draw down. When they buy your product through Marketplace, it counts against their commit — so procurement is pre-approved. Plus, our DGRs actively bring your solution to qualified end-customers. It's not passive.",
-      advance: "Would a 15-minute walkthrough of how the co-sell motion works — including the specific customer accounts we have in mind — be valuable?",
-      dataPoint: "EMEA ISV DG buyer-seller matching covers 1,112 accounts across 44 DGRs. Each matched to 3 ISV solutions. Marketplace Private Offers draw down existing EDP — procurement pre-approved."
-    },
-    'Compete - Azure AI': {
-      acknowledge: "I get it — the OpenAI/Microsoft relationship is well-marketed.",
-      clarify: "Let me ask: do you want to be locked into a single model provider, or do you want flexibility to choose the best model for each use case as the landscape evolves?",
-      reframe: "AWS Bedrock gives you access to Anthropic Claude, Meta Llama, Mistral, Cohere, Stability AI, and Amazon's own models — all through a single API. Bedrock AgentCore builds production-grade agents that are framework-agnostic. The ISVs winning in AI are those avoiding single-vendor lock-in.",
-      advance: "Would a 20-minute comparison of multi-model flexibility vs. single-vendor lock-in — specific to your use case — be worth your time?",
-      dataPoint: "AWS Highspot (Azure Compete): Bedrock offers broadest model selection. AgentCore: production in weeks, framework-agnostic, built-in guardrails. 75% of orgs meet/exceed GenAI ROI on multi-model approach."
-    },
-    'Compete - GCP': {
-      acknowledge: "GCP has some strong offerings in that space, fair point.",
-      clarify: "Beyond the specific service, are you evaluating the full picture — resiliency, business agility, ecosystem breadth, and the go-to-market opportunity around it?",
-      reframe: "GCP often leads with pricing on specific SKUs, but ISVs on AWS benefit from the broadest service portfolio, HyperPod for ML training (88.3% win rate), and 310K+ marketplace buyers. The question is total business value, not just one workload's cost. Would a workload-specific TCO comparison be useful?",
-      advance: "Let me put together a side-by-side that's specific to your workload and business model. 15 minutes — if it doesn't show clear value, no hard feelings.",
-      dataPoint: "AWS Highspot (GCP Compete Guide): Evaluate beyond pricing — resiliency, agility, productivity, sustainability. AWS leads overall service portfolio. Engage Cloud Intelligence for 1:1 opportunity support."
-    },
-    'AI Production Risk': {
-      acknowledge: "That's exactly the right concern to have — production readiness is non-negotiable.",
-      clarify: "Is the worry more about the AI models themselves, or about the governance, security, and operational reliability around them?",
-      reframe: "75% of organisations report GenAI initiatives meeting or exceeding ROI. The 46% that stall do so from missing infrastructure and governance — not technology limits. Bedrock AgentCore provides built-in security, sandboxed runtime, guardrails, and observability from day one. Production in weeks, not months.",
-      advance: "Would a 20-minute walkthrough of production-grade AI architecture — with specific governance and security controls — give your team confidence this is ready?",
-      dataPoint: "AWS Highspot (AI Path to Production): 75% meet/exceed GenAI ROI. 46% stall from infra gaps. 77% execs require trust foundation. Bedrock AgentCore: sandboxed runtime, integrated observability, framework-agnostic."
-    },
-    'Data Readiness': {
-      acknowledge: "That's the most common starting point we see — you're not alone there.",
-      clarify: "Is it more that you don't have the data infrastructure, or that the data exists but isn't organised for AI consumption?",
-      reframe: "Foundation work and AI work happen in parallel — you don't need to wait. Our AI Maturity Assessment identifies gaps and creates a roadmap in 2 hours. Data Readiness Workshops created $15M ARR in 2025 by sequencing modernisation properly. Would that assessment be a useful first step?",
-      advance: "Let me set up a 2-hour AI Maturity Assessment for your team — no commitment, just clarity on where you stand and what the path looks like.",
-      dataPoint: "AWS Highspot (AI GTM HQ): AIM Assessment identifies gaps. Foundation + AI in parallel. Data Readiness Workshops: 60 workshops, $15M ARR. Position as trusted partner building on solid ground."
-    },
-    'Compete - Bundling': {
-      acknowledge: "I hear that a lot — bundled credits are attractive on paper.",
-      clarify: "Are those credits truly free, or part of a larger EA commitment? And more importantly — are they driving product revenue or just reducing your infra bill?",
-      reframe: "The question isn't which cloud is cheaper — it's which drives more revenue for your business. ISVs co-selling on AWS see 65% higher close rates, 54% larger deals, and 51% revenue growth. That ROI tends to dwarf any credit bundle. Would it make sense to model both scenarios?",
-      advance: "Let me show you a 5-minute revenue comparison — credits saved vs. pipeline generated. If the numbers don't speak, I'll be the first to say so.",
-      dataPoint: "AWS Highspot (ISV Accelerate): 65% higher close rates, 54% larger deals, 51% higher revenue growth. Marketplace purchases apply 100% toward EDP (up to 25% annual commitment)."
-    },
-    'Agentic AI': {
-      acknowledge: "That's a smart question — AI agents are getting a lot of hype, but the enterprise impact is real.",
-      clarify: "When you say that, is it more about the technology maturity, or that you don't yet see where agents fit in your product/operations?",
-      reframe: "Here's what's concrete: Gartner predicts 33% of enterprise apps will include agentic AI by 2028 (up from <1% today). ISVs who act now are redefining customer experiences on their terms — those who wait will spend the next decade catching up. A single AI agent can replace many human users, disrupting per-seat licensing. The shift from outputs to outcomes is already happening.",
-      advance: "Would a 20-minute executive briefing on 'SaaS Transformation in the Agentic AI Era' be worth your team's time? It covers where agents create value, how commercial models are shifting, and what the 90-day path looks like.",
-      dataPoint: "Highspot (Agentic AI ISV Sales Play): Gartner: 33% enterprise apps with agentic AI by 2028. 15% of daily decisions made autonomously. 700K+ hours saved (335 dev-years). Thomson Reuters: 1.5M lines/month, 4X faster. Employees spend 2.5hrs/day searching — agents deliver in seconds."
-    },
-    'General': {
-      acknowledge: "I hear you — thanks for sharing that.",
-      clarify: "Can you help me understand a bit more? Is it more about timing, budget, or just not seeing the relevance right now?",
-      reframe: "The reason I reached out is that ISVs like yours are seeing measurable results from working with AWS — whether that's faster time-to-market, new revenue channels, or cost reduction. If there's even a chance one of those is relevant, would 15 minutes be worth exploring?",
-      advance: "How about a quick 15-minute call — no strings attached? If there's a fit, great. If not, at least you'll know what's available.",
-      dataPoint: "ISV DG co-sell generates measurable pipeline. 80% of B2B sales happen after the 5th contact. Only sell the next step (a meeting), never the whole solution."
-    }
-  };
-
-  return responseBank[category] || responseBank['General'];
-}
-
-function renderCoachResponse(objection, response) {
-  const el = document.getElementById('coachResponse');
-  el.classList.add('visible');
-
-  el.innerHTML = `
-    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-      <span class="coach-category-tag" style="background:${response.bgColor};color:${response.color}">
-        <i class="fa-solid fa-tag"></i> ${response.category}
-      </span>
-      <span style="font-size:11px;color:var(--color-text-muted);">Customer said: "${objection}"</span>
-    </div>
-
-    <div class="coach-step acknowledge">
-      <div class="step-label"><i class="fa-solid fa-hand"></i> 1. Pause + Acknowledge</div>
-      <div class="step-text">${response.acknowledge}</div>
-    </div>
-
-    <div class="coach-step clarify">
-      <div class="step-label"><i class="fa-solid fa-magnifying-glass"></i> 2. Clarify</div>
-      <div class="step-text">${response.clarify}</div>
-    </div>
-
-    <div class="coach-step reframe">
-      <div class="step-label"><i class="fa-solid fa-rotate"></i> 3. Reframe with Value</div>
-      <div class="step-text">${response.reframe}</div>
-    </div>
-
-    <div class="coach-step advance">
-      <div class="step-label"><i class="fa-solid fa-forward"></i> 4. Advance (Low-Friction Ask)</div>
-      <div class="step-text">${response.advance}</div>
-    </div>
-
-    <div class="coach-data-point">
-      <i class="fa-solid fa-chart-line"></i> <strong>Data:</strong> ${response.dataPoint}
-    </div>
-  `;
-}
-
-
-// ============================================
-// MODE SWITCHING
-// ============================================
-function switchMode(mode, btn) {
-  // Update tabs
-  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-  if (btn) {
-    btn.classList.add('active');
-  } else {
-    var el = document.querySelector('.mode-tab[data-mode="' + mode + '"]');
-    if (el) el.classList.add('active');
-  }
-  // Update content - hide all, show target
-  document.querySelectorAll('.mode-content').forEach(function(c) {
-    c.style.display = 'none';
-    c.classList.remove('active');
-  });
-  var target = document.getElementById('mode-' + mode);
-  if (target) {
-    target.style.display = 'block';
-    target.classList.add('active');
-  }
-}
-
-function goHome() {
-  switchMode('prospecting');
-}
-
-// ============================================
-// CALL NOTES ANALYZER
-// ============================================
-function analyzeCallNotes() {
-  const notes = document.getElementById('callNotesInput').value.trim();
-  if (!notes) { alert('Please paste call notes to analyze.'); return; }
-  
-  const lower = notes.toLowerCase();
-  const results = {
-    objections: [],
-    nextSteps: [],
-    emailPoints: [],
-    callPoints: []
-  };
-
-  // DETECT OBJECTIONS
-  if (lower.match(/budget|cost|expensive|price|afford|tight|no money|can't spend/)) {
-    results.objections.push({
-      type: 'Budget / Cost Concern',
-      response: "Reframe around ROI: 'Many ISVs started in the same position. The unlock was AWS Marketplace — transactions draw down existing EDP commitments, so it's not new budget. Would it help to model the ROI for your deal size?'",
-      emailPoint: "Share cost optimization case study and EDP draw-down explanation"
-    });
-  }
-  
-  if (lower.match(/azure|microsoft|gcp|google cloud|competitor|alternative/)) {
-    const competitor = lower.includes('azure') ? 'Azure' : lower.includes('gcp') || lower.includes('google') ? 'GCP' : 'competitor';
-    results.objections.push({
-      type: `Competitor Mention (${competitor})`,
-      response: `Don't bash ${competitor}. Instead: 'Many ISVs run multi-cloud not to replace ${competitor}, but to unlock new revenue channels. AWS Marketplace gives access to 310K+ buyers with pre-committed spend. Would a GTM comparison be worthwhile?'`,
-      emailPoint: `Include ${competitor} vs. AWS comparison focusing on marketplace revenue opportunity, not just infra cost`
-    });
-  }
-  
-  if (lower.match(/not ready|next quarter|next year|too early|not a priority|not now|revisit later|q[2-4]|h[12]/)) {
-    results.objections.push({
-      type: 'Timing / Priority',
-      response: "Acknowledge timing while creating urgency: 'ISVs who started their AI strategy 6 months early are now significantly ahead. Would a 15-min discovery help clarify where this fits in your roadmap — even if action is later?'",
-      emailPoint: "Position a 'no-commitment discovery' focused on roadmap alignment rather than immediate action"
-    });
-  }
-  
-  if (lower.match(/cto|ceo|boss|manager|decision|sign off|approval|stakeholder|leadership|board/)) {
-    results.objections.push({
-      type: 'Authority / Decision-Making',
-      response: "Map the decision process: 'What would your leadership need to see? I can prepare a one-page tailored to their priorities — cost savings, revenue growth, or competitive positioning.'",
-      emailPoint: "Prepare executive summary tailored to the decision-maker's priorities (1-page max)"
-    });
-  }
-  
-  if (lower.match(/tried before|bad experience|didn't work|failed|burned|migration issue/)) {
-    results.objections.push({
-      type: 'Past Negative Experience',
-      response: "Validate and differentiate: 'The landscape has changed — Bedrock AgentCore reduces complexity by 60%, managed services deploy in weeks not months. Would a 20-min show-and-tell of what\'s new be worth it?'",
-      emailPoint: "Acknowledge past experience, highlight what's changed specifically (AgentCore, managed services, reduced complexity)"
-    });
-  }
-  
-  if (lower.match(/resource|bandwidth|team.*small|capacity|engineer|developer.*busy/)) {
-    results.objections.push({
-      type: 'Resource / Capacity Constraint',
-      response: "Offer minimal-lift path: 'What if there's a path requiring minimal engineering? Many ISVs start with listing what they have — no re-architecture needed. We also provide credits and technical resources.'",
-      emailPoint: "Outline the minimal-lift onboarding path + available credits and ISV-specific technical resources"
-    });
-  }
-  
-  if (lower.match(/security|compliance|gdpr|hipaa|data privacy|regulation/)) {
-    results.objections.push({
-      type: 'Security / Compliance Concern',
-      response: "Lead with trust: 'AWS provides holistic security — data never leaves your VPC, never trains our models. Built-in guardrails, enterprise-grade certifications. Would a security architecture overview be valuable?'",
-      emailPoint: "Share AWS compliance certifications relevant to their industry + data privacy guarantees"
-    });
-  }
-  
-  if (lower.match(/ai.*not ready|data.*not ready|don't have data|data quality|data foundation/)) {
-    results.objections.push({
-      type: 'Data / AI Readiness Gap',
-      response: "Position foundation work: 'Foundation and AI work happen in parallel. Our AI Maturity Assessment identifies gaps and creates a roadmap in 2 hours. Would that be a useful starting point?'",
-      emailPoint: "Propose AI Maturity Assessment (AIM) as no-commitment first step + Data Readiness Workshop details"
-    });
-  }
-
-  if (lower.match(/send.*email|send.*info|send.*material|just email|send.*deck/)) {
-    results.objections.push({
-      type: 'Deflection (Send Me Info)',
-      response: "Qualify before sending: 'Happy to — what's the #1 challenge you're working on? I'll send something specific rather than generic content. If it resonates, would 15 minutes next week work?'",
-      emailPoint: "Send highly personalized content based on their stated challenge — NOT generic collateral"
-    });
-  }
-
-  // DETECT POSITIVE SIGNALS
-  if (lower.match(/interested|sounds good|tell me more|show me|curious|open to/)) {
-    results.nextSteps.push('🟢 POSITIVE SIGNAL: Customer expressed interest — schedule follow-up meeting within 48 hours');
-    results.callPoints.push('Build on expressed interest — reference their specific area of curiosity and expand');
-  }
-  
-  if (lower.match(/demo|workshop|hands-on|see it in action|proof of concept|pilot|poc/)) {
-    results.nextSteps.push('🟢 DEMO REQUEST: Schedule GenAI Builder Lab or technical demo — customer wants to see it working');
-    results.callPoints.push('Confirm demo format preference (hands-on lab vs. walkthrough) and who from their team should attend');
-  }
-  
-  if (lower.match(/timeline|when|launch|roadmap|planning|quarter/)) {
-    results.nextSteps.push('📅 TIMELINE SIGNAL: Customer mentioned timing — align proposal to their planning cycle');
-    results.emailPoints.push('Reference their timeline and position AWS engagement to align with their planning cadence');
-  }
-  
-  if (lower.match(/marketplace|listing|partner|co-sell/)) {
-    results.nextSteps.push('🏪 MARKETPLACE INTEREST: Share Marketplace Private Offer mechanics and co-sell program details');
-    results.emailPoints.push('Include Marketplace revenue data (65% higher close rates, EDP draw-down mechanics)');
-  }
-
-  // DETECT ACTION ITEMS
-  if (lower.match(/follow up|follow-up|get back|reconnect|touch base|circle back/)) {
-    results.nextSteps.push('📞 Follow up within 48 hours — set specific calendar reminder');
-  }
-  if (lower.match(/send|share|forward|provide|email them/)) {
-    results.nextSteps.push('📧 Prepare and send promised materials within 24 hours');
-  }
-  if (lower.match(/schedule|book|set up|arrange|meeting/)) {
-    results.nextSteps.push('📅 Book the next meeting NOW — suggest 2 specific time slots');
-  }
-  if (lower.match(/connect with|introduce|loop in|bring in|include/)) {
-    results.nextSteps.push('🤝 Make the introduction — connect relevant stakeholders within 24 hours');
-  }
-  if (lower.match(/proposal|quote|pricing|offer/)) {
-    results.nextSteps.push('💰 Prepare pricing/proposal tailored to their stated requirements');
-  }
-
-  // GENERATE EMAIL POINTS
-  results.emailPoints.push('Reference specific points from the conversation to show you listened');
-  results.emailPoints.push('Restate the key challenge they mentioned and how AWS addresses it');
-  if (results.objections.length > 0) {
-    results.emailPoints.push('Address the top objection with data/proof points (don\'t ignore it)');
-  }
-  results.emailPoints.push('Include ONE clear call-to-action (meeting invite, not multiple asks)');
-  results.emailPoints.push('Keep email under 150 words — concise and scannable');
-  
-  // Add objection-specific email points
-  results.objections.forEach(obj => {
-    if (obj.emailPoint) results.emailPoints.push(obj.emailPoint);
-  });
-
-  // GENERATE CALL POINTS
-  results.callPoints.push('Open with: "Last time we spoke, you mentioned [X]. Has anything changed since then?"');
-  results.callPoints.push('Confirm understanding of their priorities before pitching');
-  if (results.objections.length > 0) {
-    results.callPoints.push('Proactively address their top concern before they raise it again');
-  }
-  results.callPoints.push('Ask: "What would need to be true for you to move forward this quarter?"');
-  results.callPoints.push('Close with specific next step — never end a call without a scheduled follow-up');
-
-  // Add default next steps if none detected
-  if (results.nextSteps.length === 0) {
-    results.nextSteps.push('📞 Schedule follow-up call within 5 business days');
-    results.nextSteps.push('📧 Send personalized follow-up email within 24 hours');
-    results.nextSteps.push('📝 Log interaction in SFDC with clear next steps');
-  }
-  
-  // Always add these
-  results.nextSteps.push('📝 Update SFDC opportunity with call notes and next steps');
-  results.nextSteps.push('🔔 Set calendar reminder for follow-up action');
-
-  renderNotesAnalysis(results);
-}
-
-function renderNotesAnalysis(results) {
-  const el = document.getElementById('notesResults');
-  el.classList.add('visible');
-  
-  let objectionHtml = '';
-  if (results.objections.length > 0) {
-    objectionHtml = results.objections.map(obj => `
-      <div class="analysis-objection">
-        <div class="obj-text">🚨 ${obj.type}</div>
-        <div class="obj-response"><strong>Suggested response:</strong> ${obj.response}</div>
-      </div>
-    `).join('');
-  } else {
-    objectionHtml = '<p style="font-size:12px;color:var(--color-success);">✅ No clear objections detected — positive signal!</p>';
-  }
-
-  el.innerHTML = `
-    <div class="analysis-section" style="border-left:3px solid var(--color-error)">
-      <h4><i class="fa-solid fa-triangle-exclamation" style="color:var(--color-error)"></i> Objections Detected (${results.objections.length})</h4>
-      ${objectionHtml}
-    </div>
-
-    <div class="analysis-section" style="border-left:3px solid var(--color-success)">
-      <h4><i class="fa-solid fa-list-check" style="color:var(--color-success)"></i> Recommended Next Steps</h4>
-      <ul>${results.nextSteps.map(s => '<li>' + s + '</li>').join('')}</ul>
-    </div>
-
-    <div class="analysis-section" style="border-left:3px solid var(--color-primary)">
-      <h4><i class="fa-solid fa-envelope" style="color:var(--color-primary)"></i> Follow-up Email Talking Points</h4>
-      <button class="copy-btn" onclick="copySection('emailPoints')" style="float:right"><i class="fa-solid fa-copy"></i> Copy</button>
-      <ul id="emailPoints">${results.emailPoints.map(s => '<li>' + s + '</li>').join('')}</ul>
-    </div>
-
-    <div class="analysis-section" style="border-left:3px solid var(--color-warning)">
-      <h4><i class="fa-solid fa-phone" style="color:var(--color-warning)"></i> Next Call Discussion Points</h4>
-      <ul>${results.callPoints.map(s => '<li>' + s + '</li>').join('')}</ul>
-    </div>
-  `;
-}
-
-function copySection(id) {
-  const el = document.getElementById(id);
-  const text = el.innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = el.previousElementSibling;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-    setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy'; }, 2000);
-  });
-}
-
-// ============================================
-// SOLUTIONS PANEL TOGGLE
-// ============================================
-function toggleSolutions() {
-  const body = document.getElementById('solutionsBody');
-  const chevron = document.getElementById('solutionsChevron');
-  body.classList.toggle('visible');
-  chevron.style.transform = body.classList.contains('visible') ? 'rotate(0)' : 'rotate(-90deg)';
-}
-
-// ============================================
-// ROLEPLAY SIMULATION ENGINE
-// ============================================
-
-
-function launchRoleplay() {
-  var container = document.getElementById('rpIframeContainer');
-  if (container) {
-    container.style.display = 'block';
-    container.scrollIntoView({behavior:'smooth'});
-  }
-  // Also open in new tab as fallback
-  var industry = document.getElementById('rpIndustryMain').value;
-  var persona = document.getElementById('rpPersonaMain').value;
-  var difficulty = document.getElementById('rpDifficultyMain').value;
-  var objective = document.getElementById('rpObjectiveMain').value;
-  var url = 'roleplay.html#auto&industry=' + industry + '&persona=' + persona + '&difficulty=' + difficulty + '&objective=' + objective;
-  var iframe = document.getElementById('rpIframe');
-  if (iframe) iframe.src = url;
-}
 
 
 </script>

@@ -963,6 +963,117 @@ var DGR_BENCHMARKS = {
   }
 };
 
+// === DG SOFT SKILLS TRAINING FRAMEWORK (from Demand_Gen_Training.pptx) ===
+var DG_TRAINING = {
+  callFramework: {
+    // 30-Minute Call Structure
+    phases: {
+      opening: { time: "2-3 min", focus: "Build rapport, set agenda, confirm time" },
+      discovery: { time: "15-18 min", focus: "Ask questions, listen, dig deeper" },
+      valuePositioning: { time: "5-7 min", focus: "Connect their pain to your solution" },
+      nextSteps: { time: "3-5 min", focus: "Agree on specific action + timeline" }
+    },
+    openingBestPractice: [
+      "Confirm time: I have us for 30 minutes — does that still work?",
+      "Set agenda: I\'d love to learn about X, share how we help with Y, and see if it makes sense to continue.",
+      "DON\'T: Launch into a pitch immediately",
+      "DON\'T: Talk about yourself for the first 5 minutes",
+      "DON\'T: Skip the agenda — it builds trust and structure"
+    ],
+    talkRatio: "You should be talking no more than 30-40% of the call"
+  },
+  layeredQuestions: {
+    // The Art of Asking Questions - progressive depth
+    levels: [
+      { type: "broad", example: "Tell me about how your team handles X today.", purpose: "open up" },
+      { type: "clarifying", example: "When you say \'manual,\' what does that process look like?", purpose: "understand specifics" },
+      { type: "impact", example: "How does that affect your team\'s ability to hit targets?", purpose: "surface pain" },
+      { type: "quantifying", example: "Roughly how many hours per week does that cost?", purpose: "attach numbers" },
+      { type: "futureState", example: "In an ideal world, what would that look like?", purpose: "vision" }
+    ]
+  },
+  objectionFramework: {
+    // LAER Framework
+    name: "LAER",
+    steps: [
+      { letter: "L", action: "Listen", detail: "Let them finish. Don\'t interrupt." },
+      { letter: "A", action: "Acknowledge", detail: "I hear you, that\'s a fair concern." },
+      { letter: "E", action: "Explore", detail: "Can you help me understand what\'s driving that?" },
+      { letter: "R", action: "Respond", detail: "Address with a relevant proof point or reframe." }
+    ],
+    commonResponses: {
+      happy: "That\'s great — what would make it even better?",
+      budget: "Understood. If budget weren\'t a factor, is this a priority?",
+      email: "Happy to. So I send you something relevant — what\'s your biggest challenge with X?",
+      timing: "Totally fair. When would be a better time to revisit this?"
+    }
+  },
+  activeListening: {
+    // 5 Levels of Listening
+    levels: [
+      { level: 1, name: "Ignoring", desc: "Not paying attention", example: "Checking Slack during call" },
+      { level: 2, name: "Pretend", desc: "Nodding but not absorbing", example: "Uh huh, yeah, totally" },
+      { level: 3, name: "Selective", desc: "Hearing only what you want", example: "Waiting for keyword to pitch" },
+      { level: 4, name: "Attentive", desc: "Fully focused on their words", example: "Taking notes, following thread" },
+      { level: 5, name: "Empathic", desc: "Understanding intent + emotion", example: "Reading between the lines" }
+    ],
+    techniques: {
+      paraphrasing: "So what I\'m hearing is... / It sounds like...",
+      mirroring: "Repeat last 2-3 words as a question to prompt elaboration",
+      labeling: "It seems like that\'s been frustrating for your team.",
+      silence: "Pause 2-3 seconds after they answer. People fill silence with detail.",
+      noteTaking: "Write their exact words, not your interpretation. Use their language back."
+    },
+    redFlags: [
+      "Interrupting to pitch",
+      "Asking a question then not listening to the answer",
+      "Using filler responses (yeah totally, for sure) without engaging",
+      "Looking for keywords to jump in rather than understanding context"
+    ]
+  },
+  closingBestPractice: {
+    // Lock in Next Steps
+    good: [
+      "Specific date and time",
+      "Named attendees (Should we include your VP of Ops?)",
+      "Clear purpose (30-minute demo focused on X)",
+      "Send calendar invite before hanging up"
+    ],
+    bad: "Let\'s circle back sometime next week.",
+    goodExample: "How about Thursday at 2pm? I\'ll include a brief agenda and the case study we discussed."
+  },
+  meddpicc: {
+    // Full MEDDPICC questions for scoring
+    metrics: ["What does success look like in numbers?", "How are you measuring the impact today?"],
+    economicBuyer: ["Who ultimately signs off on a purchase like this?", "What does the EB care about most?"],
+    decisionCriteria: ["What are the top 3 things you need in a solution?", "Any hard requirements or deal-breakers?"],
+    decisionProcess: ["Walk me through the evaluation process from here.", "What\'s your target date for having a solution?"],
+    paperProcess: ["What does procurement look like?", "Is there a security/legal review?"],
+    implicatePain: ["What happens if this isn\'t solved by Q3?", "What\'s the yearly cost of the status quo?"],
+    champion: ["Would you be comfortable introducing me to the EB?", "What pushback do you expect internally?"],
+    competition: ["Are you evaluating other solutions?", "What do you like about what you\'ve seen so far?"]
+  },
+  quantification: {
+    // 5-Step Framework
+    steps: [
+      "Identify the pain point",
+      "Measure the frequency (daily? weekly?)",
+      "Calculate the time cost",
+      "Convert to dollars (loaded cost × time)",
+      "Annualize the impact"
+    ]
+  },
+  followUpCadence: [
+    { day: 0, channel: "Email", purpose: "Recap + next steps" },
+    { day: 3, channel: "Email", purpose: "Value-add (article, case study)" },
+    { day: 5, channel: "Phone", purpose: "Quick check-in call" },
+    { day: 8, channel: "Email", purpose: "New angle or insight" },
+    { day: 12, channel: "LinkedIn", purpose: "Engage with their content" },
+    { day: 18, channel: "Email", purpose: "Break-up email" }
+  ]
+};
+
+
 
 
 // ===== PERSONA PREVIEW UPDATE =====
@@ -3613,7 +3724,144 @@ function scoreResponse(text) {
   
   state.patience = Math.min(100, Math.max(0, state.patience + d));
   if(typeof gamification !== 'undefined') try { gamifyScore(d); } catch(e) {}
-  return d;
+  
+  // === DG TRAINING FRAMEWORK SCORING (from Demand_Gen_Training.pptx) ===
+  
+  // LAER Framework Detection: Acknowledge before responding to objection
+  if(state.lastCustomerMood === 'objecting' || (state.conversationHistory.length > 0 && 
+     state.conversationHistory[state.conversationHistory.length-1] && 
+     state.conversationHistory[state.conversationHistory.length-1].role === 'customer' &&
+     (state.conversationHistory[state.conversationHistory.length-1].text||'').match(/not interested|don.t have|can.t|won.t|no budget|too busy/i))) {
+    // Check if DGR acknowledged first (LAER: Acknowledge)
+    if(lower.match(/i hear you|i understand|that.s fair|makes sense|appreciate|totally get|fair point|valid/)) {
+      state.scores.objection += 6;
+      d += 6;
+      addFeedback('good', "LAER Framework: You acknowledged their concern before responding — builds trust and opens them up.");
+    }
+    // Check if DGR explored WHY (LAER: Explore)  
+    if(lower.match(/what.s driving|help me understand|curious why|can you tell me more|what specifically|what.s behind/)) {
+      state.scores.discovery += 5;
+      d += 5;
+      addFeedback('good', "LAER: Exploring the root cause behind the objection — top performers dig deeper instead of rebutting.");
+    }
+    // Penalize immediate pitch/rebuttal without acknowledge
+    if(!lower.match(/i hear|understand|fair|makes sense|get it/) && lower.match(/but we|actually|however|let me tell you|the thing is/)) {
+      state.scores.objection -= 4;
+      d -= 4;
+      addFeedback('improve', "LAER violation: You rebutted without acknowledging. Try: \'I hear you, that\'s fair\' BEFORE your response.");
+    }
+  }
+  
+  // Layered Questioning Detection (progressive depth)
+  if(text.indexOf('?') >= 0) {
+    // Quantifying question (highest value)
+    if(lower.match(/how much|how many|how long|what.s the cost|how often|what percentage|how many hours|what.s the impact/)) {
+      state.scores.discovery += 5;
+      d += 5;
+      addFeedback('good', "Quantifying question — attaching numbers to pain is how you build a business case (DG Training: Step 4).");
+    }
+    // Impact question
+    else if(lower.match(/how does that affect|what happens if|what.s the impact|what does that mean for|how does that hold back/)) {
+      state.scores.discovery += 4;
+      d += 4;
+      addFeedback('good', "Impact question — connecting their problem to business outcomes (DG Training: Layered Questions Level 3).");
+    }
+    // Future state question
+    else if(lower.match(/ideal world|what would.*look like|if you could.*what|vision for|where do you want|dream scenario/)) {
+      state.scores.discovery += 4;
+      d += 4;
+      addFeedback('good', "Future state question — getting them to envision the solution creates emotional investment.");
+    }
+    // Clarifying question
+    else if(lower.match(/what do you mean by|when you say|can you give me an example|what does.*look like|walk me through/)) {
+      state.scores.discovery += 3;
+      d += 3;
+    }
+  }
+  
+  // Active Listening Signals
+  // Paraphrasing (repeating their words back)
+  if(lower.match(/so what i.m hearing|it sounds like|if i understand correctly|so you.re saying|let me make sure i/)) {
+    state.scores.rapport += 5;
+    d += 5;
+    addFeedback('good', "Active Listening: Paraphrasing shows you\'re truly engaged (Level 4-5 listening).");
+  }
+  
+  // Mirroring (repeating their last few words)
+  if(state.conversationHistory.length >= 2) {
+    var lastCust = state.conversationHistory.filter(function(h){return h.role==='customer';}).slice(-1)[0];
+    if(lastCust && lastCust.text) {
+      var custWords = lastCust.text.split(' ').slice(-4).join(' ').toLowerCase();
+      if(custWords.length > 8 && lower.indexOf(custWords) >= 0) {
+        state.scores.rapport += 4;
+        d += 4;
+        addFeedback('good', "Mirroring: You used their exact words back — this naturally prompts elaboration (Chris Voss technique).");
+      }
+    }
+  }
+  
+  // Labeling Emotions
+  if(lower.match(/seems like.*frustrat|sounds like.*challeng|must be.*difficult|that.s.*tough|feels like.*pressure/)) {
+    state.scores.rapport += 5;
+    d += 5;
+    state.empathyShown = true;
+    addFeedback('good', "Emotion labeling: Validating their experience creates psychological safety (Active Listening technique).");
+  }
+  
+  // Agenda Setting (Opening best practice)
+  if(state.turn <= 2 && lower.match(/agenda|i.d love to|here.s what i was thinking|i thought we could|plan for today/)) {
+    state.scores.rapport += 4;
+    d += 4;
+    addFeedback('good', "Agenda setting in the opening — builds trust and gives the customer control (DG Training: Opening best practice).");
+  }
+  
+  // Time Confirmation (Opening best practice)
+  if(state.turn <= 2 && lower.match(/do you have.*minutes|is now.*good time|still work for you|how much time do you have/)) {
+    state.scores.rapport += 3;
+    d += 3;
+    addFeedback('good', "Time check: Confirming their availability shows respect — top DGRs always do this first.");
+  }
+  
+  // MEDDPICC Signals
+  if(lower.match(/who.*signs off|who.*decision|who.*approve|economic buyer|who.s the budget/)) {
+    state.scores.discovery += 4;
+    d += 4;
+    addFeedback('good', "MEDDPICC: Identifying the Economic Buyer — critical for qualification.");
+  }
+  if(lower.match(/evaluation process|decision process|how do you.*decide|what.*steps.*from here|timeline.*decision/)) {
+    state.scores.discovery += 4;
+    d += 4;
+    addFeedback('good', "MEDDPICC: Mapping the Decision Process — prevents deals from dying in procurement.");
+  }
+  if(lower.match(/what happens if.*nothing|cost of.*status quo|what.*risk.*not|impact.*not solving/)) {
+    state.scores.discovery += 5;
+    d += 5;
+    addFeedback('good', "MEDDPICC: Implicating the Pain — making the cost of inaction vivid creates urgency.");
+  }
+  
+  // Closing Best Practice: Specific next steps
+  if(lower.match(/thursday at 2|tuesday at 10|specific.*time|send.*calendar|include.*agenda|bring.*case study/)) {
+    state.scores.closing += 4;
+    d += 4;
+    addFeedback('good', "Specific close: Date + time + agenda + attendees = professional close (DG Training best practice).");
+  }
+  
+  // PENALIZE: Training anti-patterns
+  // Pitching too early (before discovery)
+  if(state.turn <= 2 && lower.match(/we offer|our platform|our solution|let me tell you about|we can help you with/) && !lower.match(/\?/)) {
+    state.scores.rapport -= 4;
+    d -= 4;
+    addFeedback('improve', "DG Training: Don\'t launch into a pitch in the first 5 minutes. Ask questions first — earn the right to pitch.");
+  }
+  
+  // Talk ratio violation (DGR message too long without questions)
+  if(text.length > 200 && text.indexOf('?') < 0 && state.turn > 2) {
+    state.scores.rapport -= 3;
+    d -= 3;
+    addFeedback('improve', "DG Training: Your message was long with no questions. Rule: talk no more than 30-40% of the call.");
+  }
+
+return d;
 }
 
 function addFeedback(type, msg) {
