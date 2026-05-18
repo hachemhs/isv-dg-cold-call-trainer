@@ -1635,6 +1635,7 @@ function sendMsg() {
       state.conversationHistory.push({role:'customer', text:resp});
       if(typeof generateCoachTip === 'function') generateCoachTip(resp);
       addMsg('customer', resp);
+      if(window.voiceSpeak) window.voiceSpeak(resp);
       document.getElementById('userInput').focus();
     } catch(e) {
       // Show error for debugging
@@ -1657,6 +1658,7 @@ function sendMsg() {
       var fallback = personaPool[Math.floor(Math.random() * personaPool.length)];
       state.conversationHistory.push({role:'customer', text:fallback});
       addMsg('customer', fallback);
+      if(window.voiceSpeak) window.voiceSpeak(fallback);
       document.getElementById('userInput').focus();
     }
     }, delay);
