@@ -11,12 +11,13 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 
 .top-bar {
   display:flex; align-items:center; justify-content:space-between;
-  padding:10px 24px; background:#1a2332; border-bottom:1px solid #2d3748;
+  padding:12px 24px; background:#1a2332; border-bottom:1px solid #2d3748;
   flex-shrink:0;
 }
-.top-bar .brand { display:flex; align-items:center; gap:12px; }
+.top-bar .brand { display:flex; align-items:center; gap:12px; cursor:pointer; text-decoration:none; }
+.top-bar .brand:hover h1 { color:#7c4dff; }
 .top-bar .brand i.fa-brands { font-size:28px; color:#ff9900; }
-.top-bar .brand h1 { font-size:18px; font-weight:700; color:#fff; }
+.top-bar .brand h1 { font-size:20px; font-weight:700; color:#fff; transition:color 0.2s; }
 .top-bar .brand .sub { font-size:11px; color:#8892a4; margin-top:2px; }
 
 .tabs {
@@ -30,11 +31,50 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 .tab:hover { background:#2d3748; color:#e2e8f0; }
 .tab.active { background:rgba(124,77,255,0.15); color:#7c4dff; border-color:rgba(124,77,255,0.3); }
 
-.tab-content { flex:1; position:relative; }
-.tab-frame { position:absolute; top:0; left:0; width:100%; height:100%; border:none; display:none; }
+.main-content { flex:1; position:relative; overflow:hidden; }
+
+/* HOME SCREEN */
+.home-screen {
+  display:flex; align-items:center; justify-content:center; height:100%;
+  padding:40px;
+}
+.home-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:24px;
+  max-width:900px; width:100%;
+}
+.home-card {
+  background:#1a2332; border:2px solid #2d3748; border-radius:20px;
+  padding:40px 32px; text-align:center; cursor:pointer;
+  transition:all 0.3s ease; text-decoration:none; color:#e2e8f0;
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+}
+.home-card:hover {
+  border-color:#7c4dff; transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(124,77,255,0.2);
+}
+.home-card .card-icon {
+  width:72px; height:72px; border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+}
+.home-card h2 { font-size:18px; font-weight:700; }
+.home-card p { font-size:13px; color:#8892a4; line-height:1.5; max-width:280px; }
+
+.home-card:nth-child(1) .card-icon { background:linear-gradient(135deg,#1565C0,#42A5F5); }
+.home-card:nth-child(2) .card-icon { background:linear-gradient(135deg,#5E35B1,#7C4DFF); }
+.home-card:nth-child(3) .card-icon { background:linear-gradient(135deg,#E65100,#FF9900); }
+.home-card:nth-child(4) .card-icon { background:linear-gradient(135deg,#00695C,#00BFA5); }
+
+/* IFRAME CONTENT */
+.tab-frame {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  border:none; display:none;
+}
 .tab-frame.active { display:block; }
 
 @media(max-width:768px) {
+  .home-grid { grid-template-columns:1fr; gap:16px; }
+  .home-card { padding:24px 20px; }
   .tabs { gap:2px; }
   .tab { padding:8px 10px; font-size:11px; }
   .tab span { display:none; }
@@ -44,15 +84,15 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 <body>
 
 <div class="top-bar">
-  <div class="brand">
+  <a class="brand" onclick="goHome()">
     <i class="fa-brands fa-aws"></i>
     <div>
       <h1>ISV DG Sales Trainer</h1>
       <div class="sub">EMEA Demand Generation — AI Coaching Platform</div>
     </div>
-  </div>
-  <div class="tabs">
-    <a class="tab active" onclick="switchTab('prospecting')" id="tab-prospecting">
+  </a>
+  <div class="tabs" id="tabBar">
+    <a class="tab" onclick="switchTab('prospecting')" id="tab-prospecting">
       <i class="fa-solid fa-phone"></i><span>Prospecting</span>
     </a>
     <a class="tab" onclick="switchTab('roleplay')" id="tab-roleplay">
@@ -67,15 +107,54 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
   </div>
 </div>
 
-<div class="tab-content">
-  <iframe class="tab-frame active" id="frame-prospecting" src="index.html"></iframe>
-  <iframe class="tab-frame" id="frame-roleplay" src="roleplay.html"></iframe>
-  <iframe class="tab-frame" id="frame-services" src="" data-src="services.html"></iframe>
-  <iframe class="tab-frame" id="frame-dashboard" src="" data-src="dashboard.html"></iframe>
+<div class="main-content" id="mainContent">
+  <!-- HOME SCREEN -->
+  <div class="home-screen" id="homeScreen">
+    <div class="home-grid">
+      <a class="home-card" onclick="switchTab('prospecting')">
+        <div class="card-icon"><i class="fa-solid fa-phone"></i></div>
+        <h2>Prospecting</h2>
+        <p>Call scripts, predicted objections, discovery questions, and cold outreach email generator</p>
+      </a>
+      <a class="home-card" onclick="switchTab('roleplay')">
+        <div class="card-icon"><i class="fa-solid fa-comments"></i></div>
+        <h2>Call Simulator</h2>
+        <p>AI roleplay with real customer personas. Practice cold calls with voice or text. Real-time coaching.</p>
+      </a>
+      <a class="home-card" onclick="switchTab('services')">
+        <div class="card-icon"><i class="fa-solid fa-cloud"></i></div>
+        <h2>AWS Services</h2>
+        <p>Quick reference cards — Bedrock, Marketplace, Graviton, Security. Key stats and talking points.</p>
+      </a>
+      <a class="home-card" onclick="switchTab('dashboard')">
+        <div class="card-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <h2>Coaching Dashboard</h2>
+        <p>Gong-style analytics. Track scores, skills, trends, and get AI coaching recommendations.</p>
+      </a>
+    </div>
+  </div>
+
+  <!-- IFRAMES (lazy loaded) -->
+  <iframe class="tab-frame" id="frame-prospecting" data-src="index.html"></iframe>
+  <iframe class="tab-frame" id="frame-roleplay" data-src="roleplay.html"></iframe>
+  <iframe class="tab-frame" id="frame-services" data-src="services.html"></iframe>
+  <iframe class="tab-frame" id="frame-dashboard" data-src="dashboard.html"></iframe>
 </div>
 
 <script>
+function goHome() {
+  // Hide all frames
+  document.querySelectorAll('.tab-frame').forEach(function(f) { f.classList.remove('active'); });
+  // Show home screen
+  document.getElementById('homeScreen').style.display = 'flex';
+  // Deactivate all tabs
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+}
+
 function switchTab(name) {
+  // Hide home screen
+  document.getElementById('homeScreen').style.display = 'none';
+  
   // Update tabs
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
@@ -85,8 +164,8 @@ function switchTab(name) {
   var frame = document.getElementById('frame-' + name);
   frame.classList.add('active');
   
-  // Lazy load: only load iframe src when tab is first clicked
-  if(!frame.src || frame.src === '' || frame.src === window.location.href) {
+  // Lazy load iframe on first click
+  if(!frame.src || frame.src === window.location.href || frame.src === '') {
     var dataSrc = frame.getAttribute('data-src');
     if(dataSrc) frame.src = dataSrc;
   }
