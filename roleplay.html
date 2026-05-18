@@ -3831,7 +3831,7 @@ var total = Math.min(100, Math.max(0,
   var el = document.getElementById('scorecard');
   if(!el) return;
   el.style.display='block';
-  el.innerHTML = '<div class="score-hero"><div class="score-number" style="color:'+color+'">'+total+'</div><div class="score-label">Overall Score / 100</div>'+badge+'</div>'
+  el.innerHTML = '<div style="text-align:center;margin-bottom:16px;cursor:pointer" onclick="resetSim()"><div style="display:inline-flex;align-items:center;gap:10px"><i class="fa-brands fa-aws" style="font-size:22px;color:#ff9900"></i><span style="font-size:18px;font-weight:700;color:#ffffff">Cold Call Roleplay Simulator</span></div><div style="font-size:12px;color:#aaa;margin-top:4px">\u2190 Back to Setup</div></div>' + '<div class="score-hero">'<div class="score-number" style="color:'+color+'">'+total+'</div><div class="score-label">Overall Score / 100</div>'+badge+'</div>'
     + '<div class="breakdown"><div class="item"><div class="val">'+Math.max(0,state.scores.rapport)+'</div><div class="lbl">Rapport</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.objection)+'</div><div class="lbl">Objections</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.discovery)+'</div><div class="lbl">Discovery</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.closing)+'</div><div class="lbl">Closing</div></div></div>'
     + '<div class="feedback"><h4><i class="fa-solid fa-check-circle" style="color:var(--color-success)"></i> What you did well</h4>'
     + goods.map(function(g){return '<div class="fb-card good">'+g+'</div>';}).join('')
