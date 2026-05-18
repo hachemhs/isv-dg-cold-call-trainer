@@ -1659,6 +1659,7 @@ function sendMsg() {
   
   var scoreResult = 0;
   try { scoreResult = scoreResponse(text); } catch(e) {}
+  try { applyEngagementDynamics(text, state); } catch(e) {}
   try { updatePatience(); } catch(e) {}
 
   if(state.patience<=0) {
@@ -3617,6 +3618,119 @@ function scoreResponse(text) {
 function addFeedback(type, msg) {
   var arr = state.feedback[type];
   if(arr.indexOf(msg) < 0 && arr.length < 7) arr.push(msg);
+}
+
+
+// ===== REALISTIC ENGAGEMENT DYNAMICS (Gong 300M+ calls research) =====
+// Adjusts patience based on conversation-level behavioral signals
+function applyEngagementDynamics(dgrText, state) {
+  var turn = state.turn || 0;
+  var history = state.conversationHistory || [];
+  var lower = dgrText.toLowerCase();
+  var delta = 0;
+  
+  // --- GONG SIGNAL 1: Customer Talking Streak (longer = more engaged) ---
+  // "4-min customer monologue = highest win probability" (Gong Labs)
+  var lastCustomerMsgs = history.filter(function(h){return h.role==='customer';}).slice(-3);
+  var avgCustomerLen = lastCustomerMsgs.reduce(function(a,h){return a + (h.text||'').length;}, 0) / (lastCustomerMsgs.length||1);
+  if(avgCustomerLen > 150 && turn > 3) {
+    delta += 2; // Customer is opening up — talking in longer streaks
+  } else if(avgCustomerLen < 30 && turn > 3) {
+    delta -= 3; // Short responses = disengaging (Gong: <50s monologue = below avg)
+  }
+  
+  // --- GONG SIGNAL 2: Call Duration Correlation ---
+  // "Successful calls avg 5:50 vs unsuccessful 3:14" (Gong 300M calls)
+  // Simulate: patience decays faster early, stabilizes mid-call, recovers late
+  if(turn <= 2) {
+    delta -= 2; // Natural skepticism early (first 60s most critical)
+  } else if(turn >= 5 && turn <= 8 && state.patience > 40) {
+    delta += 1; // Mid-call stability — if still on, they're somewhat interested
+  }
+  
+  // --- GONG SIGNAL 3: Talk-to-Listen Ratio (43/57 optimal) ---
+  // Penalize DGR dominating (>65% talk time proxy)
+  var dgrMsgs = history.filter(function(h){return h.role==='dgr';}).slice(-4);
+  var custMsgs = history.filter(function(h){return h.role==='customer';}).slice(-4);
+  var dgrWords = dgrMsgs.reduce(function(a,h){return a + (h.text||'').split(' ').length;}, 0);
+  var custWords = custMsgs.reduce(function(a,h){return a + (h.text||'').split(' ').length;}, 0);
+  var totalWords = dgrWords + custWords;
+  if(totalWords > 20) {
+    var dgrRatio = dgrWords / totalWords;
+    if(dgrRatio > 0.70) {
+      delta -= 3; // DGR talking too much — customer zone-out (Gong: >65% = penalized)
+    } else if(dgrRatio < 0.50 && dgrRatio > 0.30) {
+      delta += 1; // Good ratio — customer talking more = win signal
+    }
+  }
+  
+  // --- BUYING SIGNAL: Customer asks about specifics ---
+  // "Serious prospects commit time" (ASalesGuy) + "asks about pricing/timeline = intent"
+  var lastCust = lastCustomerMsgs.length > 0 ? (lastCustomerMsgs[lastCustomerMsgs.length-1].text||'').toLowerCase() : '';
+  if(lastCust.match(/how much|pricing|cost|what.s the price|implementation|timeline|how long|when could|integrate|migration|POC|proof of concept|pilot/)) {
+    delta += 4; // Asking specifics = high buying signal
+  }
+  if(lastCust.match(/my team|our engineers|my CTO|my boss|involve|loop in|check with/)) {
+    delta += 3; // Involving others = seriousness signal
+  }
+  if(lastCust.match(/we could|if we did|we.re thinking|we need|our challenge|our problem/)) {
+    delta += 2; // Inclusive/collaborative language = opening up
+  }
+  
+  // --- DISENGAGEMENT SIGNAL: Blow-off language ---
+  // "call next week", "send email", "think about it" = blow-off (ASalesGuy)
+  if(lastCust.match(/call me back|try again|maybe later|think about it|not right now|send.*(email|info)|I.ll get back/)) {
+    delta -= 4; // Classic blow-off signals
+  }
+  if(lastCust.match(/gotta go|another meeting|running late|wrapping up|out of time/)) {
+    delta -= 3; // Time pressure = losing them
+  }
+  
+  // --- GONG SIGNAL 4: Question Frequency (15-20/hr optimal) ---
+  // DGRs who ask 0 questions get penalized; 3+ in last 4 turns = rewarded
+  var recentDGR = dgrMsgs.slice(-4).map(function(h){return h.text||'';});
+  var qCount = recentDGR.filter(function(t){return t.indexOf('?') >= 0;}).length;
+  if(qCount === 0 && turn > 3) {
+    delta -= 2; // No questions = monologuing (Gong: top performers ask 15-20/hr)
+  } else if(qCount >= 2) {
+    delta += 1; // Good discovery behavior
+  }
+  
+  // --- RAPPORT MOMENTUM: Consecutive positive/negative turns compound ---
+  if(!state._engagementStreak) state._engagementStreak = 0;
+  if(delta > 0) {
+    state._engagementStreak = Math.max(0, state._engagementStreak) + 1;
+    if(state._engagementStreak >= 3) delta += 2; // Momentum: 3+ good turns = snowball
+  } else if(delta < 0) {
+    state._engagementStreak = Math.min(0, state._engagementStreak) - 1;
+    if(state._engagementStreak <= -3) delta -= 2; // Negative spiral: 3+ bad = accelerates
+  } else {
+    state._engagementStreak = 0;
+  }
+  
+  // --- NATURAL PATIENCE DECAY: Real people lose interest over time ---
+  // Even neutral calls lose ~1-2 patience per turn (attention is finite)
+  if(turn > 4 && delta >= 0 && delta < 2) {
+    delta -= 1; // Slight natural decay — you must EARN continued attention
+  }
+  
+  // --- CEILING & FLOOR: Patience recovers slowly but drops fast ---
+  // Humans: trust is hard to build, easy to lose (asymmetric)
+  if(delta > 0) delta = Math.min(delta, 5); // Cap positive (trust builds slowly)
+  // No cap on negative (trust breaks fast)
+  
+  // --- DIFFICULTY MULTIPLIER ---
+  var diff = state.difficulty || 'medium';
+  if(diff === 'hard') {
+    if(delta > 0) delta = Math.round(delta * 0.7); // Harder to gain trust
+    if(delta < 0) delta = Math.round(delta * 1.3); // Faster to lose it
+  } else if(diff === 'easy') {
+    if(delta > 0) delta = Math.round(delta * 1.2);
+    if(delta < 0) delta = Math.round(delta * 0.8);
+  }
+  
+  state.patience = Math.max(0, Math.min(100, state.patience + delta));
+  return delta;
 }
 
 function updatePatience() {
