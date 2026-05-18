@@ -219,6 +219,7 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 </div>
 
 <script>
+try{document.addEventListener('DOMContentLoaded',function(){if(typeof startSim!=='function'){document.body.innerHTML='<h1 style="color:red;padding:40px">ERROR: Script failed to parse. startSim not found.</h1>'+document.body.innerHTML;}});}catch(e){}
 // Suppress non-critical UI errors (null elements from timing issues)
 window.addEventListener('error', function(e) {
   if(e.message && e.message.indexOf('Cannot set properties of null') >= 0) {
