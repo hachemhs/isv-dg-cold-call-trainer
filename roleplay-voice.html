@@ -124,12 +124,6 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 
 
 
-
-/* Voice Mode */
-.voice-panel { display:none; flex-direction:column; align-items:center; gap:12px; padding:20px; background:linear-gradient(180deg,#0f172a,#1e293b); border-radius:16px; margin:12px 0; border:1px solid #334155; }
-.voice-avatar { width:80px; height:80px; border-radius:50%; border:3px solid #6366f1; display:flex; align-items:center; justify-content:center; font-size:32px; background:#0f172a; }
-.voice-status { font-size:13px; font-weight:600; color:#8892a4; }
-
 </style>
 </head>
 <body>
@@ -207,13 +201,14 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
       <input type="text" id="userInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter')sendMsg()">
       <button onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
+    <!-- Voice Mode UI -->
     <div style="padding:8px 16px;display:flex;gap:8px">
-      <button id="voiceModeBtn" onclick="toggleVoiceMode()" style="flex:1;padding:12px 16px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s"><i class="fa-solid fa-microphone" style="margin-right:6px"></i> Voice Mode</button>
+      <button id="voiceModeBtn" onclick="toggleVoiceMode()" style="flex:1;padding:12px 16px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s"><i class="fa-solid fa-microphone" style="margin-right:6px"></i> Voice Mode</button>
     </div>
-    <div class="voice-panel" id="voicePanel">
-      <div class="voice-avatar" id="voiceAvatar">🎙️</div>
-      <div class="voice-status" id="voiceStatus">Click Voice Mode to start</div>
-      <div style="font-size:11px;color:#8892a4;margin-top:4px">Customer speaks aloud • You speak to respond</div>
+    <div id="voicePanel" style="display:none;flex-direction:column;align-items:center;gap:10px;padding:16px;background:linear-gradient(180deg,#0f172a,#1e293b);border-radius:12px;margin:8px 16px;border:1px solid #334155">
+      <div style="width:60px;height:60px;border-radius:50%;border:3px solid #6366f1;display:flex;align-items:center;justify-content:center;font-size:24px;background:#0f172a">🎙️</div>
+      <div id="voiceStatus" style="font-size:13px;font-weight:600;color:#8892a4">Click Voice Mode to start</div>
+      <div style="font-size:11px;color:#64748b">Customer speaks aloud • You speak to respond • Chrome/Edge required</div>
     </div>
 
   </div>
@@ -222,24 +217,6 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 </div>
 
 <script>
-
-var voiceMode = {
-  enabled: false,
-  speaking: false,
-  listening: false,
-  recognition: null,
-  synthesis: null,
-  voices: [],
-  customerVoice: null,
-  speakQueue: [],
-  currentUtterance: null
-};
-try { voiceMode.synthesis = window.speechSynthesis || null; } catch(e) { voiceMode.synthesis = null;
-
-
-
-
-
 
 // Global error catcher - shows errors on page for debugging
 window.onerror = function(msg, url, line, col, error) {
@@ -1330,8 +1307,6 @@ function startSim() {
       unfinishedThreads: [] // topics that were started but not completed
     }
   };
-  if(typeof voiceMode !== 'undefined' && voiceMode.enabled && voiceMode.voices.length > 0) selectPersonaVoice();
-
 
   
   // Gamification: reset combo for new call
@@ -1462,8 +1437,6 @@ function sendMsg() {
         state.conversationHistory.push({role:'customer', text:resp});
     generateCoachTip(resp);
         addMsg('customer', resp);
-      if(typeof voiceMode !== 'undefined' && voiceMode.enabled && typeof speakResponse === 'function') { try { speakResponse(resp); } catch(e) {} }
-      
       }, 800 + Math.random()*600);
       return;
     }
@@ -1618,10 +1591,7 @@ function sendMsg() {
       state.conversationHistory.push({role:'customer', text:resp});
       if(typeof generateCoachTip === 'function') generateCoachTip(resp);
       addMsg('customer', resp);
-      // Speak response if voice mode is active
-      if(typeof voiceMode !== 'undefined' && voiceMode.enabled && typeof speakResponse === 'function') {
-        try { speakResponse(resp); } catch(e) { console.error('Voice error:', e); }
-      }
+      if(window.voiceSpeak) window.voiceSpeak(resp);
       document.getElementById('userInput').focus();
     } catch(e) {
       // Show error for debugging
@@ -1644,9 +1614,7 @@ function sendMsg() {
       var fallback = personaPool[Math.floor(Math.random() * personaPool.length)];
       state.conversationHistory.push({role:'customer', text:fallback});
       addMsg('customer', fallback);
-      if(typeof voiceMode !== 'undefined' && voiceMode.enabled && typeof speakResponse === 'function') {
-        try { speakResponse(fallback); } catch(e) {}
-      }
+      if(window.voiceSpeak) window.voiceSpeak(fallback);
       document.getElementById('userInput').focus();
     }
     }, delay);
@@ -4014,347 +3982,259 @@ var typingSafetyInterval = setInterval(function() {
   }
 }, 1000);
 
-
-
-// ===== VOICE MODE (Enhanced Natural Speech) =====
- }
-
-function initVoiceMode() {
-  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(!SpeechRecognition) {
-    alert('Speech recognition not supported. Use Chrome or Edge.');
-    return false;
-  }
-  voiceMode.recognition = new SpeechRecognition();
-  voiceMode.recognition.continuous = true;
-  voiceMode.recognition.interimResults = true;
-  voiceMode.recognition.lang = 'en-GB';
-  
-  voiceMode.recognition.onresult = function(event) {
-    var transcript = '';
-    var isFinal = false;
-    for(var i = event.resultIndex; i < event.results.length; i++) {
-      transcript += event.results[i][0].transcript;
-      if(event.results[i].isFinal) isFinal = true;
-    }
-    var input = document.getElementById('userInput');
-    if(input) input.value = transcript;
-    
-    if(isFinal && transcript.trim().length > 3) {
-      setTimeout(function() {
-        if(voiceMode.listening && state && state.active) {
-          sendMsg();
-          voiceMode.listening = false;
-          updateVoiceUI('idle');
-        }
-      }, 500);
-    }
-  };
-  
-  voiceMode.recognition.onerror = function(e) {
-    if(e.error !== 'no-speech' && e.error !== 'aborted') console.log('Speech error:', e.error);
-    updateVoiceUI('idle');
-  };
-  
-  voiceMode.recognition.onend = function() {
-    if(voiceMode.listening && state && state.active && !voiceMode.speaking) {
-      try { voiceMode.recognition.start(); } catch(e) {}
-    }
-  };
-  
-  // Load voices with preference for high-quality ones
-  function loadVoices() {
-    if(!voiceMode.synthesis) return;
-    voiceMode.voices = voiceMode.synthesis.getVoices();
-    if(voiceMode.voices.length > 0) selectPersonaVoice();
-  }
-  if(voiceMode.synthesis) {
-    voiceMode.synthesis.onvoiceschanged = loadVoices;
-    loadVoices();
-  }
-  return true;
-}
-
-// === VOICE SELECTION: Prefer neural/natural voices ===
-function selectPersonaVoice() {
-  var voices = voiceMode.voices;
-  if(!voices.length) return;
-  var persona = state ? state.persona : 'cto';
-  
-  // === GENDER MAP: Match persona to voice gender ===
-  // Female personas: Sarah Mitchell (CFO), Maria Santos (CIO), Priya Kapoor (AI/ML), Rachel Okonkwo (Head IT)
-  // Male personas: Alex Chen (CTO), James Park (CEO), Tom Richardson (VP Eng), Marcus Wei (Head Digital)
-  var femalePersonas = ['cfo', 'cio', 'aiml', 'head_it'];
-  var malePersonas = ['cto', 'ceo', 'vp_eng', 'head_digital'];
-  var wantFemale = femalePersonas.indexOf(persona) >= 0;
-  
-  // === VOICE NAME PATTERNS for gender detection ===
-  var femaleNames = /female|woman|samantha|karen|kate|moira|fiona|victoria|zira|hazel|libby|sonia|jenny|aria|sara|susan|emma|olivia|ava|sophia|emily|nicky|joanna|kendra|ivy|nicole|celeste|amelie|martha|tessa|serena|shelley|paulina/i;
-  var maleNames = /\bmale\b|\bman\b|daniel|james|david|george|ryan|guy|thomas|rishi|oliver|william|harry|jack|noah|liam|matthew|arthur|brian|joey|stephen|russell|lee|fred|ralph|eric|aaron|adam|tony|mark|sean/i;
-  
-  // Score all English voices
-  var scored = [];
-  for(var i = 0; i < voices.length; i++) {
-    var v = voices[i];
-    var score = 0;
-    
-    // Must be English
-    if(!v.lang || !v.lang.match(/^en/)) continue;
-    
-    // Prefer UK English (EMEA context)
-    if(v.lang === 'en-GB') score += 20;
-    else if(v.lang === 'en-US') score += 12;
-    else if(v.lang === 'en-AU') score += 10;
-    else score += 5;
-    
-    // Quality: prefer neural/natural voices
-    if(v.name.match(/Google UK English/i)) score += 35;
-    if(v.name.match(/Microsoft.*Online.*Natural/i)) score += 30;
-    if(v.name.match(/Natural|Neural/i)) score += 20;
-    if(v.name.match(/Google/i)) score += 15;
-    if(v.name.match(/Microsoft/i)) score += 10;
-    if(v.name.match(/enhanced|premium|hd/i)) score += 10;
-    
-    // === CRITICAL: Gender matching ===
-    var isFemale = femaleNames.test(v.name);
-    var isMale = maleNames.test(v.name);
-    
-    // Strong preference for correct gender
-    if(wantFemale) {
-      if(isFemale) score += 25;       // Correct gender = big bonus
-      else if(isMale) score -= 30;    // Wrong gender = big penalty
-      // Neutral (unknown gender) gets small penalty
-      else score -= 5;
-    } else {
-      if(isMale) score += 25;
-      else if(isFemale) score -= 30;
-      else score -= 5;
-    }
-    
-    // Google UK has 2 voices: "Google UK English Female" and "Google UK English Male"
-    // These are the best quality — give extra bonus for exact match
-    if(v.name === 'Google UK English Female' && wantFemale) score += 50;
-    if(v.name === 'Google UK English Male' && !wantFemale) score += 50;
-    
-    scored.push({voice: v, score: score});
-  }
-  
-  if(scored.length === 0) {
-    voiceMode.customerVoice = voices[0];
-    return;
-  }
-  
-  scored.sort(function(a, b) { return b.score - a.score; });
-  voiceMode.customerVoice = scored[0].voice;
-  
-  // Debug: log selected voice
-  console.log('Voice selected for ' + persona + ' (' + (wantFemale ? 'female' : 'male') + '): ' + scored[0].voice.name + ' (score: ' + scored[0].score + ')');
-}
-
-// === PERSONA VOICE PROFILES ===
-function getVoiceProfile(persona) {
-  var profiles = {
-    cto: {baseRate: 1.05, basePitch: 0.9, style: 'direct'},       // Fast, lower pitch, technical
-    cfo: {baseRate: 0.95, basePitch: 1.0, style: 'measured'},      // Slower, precise, measured
-    ceo: {baseRate: 1.0, basePitch: 0.95, style: 'confident'},     // Medium pace, commanding
-    cio: {baseRate: 0.9, basePitch: 1.05, style: 'careful'},       // Slower, methodical
-    aiml: {baseRate: 1.1, basePitch: 1.1, style: 'enthusiastic'},  // Faster, higher, excited about tech
-    vp_eng: {baseRate: 1.05, basePitch: 0.85, style: 'direct'},    // Fast, deep voice
-    head_it: {baseRate: 0.92, basePitch: 1.0, style: 'careful'},   // Methodical
-    head_digital: {baseRate: 1.0, basePitch: 0.9, style: 'confident'} // Confident
-  };
-  return profiles[persona] || profiles.cto;
-}
-
-// === ENHANCED SPEAK: Chunked, natural pacing ===
-function speakResponse(text, callback) {
-  if(!voiceMode.enabled || !voiceMode.synthesis) { if(callback) callback(); return; }
-  
-  // Stop any current speech
-  voiceMode.synthesis.cancel();
-  voiceMode.speaking = true;
-  voiceMode.speakQueue = [];
-  updateVoiceUI('speaking');
-  
-  // Stop listening while speaking
-  if(voiceMode.recognition) try { voiceMode.recognition.stop(); } catch(e) {}
-  
-  var persona = state ? state.persona : 'cto';
-  var profile = getVoiceProfile(persona);
-  var patience = state ? state.patience : 50;
-  
-  // === CLEAN TEXT for speech ===
-  var cleanText = text
-    .replace(/\[sighs?\]/gi, '... hmm ...')
-    .replace(/\[laughs?\]/gi, '... ha ...')
-    .replace(/\[thinks?\]/gi, '... hmm ...')
-    .replace(/\[pauses?\]/gi, '...')
-    .replace(/\[interrupts?\]/gi, '')
-    .replace(/\[surprised\]/gi, '')
-    .replace(/\[amused\]/gi, '')
-    .replace(/\[intrigued\]/gi, '')
-    .replace(/\[directly\]/gi, '')
-    .replace(/\[nods?\]/gi, '')
-    .replace(/\[leans? (?:in|back|forward)\]/gi, '')
-    .replace(/\[checks? (?:phone|time|calendar|laptop)\]/gi, '...')
-    .replace(/\[(?:phone|slack|notification) (?:buzzes?|sounds?)\]/gi, '... oh ...')
-    .replace(/\[takes? notes?\]/gi, '')
-    .replace(/\[stands? up[^\]]*\]/gi, '')
-    .replace(/\[typing[^\]]*\]/gi, '')
-    .replace(/\[muffled[^\]]*\]/gi, '...')
-    .replace(/\[dog barks?[^\]]*\]/gi, '... oh sorry ...')
-    .replace(/\[doorbell[^\]]*\]/gi, '... one moment ...')
-    .replace(/\[coffee[^\]]*\]/gi, '')
-    .replace(/\[someone[^\]]*\]/gi, '... hold on ...')
-    .replace(/\[tone shifts?\]/gi, '...')
-    .replace(/\[half listening\]/gi, '')
-    .replace(/\[gets? (?:distracted|excited)[^\]]*\]/gi, '... sorry ...')
-    .replace(/\[opens?[^\]]*\]/gi, '')
-    .replace(/\[[^\]]*\]/g, '...')  // Catch all remaining brackets
-    .replace(/\\/g, "'")
-    .replace(/\.{3,}/g, '...');
-  
-  // === CHUNK INTO NATURAL PHRASES ===
-  // Split on sentence boundaries, dashes, and ellipses for natural pauses
-  var chunks = cleanText
-    .split(/(?<=[.!?])\s+|(?<=\.\.\.)\s*|(?<=—)\s*|(?<=,\s)(?=[A-Z])/)
-    .filter(function(c) { return c && c.trim().length > 0; });
-  
-  if(chunks.length === 0) chunks = [cleanText];
-  
-  // === SPEAK CHUNKS SEQUENTIALLY with natural pauses ===
-  var chunkIndex = 0;
-  
-  function speakNextChunk() {
-    if(chunkIndex >= chunks.length || !voiceMode.enabled) {
-      // Done speaking
-      voiceMode.speaking = false;
-      updateVoiceUI('listening');
-      if(voiceMode.enabled && state && state.active) {
-        setTimeout(startListening, 300);
-      }
-      if(callback) callback();
-      return;
-    }
-    
-    var chunk = chunks[chunkIndex].trim();
-    chunkIndex++;
-    
-    // Skip empty chunks
-    if(!chunk || chunk === '...') {
-      // Just pause
-      setTimeout(speakNextChunk, 400 + Math.random() * 300);
-      return;
-    }
-    
-    var utterance = new SpeechSynthesisUtterance(chunk);
-    utterance.voice = voiceMode.customerVoice;
-    
-    // === NATURAL RATE VARIATION per chunk ===
-    // First chunk slightly slower (thinking), middle faster (flowing), last slower (concluding)
-    var positionFactor = chunkIndex === 1 ? -0.05 : (chunkIndex === chunks.length ? -0.03 : 0.02);
-    
-    // Patience affects overall speed (impatient = faster)
-    var patienceFactor = patience > 60 ? 0 : (patience > 40 ? 0.05 : 0.12);
-    
-    // Random human variation
-    var randomVariation = (Math.random() * 0.1) - 0.05;
-    
-    utterance.rate = Math.max(0.7, Math.min(1.4, profile.baseRate + positionFactor + patienceFactor + randomVariation));
-    
-    // === NATURAL PITCH VARIATION ===
-    // Questions go up in pitch at the end
-    var isQuestion = chunk.indexOf('?') >= 0;
-    var pitchUp = isQuestion ? 0.1 : 0;
-    utterance.pitch = Math.max(0.6, Math.min(1.5, profile.basePitch + pitchUp + (Math.random() * 0.1 - 0.05)));
-    
-    // === VOLUME: slightly quieter for filler words ===
-    var isFiller = chunk.match(/^(hmm|mm|uh|um|right|okay|yeah|hm|ah)\.?$/i);
-    utterance.volume = isFiller ? 0.6 : (0.8 + Math.random() * 0.15);
-    
-    utterance.onend = function() {
-      // Pause between chunks (natural breathing gap)
-      var pauseDuration;
-      if(chunk.indexOf('...') >= 0) pauseDuration = 600 + Math.random() * 400;  // Thinking pause
-      else if(chunk.match(/[.!]$/)) pauseDuration = 300 + Math.random() * 250;   // Sentence end
-      else if(chunk.match(/\?$/)) pauseDuration = 400 + Math.random() * 300;     // Question (wait for effect)
-      else if(isFiller) pauseDuration = 200 + Math.random() * 200;              // Quick filler
-      else pauseDuration = 150 + Math.random() * 150;                           // Comma/mid-sentence
-      
-      setTimeout(speakNextChunk, pauseDuration);
-    };
-    
-    utterance.onerror = function() {
-      setTimeout(speakNextChunk, 100);
-    };
-    
-    try {
-      voiceMode.synthesis.speak(utterance);
-    } catch(e) {
-      setTimeout(speakNextChunk, 100);
-    }
-  }
-  
-  speakNextChunk();
-}
-
-function startListening() {
-  if(!voiceMode.recognition || voiceMode.speaking || !state || !state.active) return;
-  voiceMode.listening = true;
-  updateVoiceUI('listening');
-  try { voiceMode.recognition.start(); } catch(e) {}
-}
-
-function stopListening() {
-  voiceMode.listening = false;
-  if(voiceMode.recognition) try { voiceMode.recognition.stop(); } catch(e) {}
-  updateVoiceUI('idle');
-}
-
-function updateVoiceUI(mode) {
-  var status = document.getElementById('voiceStatus');
-  var avatar = document.getElementById('voiceAvatar');
-  if(!status) return;
-  if(mode === 'speaking') {
-    status.textContent = '🔊 Customer speaking...';
-    status.style.color = '#22c55e';
-    if(avatar) avatar.style.borderColor = '#22c55e';
-  } else if(mode === 'listening') {
-    status.textContent = '🎤 Listening to you...';
-    status.style.color = '#6366f1';
-    if(avatar) avatar.style.borderColor = '#6366f1';
-  } else {
-    status.textContent = 'Voice mode ready';
-    status.style.color = '#8892a4';
-    if(avatar) avatar.style.borderColor = '#334155';
-  }
-}
-
-function toggleVoiceMode() {
-  voiceMode.enabled = !voiceMode.enabled;
-  var btn = document.getElementById('voiceModeBtn');
-  var panel = document.getElementById('voicePanel');
-  
-  if(voiceMode.enabled) {
-    if(!initVoiceMode()) { voiceMode.enabled = false; return; }
-    selectPersonaVoice();
-    btn.innerHTML = '<i class="fa-solid fa-phone-volume" style="margin-right:6px"></i> Voice ON';
-    btn.style.background = '#22c55e';
-    btn.style.color = '#fff';
-    if(panel) panel.style.display = 'flex';
-    updateVoiceUI('idle');
-  } else {
-    stopListening();
-    if(voiceMode.synthesis) voiceMode.synthesis.cancel();
-    btn.innerHTML = '<i class="fa-solid fa-microphone" style="margin-right:6px"></i> Voice Mode';
-    btn.style.background = '#1e293b';
-    btn.style.color = '#e2e8f0';
-    if(panel) panel.style.display = 'none';
-  }
-}
-
-
 </script>
+
+<script>
+// ===== VOICE CONVERSATION MODULE =====
+// Separate script to ensure correct load order
+
+(function() {
+  // State
+  var voice = window._voice = {
+    on: false,
+    speaking: false,
+    listening: false,
+    synth: null,
+    recog: null,
+    selectedVoice: null
+  };
+  
+  // Init synthesis
+  try { voice.synth = window.speechSynthesis; } catch(e) {}
+  
+  // === SELECT BEST VOICE FOR PERSONA ===
+  function pickVoice() {
+    if(!voice.synth) return;
+    var voices = voice.synth.getVoices();
+    if(!voices.length) return;
+    
+    var persona = (window.state && window.state.persona) || 'cto';
+    // Female: CFO (Sarah), CIO (Maria), AI/ML (Priya), Head IT (Rachel)
+    var wantFemale = (persona === 'cfo' || persona === 'cio' || persona === 'aiml' || persona === 'head_it');
+    
+    var best = null;
+    var bestScore = -999;
+    
+    for(var i = 0; i < voices.length; i++) {
+      var v = voices[i];
+      var score = 0;
+      
+      // Must be English
+      if(!v.lang || v.lang.indexOf('en') !== 0) continue;
+      
+      // Prefer UK
+      if(v.lang === 'en-GB') score += 20;
+      else if(v.lang === 'en-US') score += 10;
+      
+      // Quality
+      if(v.name.indexOf('Google UK English') >= 0) score += 40;
+      if(v.name.indexOf('Microsoft') >= 0 && v.name.indexOf('Online') >= 0) score += 30;
+      if(v.name.indexOf('Natural') >= 0 || v.name.indexOf('Neural') >= 0) score += 20;
+      
+      // Gender match
+      var nameL = v.name.toLowerCase();
+      var isFemale = /female|samantha|kate|moira|fiona|zira|hazel|libby|sonia|jenny|aria|sara|susan|emma|victoria/.test(nameL);
+      var isMale = /\bmale|daniel|james|david|george|ryan|thomas|rishi|guy|oliver|william/.test(nameL);
+      
+      if(wantFemale && isFemale) score += 30;
+      else if(!wantFemale && isMale) score += 30;
+      else if(wantFemale && isMale) score -= 40;
+      else if(!wantFemale && isFemale) score -= 40;
+      
+      if(score > bestScore) { bestScore = score; best = v; }
+    }
+    
+    voice.selectedVoice = best || voices[0];
+    console.log('Voice: ' + voice.selectedVoice.name + ' (' + (wantFemale?'F':'M') + ')');
+  }
+  
+  // Load voices (async on some browsers)
+  if(voice.synth) {
+    voice.synth.onvoiceschanged = pickVoice;
+    pickVoice();
+  }
+  
+  // === SPEAK TEXT (chunked with pauses) ===
+  window.speakCustomerResponse = function(text) {
+    if(!voice.on || !voice.synth) return;
+    
+    // Stop listening while speaking
+    stopMic();
+    voice.speaking = true;
+    voice.synth.cancel();
+    updateVoiceStatus('speaking');
+    
+    // Clean text for speech
+    var clean = text
+      .replace(/\[[^\]]*\]/g, '')       // Remove [sighs], [laughs], etc
+      .replace(/\\/g, "'")
+      .replace(/\.{3,}/g, '...')
+      .replace(/—/g, ', ');
+    
+    // Split into sentences for natural delivery
+    var sentences = clean.split(/(?<=[.!?])\s+/).filter(function(s) { return s.trim().length > 0; });
+    if(!sentences.length) sentences = [clean];
+    
+    var idx = 0;
+    
+    function speakNext() {
+      if(idx >= sentences.length || !voice.on) {
+        voice.speaking = false;
+        updateVoiceStatus('listening');
+        // Start listening after a short pause
+        setTimeout(function() { if(voice.on) startMic(); }, 400);
+        return;
+      }
+      
+      var sent = sentences[idx].trim();
+      idx++;
+      
+      if(!sent) { speakNext(); return; }
+      
+      var utt = new SpeechSynthesisUtterance(sent);
+      utt.voice = voice.selectedVoice;
+      
+      // Natural variation
+      var patience = (window.state && window.state.patience) || 50;
+      var baseRate = patience > 60 ? 0.95 : (patience > 40 ? 1.0 : 1.1);
+      utt.rate = baseRate + (Math.random() * 0.12 - 0.06);
+      utt.pitch = (sent.indexOf('?') >= 0 ? 1.1 : 1.0) + (Math.random() * 0.1 - 0.05);
+      utt.volume = 0.9;
+      
+      utt.onend = function() {
+        // Pause between sentences
+        var pause = sent.indexOf('?') >= 0 ? 450 : (sent.indexOf('!') >= 0 ? 350 : 300);
+        pause += Math.random() * 200;
+        setTimeout(speakNext, pause);
+      };
+      utt.onerror = function() { setTimeout(speakNext, 100); };
+      
+      voice.synth.speak(utt);
+    }
+    
+    speakNext();
+  };
+  
+  // === MICROPHONE (Speech Recognition) ===
+  var SpeechRecog = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  function startMic() {
+    if(!SpeechRecog || voice.speaking || !voice.on) return;
+    if(!voice.recog) {
+      voice.recog = new SpeechRecog();
+      voice.recog.continuous = false;  // Single utterance mode — more reliable
+      voice.recog.interimResults = true;
+      voice.recog.lang = 'en-GB';
+      
+      voice.recog.onresult = function(ev) {
+        var text = '';
+        var final = false;
+        for(var i = ev.resultIndex; i < ev.results.length; i++) {
+          text += ev.results[i][0].transcript;
+          if(ev.results[i].isFinal) final = true;
+        }
+        var input = document.getElementById('userInput');
+        if(input) input.value = text;
+        
+        if(final && text.trim().length > 2) {
+          voice.listening = false;
+          updateVoiceStatus('processing');
+          // Small delay then send
+          setTimeout(function() {
+            if(window.state && window.state.active) {
+              sendMsg();
+            }
+          }, 300);
+        }
+      };
+      
+      voice.recog.onend = function() {
+        // Restart if still in listening mode and call is active
+        if(voice.listening && voice.on && !voice.speaking && window.state && window.state.active) {
+          setTimeout(function() { try { voice.recog.start(); } catch(e) {} }, 100);
+        }
+      };
+      
+      voice.recog.onerror = function(e) {
+        if(e.error === 'no-speech') {
+          // No speech detected — restart
+          if(voice.on && !voice.speaking) {
+            setTimeout(function() { try { voice.recog.start(); } catch(e) {} }, 500);
+          }
+        }
+      };
+    }
+    
+    voice.listening = true;
+    updateVoiceStatus('listening');
+    try { voice.recog.start(); } catch(e) {
+      // Already running — ignore
+    }
+  }
+  
+  function stopMic() {
+    voice.listening = false;
+    if(voice.recog) { try { voice.recog.stop(); } catch(e) {} }
+  }
+  
+  // === UI UPDATE ===
+  function updateVoiceStatus(mode) {
+    var el = document.getElementById('voiceStatus');
+    var btn = document.getElementById('voiceModeBtn');
+    if(!el) return;
+    if(mode === 'speaking') {
+      el.textContent = '🔊 Customer speaking...';
+      el.style.color = '#22c55e';
+    } else if(mode === 'listening') {
+      el.textContent = '🎤 Your turn — speak now';
+      el.style.color = '#6366f1';
+    } else if(mode === 'processing') {
+      el.textContent = '⏳ Processing...';
+      el.style.color = '#ff9900';
+    } else {
+      el.textContent = 'Click Voice Mode to start';
+      el.style.color = '#8892a4';
+    }
+  }
+  
+  // === TOGGLE ===
+  window.toggleVoiceMode = function() {
+    voice.on = !voice.on;
+    var btn = document.getElementById('voiceModeBtn');
+    var panel = document.getElementById('voicePanel');
+    
+    if(voice.on) {
+      if(!SpeechRecog) { alert('Speech recognition not supported. Use Chrome.'); voice.on = false; return; }
+      if(!voice.synth) { alert('Speech synthesis not available.'); voice.on = false; return; }
+      pickVoice();
+      btn.innerHTML = '<i class="fa-solid fa-phone-volume" style="margin-right:6px"></i> Voice ON';
+      btn.style.background = '#22c55e';
+      btn.style.color = '#fff';
+      if(panel) panel.style.display = 'flex';
+      updateVoiceStatus('listening');
+      // Start listening immediately
+      startMic();
+    } else {
+      stopMic();
+      voice.synth.cancel();
+      voice.speaking = false;
+      btn.innerHTML = '<i class="fa-solid fa-microphone" style="margin-right:6px"></i> Voice Mode';
+      btn.style.background = '#1e293b';
+      btn.style.color = '#e2e8f0';
+      if(panel) panel.style.display = 'none';
+      updateVoiceStatus('off');
+    }
+  };
+  
+  // === HOOK: Call this after customer response is generated ===
+  window.voiceSpeak = function(text) {
+    if(voice.on) window.speakCustomerResponse(text);
+  };
+  
+})();
+</script>
+
+
 
 <!-- Floating Coaching Tips Panel (only in practice/coaching mode) -->
 <div id="coachingPanel" style="display:none; position:fixed; bottom:20px; left:20px; max-width:320px; z-index:9000;">
