@@ -192,6 +192,14 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
     <!-- Mode Selection -->
     
     
+    
+    <div style="margin:16px 0;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border:2px solid #6366f1;border-radius:12px;text-align:center">
+      <label style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;font-size:15px;font-weight:600;color:#e2e8f0">
+        <input type="checkbox" id="voiceModeCheckbox" style="width:20px;height:20px;accent-color:#6366f1">
+        <span><i class="fa-solid fa-microphone" style="margin-right:6px;color:#6366f1"></i> Enable Voice Mode (Chrome/Edge)</span>
+      </label>
+      <p style="font-size:11px;color:#8892a4;margin-top:8px">Customer speaks aloud, you speak to respond. Requires microphone access.</p>
+    </div>
     <button class="start-btn" onclick="startSim()"><i class="fa-solid fa-phone"></i> Start Simulation</button>
   </div>
 
@@ -1222,6 +1230,9 @@ function startSim() {
     return;
   }
   dgrNameInput.style.border = '1px solid #2d3748';
+  var voiceCheckbox = document.getElementById('voiceModeCheckbox');
+  var startWithVoice = voiceCheckbox && voiceCheckbox.checked;
+
   // Save DGR name for session tracking
   try { localStorage.setItem('rpDgrName', dgrName); } catch(e) {}
   
@@ -1334,6 +1345,13 @@ function startSim() {
   var g = cfg.greetings[Math.floor(Math.random()*cfg.greetings.length)];
   state.conversationHistory.push({role:'customer', text:g});
   addMsg('customer', g);
+  if(startWithVoice && typeof toggleVoiceMode === 'function') {
+    setTimeout(function() {
+      if(!window._voice || !window._voice.on) toggleVoiceMode();
+      if(window.voiceSpeak) window.voiceSpeak(g);
+    }, 500);
+  }
+
   document.getElementById('userInput').focus();
   startTimer();
 }
@@ -3990,5 +4008,265 @@ var typingSafetyInterval = setInterval(function() {
 </div>
 
 
+
+<script>
+// ===== VOICE CONVERSATION MODULE =====
+// Separate script to ensure correct load order
+
+try {
+document.addEventListener('DOMContentLoaded', function() {
+(function() {
+  // State
+  var voice = window._voice = {
+    on: false,
+    speaking: false,
+    listening: false,
+    synth: null,
+    recog: null,
+    selectedVoice: null
+  };
+  
+  // Init synthesis
+  try { voice.synth = window.speechSynthesis; } catch(e) {}
+  
+  // === SELECT BEST VOICE FOR PERSONA ===
+  function pickVoice() {
+    if(!voice.synth) return;
+    var voices = voice.synth.getVoices();
+    if(!voices.length) return;
+    
+    var persona = (window.state && window.state.persona) || 'cto';
+    // Female: CFO (Sarah), CIO (Maria), AI/ML (Priya), Head IT (Rachel)
+    var wantFemale = (persona === 'cfo' || persona === 'cio' || persona === 'aiml' || persona === 'head_it');
+    
+    var best = null;
+    var bestScore = -999;
+    
+    for(var i = 0; i < voices.length; i++) {
+      var v = voices[i];
+      var score = 0;
+      
+      // Must be English
+      if(!v.lang || v.lang.indexOf('en') !== 0) continue;
+      
+      // Prefer UK
+      if(v.lang === 'en-GB') score += 20;
+      else if(v.lang === 'en-US') score += 10;
+      
+      // Quality
+      if(v.name.indexOf('Google UK English') >= 0) score += 40;
+      if(v.name.indexOf('Microsoft') >= 0 && v.name.indexOf('Online') >= 0) score += 30;
+      if(v.name.indexOf('Natural') >= 0 || v.name.indexOf('Neural') >= 0) score += 20;
+      
+      // Gender match
+      var nameL = v.name.toLowerCase();
+      var isFemale = /female|samantha|kate|moira|fiona|zira|hazel|libby|sonia|jenny|aria|sara|susan|emma|victoria/.test(nameL);
+      var isMale = /\bmale|daniel|james|david|george|ryan|thomas|rishi|guy|oliver|william/.test(nameL);
+      
+      if(wantFemale && isFemale) score += 30;
+      else if(!wantFemale && isMale) score += 30;
+      else if(wantFemale && isMale) score -= 40;
+      else if(!wantFemale && isFemale) score -= 40;
+      
+      if(score > bestScore) { bestScore = score; best = v; }
+    }
+    
+    voice.selectedVoice = best || voices[0];
+    console.log('Voice: ' + voice.selectedVoice.name + ' (' + (wantFemale?'F':'M') + ')');
+  }
+  
+  // Load voices (async on some browsers)
+  if(voice.synth) {
+    voice.synth.onvoiceschanged = pickVoice;
+    pickVoice();
+  }
+  
+  // === SPEAK TEXT (chunked with pauses) ===
+  window.speakCustomerResponse = function(text) {
+    if(!voice.on || !voice.synth) return;
+    
+    // Stop listening while speaking
+    stopMic();
+    voice.speaking = true;
+    voice.synth.cancel();
+    updateVoiceStatus('speaking');
+    
+    // Clean text for speech
+    var clean = text
+      .replace(/\[[^\]]*\]/g, '')       // Remove [sighs], [laughs], etc
+      .replace(/\\/g, "'")
+      .replace(/\.{3,}/g, '...')
+      .replace(/—/g, ', ');
+    
+    // Split into sentences for natural delivery
+    var sentences = clean.split(/(?<=[.!?])\s+/).filter(function(s) { return s.trim().length > 0; });
+    if(!sentences.length) sentences = [clean];
+    
+    var idx = 0;
+    
+    function speakNext() {
+      if(idx >= sentences.length || !voice.on) {
+        voice.speaking = false;
+        updateVoiceStatus('listening');
+        // Start listening after a short pause
+        setTimeout(function() { if(voice.on) startMic(); }, 400);
+        return;
+      }
+      
+      var sent = sentences[idx].trim();
+      idx++;
+      
+      if(!sent) { speakNext(); return; }
+      
+      var utt = new SpeechSynthesisUtterance(sent);
+      utt.voice = voice.selectedVoice;
+      
+      // Natural variation
+      var patience = (window.state && window.state.patience) || 50;
+      var baseRate = patience > 60 ? 0.95 : (patience > 40 ? 1.0 : 1.1);
+      utt.rate = baseRate + (Math.random() * 0.12 - 0.06);
+      utt.pitch = (sent.indexOf('?') >= 0 ? 1.1 : 1.0) + (Math.random() * 0.1 - 0.05);
+      utt.volume = 0.9;
+      
+      utt.onend = function() {
+        // Pause between sentences
+        var pause = sent.indexOf('?') >= 0 ? 450 : (sent.indexOf('!') >= 0 ? 350 : 300);
+        pause += Math.random() * 200;
+        setTimeout(speakNext, pause);
+      };
+      utt.onerror = function() { setTimeout(speakNext, 100); };
+      
+      voice.synth.speak(utt);
+    }
+    
+    speakNext();
+  };
+  
+  // === MICROPHONE (Speech Recognition) ===
+  var SpeechRecog = window.SpeechRecognition || window.webkitSpeechRecognition;
+  
+  function startMic() {
+    if(!SpeechRecog || voice.speaking || !voice.on) return;
+    if(!voice.recog) {
+      voice.recog = new SpeechRecog();
+      voice.recog.continuous = false;  // Single utterance mode — more reliable
+      voice.recog.interimResults = true;
+      voice.recog.lang = 'en-GB';
+      
+      voice.recog.onresult = function(ev) {
+        var text = '';
+        var final = false;
+        for(var i = ev.resultIndex; i < ev.results.length; i++) {
+          text += ev.results[i][0].transcript;
+          if(ev.results[i].isFinal) final = true;
+        }
+        var input = document.getElementById('userInput');
+        if(input) input.value = text;
+        
+        if(final && text.trim().length > 2) {
+          voice.listening = false;
+          updateVoiceStatus('processing');
+          // Small delay then send
+          setTimeout(function() {
+            if(window.state && window.state.active) {
+              sendMsg();
+            }
+          }, 300);
+        }
+      };
+      
+      voice.recog.onend = function() {
+        // Restart if still in listening mode and call is active
+        if(voice.listening && voice.on && !voice.speaking && window.state && window.state.active) {
+          setTimeout(function() { try { voice.recog.start(); } catch(e) {} }, 100);
+        }
+      };
+      
+      voice.recog.onerror = function(e) {
+        if(e.error === 'no-speech') {
+          // No speech detected — restart
+          if(voice.on && !voice.speaking) {
+            setTimeout(function() { try { voice.recog.start(); } catch(e) {} }, 500);
+          }
+        }
+      };
+    }
+    
+    voice.listening = true;
+    updateVoiceStatus('listening');
+    try { voice.recog.start(); } catch(e) {
+      // Already running — ignore
+    }
+  }
+  
+  function stopMic() {
+    voice.listening = false;
+    if(voice.recog) { try { voice.recog.stop(); } catch(e) {} }
+  }
+  
+  // === UI UPDATE ===
+  function updateVoiceStatus(mode) {
+    var el = document.getElementById('voiceStatus');
+    var bar = document.getElementById('voiceStatusBar');
+    var barText = document.getElementById('voiceStatusText');
+    if(bar) bar.style.display = voice.on ? 'block' : 'none';
+    var btn = document.getElementById('voiceModeBtn');
+    if(!el) return;
+    if(mode === 'speaking') {
+      el.textContent = '🔊 Customer speaking...';
+      el.style.color = '#22c55e';
+      if(barText) { barText.textContent = '🔊 Customer speaking...'; barText.style.color = '#22c55e'; }
+    } else if(mode === 'listening') {
+      el.textContent = '🎤 Your turn — speak now';
+      el.style.color = '#6366f1';
+      if(barText) { barText.textContent = '🎤 Your turn — speak now'; barText.style.color = '#6366f1'; }
+    } else if(mode === 'processing') {
+      el.textContent = '⏳ Processing...';
+      el.style.color = '#ff9900';
+      if(barText) { barText.textContent = '⏳ Processing...'; barText.style.color = '#ff9900'; }
+    } else {
+      el.textContent = 'Click Voice Mode to start';
+      el.style.color = '#8892a4';
+    }
+  }
+  
+  // === TOGGLE ===
+  window.toggleVoiceMode = function() {
+    voice.on = !voice.on;
+    var btn = document.getElementById('voiceModeBtn');
+    var panel = document.getElementById('voicePanel');
+    
+    if(voice.on) {
+      if(!SpeechRecog) { alert('Speech recognition not supported. Use Chrome.'); voice.on = false; return; }
+      if(!voice.synth) { alert('Speech synthesis not available.'); voice.on = false; return; }
+      pickVoice();
+      btn.innerHTML = '<i class="fa-solid fa-phone-volume" style="margin-right:6px"></i> Voice ON';
+      btn.style.background = '#22c55e';
+      btn.style.color = '#fff';
+      if(panel) panel.style.display = 'flex';
+      updateVoiceStatus('listening');
+      // Mic will start after customer speaks first greeting
+    } else {
+      stopMic();
+      voice.synth.cancel();
+      voice.speaking = false;
+      btn.innerHTML = '<i class="fa-solid fa-microphone" style="margin-right:6px"></i> Voice Mode';
+      btn.style.background = '#1e293b';
+      btn.style.color = '#e2e8f0';
+      if(panel) panel.style.display = 'none';
+      updateVoiceStatus('off');
+    }
+  };
+  
+  // === HOOK: Call this after customer response is generated ===
+  window.voiceSpeak = function(text) {
+    if(voice.on) window.speakCustomerResponse(text);
+  };
+  
+})();
+
+});
+} catch(voiceErr) { console.error('Voice module error:', voiceErr); }
+</script>
 </body>
 </html>

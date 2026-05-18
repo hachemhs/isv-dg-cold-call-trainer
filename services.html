@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Services Quick Reference</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0f1419; color:#e2e8f0; padding:24px; }
+h1 { font-size:22px; margin-bottom:8px; }
+.subtitle { color:#8892a4; font-size:13px; margin-bottom:24px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+.card { background:#1a2332; border:1px solid #2d3748; border-radius:12px; padding:20px; transition:all 0.2s; }
+.card:hover { border-color:#7c4dff; transform:translateY(-2px); }
+.card h3 { font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+.card h3 .icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.card p { font-size:12px; color:#8892a4; line-height:1.6; margin-bottom:12px; }
+.card .stats { display:flex; gap:8px; flex-wrap:wrap; }
+.card .stat { padding:3px 10px; background:rgba(124,77,255,0.1); border:1px solid rgba(124,77,255,0.2); border-radius:6px; font-size:10px; font-weight:600; color:#7c4dff; }
+.section-title { font-size:16px; font-weight:700; margin:32px 0 16px; padding-bottom:8px; border-bottom:1px solid #2d3748; display:flex; align-items:center; gap:8px; }
+.section-title i { color:#ff9900; }
+</style>
+</head>
+<body>
+<h1>AWS Services — ISV Sales Quick Reference</h1>
+<div class="subtitle">Key talking points, stats, and value propositions for DGR cold calls</div>
+
+<div class="section-title"><i class="fa-solid fa-brain"></i> GenAI & AI/ML</div>
+<div class="grid">
+  <div class="card">
+    <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1">🧠</span> Amazon Bedrock</h3>
+    <p>Fully managed service for building GenAI apps. Model choice (Claude, Nova, Llama, Mistral), Guardrails, Knowledge Bases, Agents. No infrastructure to manage.</p>
+    <div class="stats"><span class="stat">73% POC→Production</span><span class="stat">2.1x faster dev</span><span class="stat">75% less infra time</span><span class="stat">Model choice = no lock-in</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#E3F2FD;color:#1565C0">🤖</span> Bedrock Agents / AgentCore</h3>
+    <p>Build autonomous AI agents with tool use, memory, and multi-step reasoning. Sandboxed runtime, IAM-level controls, Guardrails integration.</p>
+    <div class="stats"><span class="stat">33% enterprise apps agentic by 2028</span><span class="stat">Strands + LangGraph + CrewAI</span><span class="stat">5.2x faster deployment</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#FFF3E0;color:#E65100">📊</span> Amazon SageMaker</h3>
+    <p>End-to-end ML platform. Train, tune, and deploy models at scale. SageMaker Studio for notebooks, Autopilot for no-code ML.</p>
+    <div class="stats"><span class="stat">10x faster training</span><span class="stat">Graviton inference 40% cheaper</span><span class="stat">Ground Truth for labeling</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#E8F5E9;color:#2E7D32">🔒</span> Amazon Nova</h3>
+    <p>AWS-built foundation models. Nova Micro (text), Nova Lite (multimodal), Nova Pro (complex), Nova Premier (most capable). Cost-effective, low latency.</p>
+    <div class="stats"><span class="stat">75% cheaper than competitors</span><span class="stat">AWS-native integration</span><span class="stat">No data leaves AWS</span></div>
+  </div>
+</div>
+
+<div class="section-title"><i class="fa-solid fa-store"></i> Marketplace & Co-Sell</div>
+<div class="grid">
+  <div class="card">
+    <h3><span class="icon" style="background:#FFF3E0;color:#FF6D00">🏪</span> AWS Marketplace</h3>
+    <p>Digital catalog for ISVs to list, sell, and transact. Customers draw down EDP commitment. Simplified procurement, automated billing.</p>
+    <div class="stats"><span class="stat">65% higher close rates</span><span class="stat">54% larger deals</span><span class="stat">70% faster procurement</span><span class="stat">40% faster sales cycles</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#E3F2FD;color:#1565C0">🤝</span> ISV Accelerate</h3>
+    <p>Co-sell program. AWS account teams actively bring ISVs into deals. SaaS Co-Sell Benefit = AM quota retirement when selling your solution.</p>
+    <div class="stats"><span class="stat">51% revenue growth</span><span class="stat">27% higher win rates</span><span class="stat">33% better renewals</span><span class="stat">AWS AMs sell FOR you</span></div>
+  </div>
+</div>
+
+<div class="section-title"><i class="fa-solid fa-server"></i> Infrastructure & Compute</div>
+<div class="grid">
+  <div class="card">
+    <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1">⚡</span> AWS Graviton</h3>
+    <p>Custom ARM-based processors. 40% better price-performance than x86. Available on EC2, ECS, EKS, Lambda, RDS.</p>
+    <div class="stats"><span class="stat">40% better price-perf</span><span class="stat">60% less energy</span><span class="stat">Drop-in replacement</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#E8F5E9;color:#2E7D32">📦</span> Amazon EKS / ECS</h3>
+    <p>Managed Kubernetes (EKS) and container orchestration (ECS). Run microservices at scale with Fargate (serverless) or EC2.</p>
+    <div class="stats"><span class="stat">Most Kubernetes workloads run on AWS</span><span class="stat">Fargate = zero infra mgmt</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#FFF3E0;color:#E65100">λ</span> AWS Lambda</h3>
+    <p>Serverless compute. Run code without provisioning servers. Pay per millisecond. Auto-scales from zero to thousands.</p>
+    <div class="stats"><span class="stat">Pay only when running</span><span class="stat">Auto-scale to millions</span><span class="stat">Sub-second cold starts</span></div>
+  </div>
+</div>
+
+<div class="section-title"><i class="fa-solid fa-shield-halved"></i> Security & Compliance</div>
+<div class="grid">
+  <div class="card">
+    <h3><span class="icon" style="background:#FCE4EC;color:#C62828">🛡️</span> AWS Security</h3>
+    <p>8 European regions. Data never leaves chosen region. Nitro architecture = physically impossible for AWS staff to access data. Customer-managed encryption keys.</p>
+    <div class="stats"><span class="stat">ISO 27001/27017/27018</span><span class="stat">SOC 2 Type 2</span><span class="stat">GDPR compliant</span><span class="stat">143 security services</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#E3F2FD;color:#1565C0">🇪🇺</span> European Sovereign Cloud</h3>
+    <p>Launching 2025. Fully independent infrastructure operated by EU-resident staff. Addresses data sovereignty concerns for regulated European customers.</p>
+    <div class="stats"><span class="stat">EU data residency guaranteed</span><span class="stat">EU-resident operations</span><span class="stat">Addresses CLOUD Act concerns</span></div>
+  </div>
+</div>
+
+<div class="section-title"><i class="fa-solid fa-database"></i> Data & Analytics</div>
+<div class="grid">
+  <div class="card">
+    <h3><span class="icon" style="background:#EDE7F6;color:#5E35B1">📈</span> Amazon Redshift / Athena</h3>
+    <p>Redshift: Petabyte-scale data warehouse. Athena: Serverless SQL on S3. Both integrate with QuickSight for BI.</p>
+    <div class="stats"><span class="stat">3x better price-perf</span><span class="stat">Serverless option</span><span class="stat">Zero-ETL integrations</span></div>
+  </div>
+  <div class="card">
+    <h3><span class="icon" style="background:#E8F5E9;color:#2E7D32">🔄</span> Amazon DynamoDB</h3>
+    <p>Serverless NoSQL. Single-digit ms latency at any scale. Global tables for multi-region. On-demand or provisioned capacity.</p>
+    <div class="stats"><span class="stat">Single-digit ms at any scale</span><span class="stat">Zero maintenance</span><span class="stat">Global tables</span></div>
+  </div>
+</div>
+
+</body>
+</html>
