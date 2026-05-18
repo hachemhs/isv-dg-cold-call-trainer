@@ -2265,193 +2265,160 @@ function humanizeResponse(resp, state) {
   if(!resp || resp.length < 5) return resp;
   var turn = state.turn || 0;
   var patience = state.patience || 50;
-  var mem = state.convMemory || {};
   var persona = state.persona || 'cto';
+  var company = (state.cfg && state.cfg.company) || {};
   
-  // --- A. SELF-CORRECTIONS (8% chance) ---
-  if(Math.random() < 0.08 && resp.length > 40) {
-    var corrections = [
-      function(r) { var mid = Math.floor(r.length * 0.4); var space = r.indexOf(' ', mid); if(space > 0) return r.substring(0, space) + " — actually no, let me rephrase. " + r.substring(space+1); return r; },
-      function(r) { return r.replace(/\. /, ". Actually wait — "); },
-      function(r) { return "I was going to say — " + r.charAt(0).toLowerCase() + r.slice(1); }
-    ];
-    resp = corrections[Math.floor(Math.random() * corrections.length)](resp);
-  }
-  
-  // --- B. THINKING OUT LOUD (10% chance on questions answered) ---
-  if(Math.random() < 0.10 && (mem.lastType === 'answered_question' || resp.indexOf('?') < 0)) {
-    var thinks = [
-      "Hmm. Let me think about that. ", "That\'s a good question actually. ", 
-      "[pauses] Right, so... ", "Okay let me process that. ",
-      "Interesting. Give me a second... ", "[exhales] Yeah so... "
-    ];
-    if(resp.indexOf('[') !== 0 && resp.indexOf('Hmm') !== 0) {
-      resp = thinks[Math.floor(Math.random() * thinks.length)] + resp;
+  // --- MICRO-FILLERS: Real speech has hesitations (25% chance) ---
+  if(Math.random() < 0.25 && resp.indexOf('[') !== 0 && turn > 1) {
+    var fillers;
+    if(patience > 65) {
+      fillers = ["Yeah, so... ", "Right, um... ", "Okay so look — ", "Yeah, I mean — ", "Hmm, well — ", "So here\'s the thing — ", "I think — well — ", "Right, right. So "];
+    } else if(patience > 40) {
+      fillers = ["Mm. Look, ", "Right. ", "Yeah... ", "Okay, ", "So — ", "I mean — ", "Look, "];
+    } else {
+      fillers = ["", "Yeah no. ", "Look. ", "Right. ", "Mm. "];
+    }
+    if(fillers[0] !== '' || Math.random() < 0.7) {
+      var filler = fillers[Math.floor(Math.random() * fillers.length)];
+      if(filler && resp.indexOf(filler.trim()) !== 0) resp = filler + resp.charAt(0).toLowerCase() + resp.slice(1);
     }
   }
   
-  // --- C. EMOTIONAL SHIFTS MID-RESPONSE (6% chance) ---
-  if(Math.random() < 0.06 && resp.length > 60) {
-    var shifts = [
-      function(r) { var dot = r.indexOf('. ', 20); if(dot > 0) return r.substring(0, dot+2) + "[tone shifts] But actually — " + r.substring(dot+2); return r; },
-      function(r) { return r + " [sighs] Sorry, I\'m just... it\'s been a long day."; },
-      function(r) { return r + " Actually you know what, that reminds me of something — but go on."; }
+  // --- SELF-INTERRUPTIONS: Person changes thought mid-sentence (8%) ---
+  if(Math.random() < 0.08 && resp.length > 50 && turn > 2) {
+    var interrupts = [
+      function(r) { var d = r.indexOf('. ', 20); if(d>0) return r.substring(0,d+2) + "Actually — wait. " + r.substring(d+2); return r; },
+      function(r) { return r.replace(/\.([^.]{20,})$/, ". No wait — $1"); },
+      function(r) { var d = r.indexOf(', ', 15); if(d>0) return r.substring(0,d+2) + "well, " + r.substring(d+2); return r; }
     ];
-    resp = shifts[Math.floor(Math.random() * shifts.length)](resp);
+    resp = interrupts[Math.floor(Math.random() * interrupts.length)](resp);
   }
   
-  // --- D. CULTURAL FLAVOR (UK/European, 15% chance) ---
+  // --- DG CONTEXT INJECTIONS: Real ISV/EMEA/cloud references (12%) ---
+  if(Math.random() < 0.12 && turn > 2 && patience > 40) {
+    var dgContext = [
+      function(r) { return r + " Oh and — you should know, we\'re presenting to our board next " + (Math.random()>0.5?"Tuesday":"week") + ". If this is relevant, timing matters."; },
+      function(r) { return r + " By the way — we\'re already on the AWS marketplace as a buyer. If that\'s relevant."; },
+      function(r) { return r + " Side note: we had an SA from " + (Math.random()>0.5?"Azure":"Google") + " in here last month. Just so you know the landscape."; },
+      function(r) { return r + " Actually — we just lost a deal to a competitor because our infra couldn\'t scale fast enough. So cloud IS on our radar."; },
+      function(r) { return r + " Fun fact: our CTO is at re:Invent this year. If you have sessions to recommend..."; },
+      function(r) { return r + " Random: do ISVs like us get partner credits or is that only for bigger companies?"; },
+      function(r) { return r + " One thing — our customers are increasingly asking about GDPR and data locality. That\'s driving some of our platform decisions."; },
+      function(r) { return r + " We just finished SOC2. Now the question is: what\'s next? That\'s where cloud comes in maybe."; }
+    ];
+    resp = dgContext[Math.floor(Math.random() * dgContext.length)](resp);
+  }
+  
+  // --- PERSONA VOCABULARY: Each persona speaks differently (15%) ---
   if(Math.random() < 0.15) {
-    var region = (state.cfg && state.cfg.backstory && state.cfg.backstory.region) || 'UK';
-    if(region === 'UK' || Math.random() < 0.5) {
-      var ukisms = [
-        function(r) { return r.replace(/\bOkay\b/, 'Right'); },
-        function(r) { return r.replace(/Yeah/, 'Yeah, look'); },
-        function(r) { if(r.indexOf('mate') < 0 && Math.random() < 0.3) return r.replace(/\.([^.]*?)$/, '. Fair enough$1'); return r; },
-        function(r) { return r.replace(/I don\'t know/, 'I haven\'t got a clue'); },
-        function(r) { return r.replace(/honestly/, 'to be fair'); }
+    if(persona === 'cto' || persona === 'vp_eng') {
+      // Technical language
+      var techPhrases = [
+        function(r) { return r.replace(/that/, "that from an architecture standpoint"); },
+        function(r) { return r + " What\'s the SDK like? DX matters to my team."; },
+        function(r) { return r.replace(/interesting/, "architecturally interesting"); }
       ];
-      resp = ukisms[Math.floor(Math.random() * ukisms.length)](resp);
+      resp = techPhrases[Math.floor(Math.random() * techPhrases.length)](resp);
+    }
+    else if(persona === 'cfo') {
+      // Financial language
+      var finPhrases = [
+        function(r) { return r.replace(/\. /, ". From a unit economics perspective — "); },
+        function(r) { return r + " What does the P&L impact look like in month one?"; },
+        function(r) { return r.replace(/cost/, "total cost of ownership"); }
+      ];
+      resp = finPhrases[Math.floor(Math.random() * finPhrases.length)](resp);
+    }
+    else if(persona === 'ceo') {
+      // Strategic language
+      var stratPhrases = [
+        function(r) { return r.replace(/\. /, ". Strategically speaking — "); },
+        function(r) { return r + " How does this move the needle on our market position?"; },
+        function(r) { return r.replace(/think/, "think from a 3-year horizon"); }
+      ];
+      resp = stratPhrases[Math.floor(Math.random() * stratPhrases.length)](resp);
+    }
+    else if(persona === 'cio') {
+      // Governance language
+      var govPhrases = [
+        function(r) { return r.replace(/\. /, ". From a governance standpoint — "); },
+        function(r) { return r + " Where does this sit in our risk register?"; },
+        function(r) { return r.replace(/security/, "security AND compliance"); }
+      ];
+      resp = govPhrases[Math.floor(Math.random() * govPhrases.length)](resp);
     }
   }
   
-  // --- E. CALLBACKS TO EARLIER TURNS (12% chance after turn 3) ---
-  if(turn > 3 && Math.random() < 0.12 && state.conversationHistory && state.conversationHistory.length > 4) {
+  // --- REAL-LIFE CONTEXT BLEED (6%): Their actual day bleeding through ---
+  if(Math.random() < 0.06 && turn > 2) {
+    var realLife = [
+      "[looks at watch] Sorry — I\'ve got a 1-on-1 in 10. Go on though. ",
+      "[notification sound] That\'s my sprint standup reminding me... anyway. ",
+      "[distracted] Sorry, Slack is blowing up. Something\'s on fire internally. Quick — you were saying? ",
+      "[coffee slurp] Mmm. Sorry. Third coffee. Long day. What were you saying? ",
+      "[dog barks] Working from home. Ignore that. Go on. ",
+      "[colleague walks by] Hey! One sec — [to them] I\'m on a call! [back] Right, yeah. ",
+      "[typing] Sorry, just putting a hold on my next meeting so we can finish this. "
+    ];
+    resp = realLife[Math.floor(Math.random() * realLife.length)] + resp;
+  }
+  
+  // --- CALLBACKS TO EARLIER CONVERSATION (10%, after turn 3) ---
+  if(turn > 3 && Math.random() < 0.10 && state.conversationHistory && state.conversationHistory.length > 4) {
     var earlier = state.conversationHistory.filter(function(h) { return h.role === 'dgr'; });
     if(earlier.length > 2) {
-      var oldMsg = earlier[Math.floor(Math.random() * Math.min(earlier.length-1, 3))];
+      var oldMsg = earlier[Math.floor(Math.random() * (earlier.length - 1))];
       if(oldMsg && oldMsg.text) {
-        var oldPhrase = oldMsg.text.match(/(?:about|with|using|for|on)\s+([A-Za-z][A-Za-z0-9 ]{3,20})/i);
-        if(oldPhrase) {
-          resp += " Oh and — going back to what you said about " + oldPhrase[1].trim() + " earlier. How does THIS connect?";
+        var phrase = oldMsg.text.match(/(?:about|with|using|for|on|called)\s+([A-Za-z][A-Za-z0-9 ]{3,20})/i);
+        if(phrase) {
+          resp += " Actually — circling back to \'" + phrase[1].trim() + "\' from earlier. Does what you just said change anything there?";
         }
       }
     }
   }
   
-  // --- F. PERSONALITY QUIRKS per persona ---
-  if(Math.random() < 0.12) {
-    var quirks = {
-      cto: ["[gets distracted by laptop notification] Sorry — go on.", "[muttering] God, another Jira ticket... Anyway.", "[starts typing] Keep talking, I\'m just checking something you said against our docs."],
-      cfo: ["[calculator sounds] Hold on, let me do quick math on that...", "[rustling papers] Sorry, just pulling up our budget spreadsheet.", "Wait — what was that number again? Say it slower."],
-      ceo: ["[phone vibrates] Hold on — [checks] Okay, just my PA. Go on.", "[stands up, pacing] Right. Keep talking. I think better on my feet.", "[direct eye contact] Look me in the eye — metaphorically — and tell me the truth about this."],
-      cio: ["[typing] I\'m noting this down for my security review. Continue.", "[pulls up compliance checklist] Okay, go on — I\'m cross-referencing.", "Hold on — what about GDPR? [to themselves] I need to ask about that..."],
-      aiml: ["[opens Jupyter notebook] Interesting. What\'s the architecture under the hood?", "[gets excited briefly] Oh wait — is this using transformers or...? [catches self] Sorry, go on.", "[nerdy laugh] Ha. Okay. I like where this is going technically."]
-    };
-    var personaQuirks = quirks[persona] || quirks.cto;
-    if(Math.random() < 0.4) {
-      resp = personaQuirks[Math.floor(Math.random() * personaQuirks.length)] + " " + resp;
+  // --- EMOTIONAL TEMPERATURE SHIFTS (5%): Sudden mood change ---
+  if(Math.random() < 0.05 && resp.length > 40) {
+    if(patience > 60) {
+      resp += " [softer] Look — I\'m being more open with you than I usually am on these calls. Don\'t make me regret it.";
+    } else if(patience < 40) {
+      resp = resp.split('.')[0] + ". [tone drops] That\'s all I\'ve got energy for right now.";
     }
   }
   
-  // --- G. REAL LIFE BLEEDING IN (4% chance) ---
-  if(Math.random() < 0.04 && turn > 2) {
-    var realLife = [
-      "[dog barks in background] Sorry — working from home. Where were we?",
-      "[doorbell] One sec... [muffled] Just leave it by the door! [back] Sorry. You were saying?",
-      "[coffee machine whirring] Hang on... [pause] ...okay. Right. Continue.",
-      "[Slack notification sound] Sorry, that\'s my boss. Let me just... okay, go on.",
-      "[someone calling their name in background] TWO MINUTES! [back] Sorry. Yeah?"
-    ];
-    resp = realLife[Math.floor(Math.random() * realLife.length)] + " " + resp;
-  }
-  
-  // --- H. MICRO-REACTIONS at start (20% chance) ---
-  if(Math.random() < 0.20 && resp.indexOf('[') !== 0 && resp.indexOf('Mm') !== 0) {
-    var micros = ["Mm. ", "Right. ", "Okay. ", "Hm. ", "Yeah. ", "Huh. ", "Ah. ", "Look. "];
-    if(patience < 40) micros = ["Mm. ", "Right. ", "Yeah. ", "Okay look. ", "Fine. "];
-    if(patience > 70) micros = ["Okay! ", "Right, yeah. ", "Mm-hmm. ", "Interesting. ", "Hm, okay. "];
-    resp = micros[Math.floor(Math.random() * micros.length)] + resp;
-  }
-  
-  // --- I. VARIABLE LENGTH based on engagement ---
+  // --- VARIABLE SENTENCE LENGTH based on engagement ---
   if(patience < 30 && resp.length > 80) {
-    // Bored/impatient = SHORT responses
-    var firstSentence = resp.match(/^[^.!?]+[.!?]/);
-    if(firstSentence) resp = firstSentence[0];
-  }
-  if(patience > 75 && resp.length < 60 && Math.random() < 0.3) {
-    // Engaged = occasionally elaborate
-    var elaborations = [
-      " Actually, let me add to that — " + (state.cfg && state.cfg.company && state.cfg.company.painPoints ? "our real issue is " + state.cfg.company.painPoints.split('.')[0].toLowerCase() + "." : "we\'ve been thinking about this a lot lately."),
-      " And while we\'re on this — I should mention " + (state.cfg && state.cfg.company && state.cfg.company.recentDecisions ? "we just " + state.cfg.company.recentDecisions.split('.')[0].toLowerCase() + "." : "there\'s internal context you should know."),
-      " You know what, I\'m going to be more open than I usually am on these calls. " + (state.cfg && state.cfg.company && state.cfg.company.painPoints ? state.cfg.company.painPoints.split('.')[0] + ". There. I said it." : "We need help. But I can\'t say that in public.")
-    ];
-    resp += elaborations[Math.floor(Math.random() * elaborations.length)];
+    // Bored = cut to first sentence
+    var first = resp.match(/^[^.!?]+[.!?]/);
+    if(first && first[0].length > 15) resp = first[0];
   }
   
-  // --- J. VOLUNTEERING INFO (when engaged, 10% chance) ---
-  if(patience > 65 && Math.random() < 0.10 && turn > 3) {
+  // --- CULTURAL UK/EMEA FLAVOR (12%) ---
+  if(Math.random() < 0.12) {
+    var culture = [
+      function(r) { return r.replace(/\bOkay\b/, "Right"); },
+      function(r) { return r.replace(/\bYeah\b/, "Yeah, look"); },
+      function(r) { return r.replace(/I don\'t know/, "I haven\'t a clue"); },
+      function(r) { return r.replace(/honestly/, "to be fair"); },
+      function(r) { return r.replace(/good point/, "fair point"); },
+      function(r) { if(r.indexOf("cheers") < 0 && Math.random() < 0.3) return r.replace(/\.$/, ". Cheers."); return r; }
+    ];
+    resp = culture[Math.floor(Math.random() * culture.length)](resp);
+  }
+  
+  // --- CUSTOMER VOLUNTEERING UNPROMPTED INFO (8% when engaged) ---
+  if(patience > 60 && Math.random() < 0.08 && turn > 3) {
     var volunteers = [
-      " Actually — unrelated but since you\'re from AWS — do you know anything about " + (Math.random() > 0.5 ? "Bedrock pricing" : "Marketplace fees") + "? Someone asked me yesterday.",
-      " Oh and by the way — we\'re actually hiring a " + (Math.random() > 0.5 ? "cloud architect" : "data engineer") + " right now if you know anyone.",
-      " Random thought: my CEO just came back from re:Invent last year and hasn\'t stopped talking about AI. Is the hype justified or...?",
-      " Side note — we had another vendor call us about the EXACT same thing yesterday. " + (Math.random() > 0.5 ? "Datadog." : "A Google partner.") + " Just so you know you\'re competing."
+      " Between us — my team\'s been complaining about our current vendor for months. I just haven\'t had time to look at alternatives.",
+      " I should tell you: we\'re fundraising right now. If we close the round, budget opens up significantly.",
+      " Quick context: two of my engineers just quit. Anything that reduces their workload on the remaining team... I\'m all ears.",
+      " Real talk: I got promoted 3 months ago. I need a quick win. If this can be that — you have my attention.",
+      " Fun fact: I used to work at " + (Math.random()>0.5?"AWS":"a company on AWS") + " actually. So I\'m not anti-cloud. I\'m anti-disruption.",
+      " Our biggest customer just asked if we\'re on AWS. So there\'s external pressure here too."
     ];
     resp += volunteers[Math.floor(Math.random() * volunteers.length)];
   }
   
-  
-  // --- K. CUSTOMER ASKS FOLLOW-UP QUESTION MID-RESPONSE (15% chance when engaged) ---
-  if(patience > 60 && Math.random() < 0.15 && resp.length > 40) {
-    var followUps = [
-      " Actually — while we\'re on this. What\'s your onboarding process like?",
-      " Quick one: would this require us to change our existing contracts?",
-      " And how does support work? Like if it breaks at 2am — who do we call?",
-      " Do you work with companies our size? Or is this more for enterprise-enterprise?",
-      " And the data — where does it physically sit? EU? US?",
-      " One more: can I trial this without signing anything? Like a sandbox?",
-      " Also curious: what\'s YOUR background? Sales or technical? Just trying to gauge if you actually understand our problems.",
-      " Random: how many customers do you have in " + (state.cfg && state.cfg.company && state.cfg.company.industry ? state.cfg.company.industry.split('—')[0] : "our industry") + "?"
-    ];
-    resp += followUps[Math.floor(Math.random() * followUps.length)];
-  }
-  
-  // --- L. INCOMPLETE THOUGHTS trailing off (7% chance) ---
-  if(Math.random() < 0.07 && resp.length > 50) {
-    var trailOffs = [
-      function(r) { var dot = r.lastIndexOf('. '); if(dot > 30) return r.substring(0, dot) + ". And also... hmm, never mind. Go on."; return r; },
-      function(r) { return r + " I was going to say something else but... it\'s not important. Continue."; },
-      function(r) { var mid = Math.floor(r.length * 0.6); var sp = r.indexOf(' ', mid); if(sp > 0) return r.substring(0, sp) + "... actually, you know what — " + r.substring(sp); return r; }
-    ];
-    resp = trailOffs[Math.floor(Math.random() * trailOffs.length)](resp);
-  }
-  
-  // --- M. SENTIMENT-ADAPTIVE LANGUAGE (always active) ---
-  if(patience > 75) {
-    // Very engaged — warmer language
-    if(Math.random() < 0.15) {
-      var warm = [
-        function(r) { return r.replace(/Right\./, "Yeah, right, right."); },
-        function(r) { return r.replace(/Okay\./, "Okay yeah."); },
-        function(r) { if(r.indexOf("good") < 0) return r + " This is actually a good conversation."; return r; }
-      ];
-      resp = warm[Math.floor(Math.random() * warm.length)](resp);
-    }
-  } else if(patience < 30) {
-    // Very disengaged — curt language
-    if(Math.random() < 0.2) {
-      var curt = [
-        function(r) { var firstSent = r.match(/^[^.!?]+[.!?]/); return firstSent ? firstSent[0] : r; },
-        function(r) { return r.replace(/\. .+$/, ". That\'s all I\'ve got."); },
-        function(r) { return "Mm. " + (r.length > 60 ? r.split('.')[0] + "." : r); }
-      ];
-      resp = curt[Math.floor(Math.random() * curt.length)](resp);
-    }
-  }
-  
-  // --- N. CUSTOMER SHARES PERSONAL CONTEXT (5% chance when warming) ---
-  if(patience > 65 && Math.random() < 0.05 && (state.turn || 0) > 3) {
-    var personal = [
-      " By the way — I\'ve been in this role for " + (Math.floor(Math.random()*5)+1) + " years. Before this I was at " + (Math.random() > 0.5 ? "a startup" : "a bigger company") + ". So I get the build-vs-buy tension.",
-      " Fun fact: I actually used to work in tech before moving to the business side. So you can talk technical with me — I won\'t glaze over.",
-      " Context: our board meets in 3 weeks. If you can get me something compelling by then, timing-wise it could actually work.",
-      " Look, between you and me — my team is frustrated with our current setup. I just can\'t say that publicly. So... yeah, there might be an opening here.",
-      " Honestly? The reason I\'m still on this call is because my last vendor conversation was terrible and you\'re at least asking questions. Low bar but you\'re clearing it."
-    ];
-    resp += personal[Math.floor(Math.random() * personal.length)];
-  }
-
   return resp;
 }
 
