@@ -1115,18 +1115,34 @@ var CONTEXT_REACTIONS = {
     easy: [
       "A meeting... okay. What would we actually discuss? And how long are we talking?",
       "I could do next week maybe. Is this a demo or more of a discovery thing?",
-      "Sure, tentatively. Send me a calendar invite and I'll see if it works."
+      "Sure, tentatively. Send me a calendar invite and I\'ll see if it works.",
+      "Mm, yeah potentially. Who else would be on the call from your side? Just you or...?",
+      "I\'m open to it. But tell me: what\'s the one thing you\'d show me that I can\'t find on your docs?",
+      "Next week is lighter. What day were you thinking?",
+      "Yeah maybe. Would it be useful to bring my " + (Math.random()>0.5?"technical lead":"ops manager") + " or is this more strategic?",
+      "I\'d prefer async honestly. Could you send a Loom instead? If it\'s good I\'ll respond with a time.",
+      "Okay. But 20 minutes max. And please — no \'let me share my screen and walk you through 40 slides.\' Just talk to me like a human."
     ],
     medium: [
-      "Mmm. I don't want to waste time if this is just a pitch. What specifically would we cover that's relevant to us?",
-      "I'll be honest — I've taken 3 'introductory calls' this month that turned into 45-minute product demos. Is that what this is?",
-      "Maybe. But I need to know what you're going to bring that I can't just read on your website.",
-      "[Checking calendar] I'm slammed for the next two weeks. Send me something by email first, and if it's relevant I'll find time."
+      "Mmm. I don\'t want to waste time if this is just a pitch. What specifically would we cover that\'s relevant to us?",
+      "I\'ll be honest — I\'ve taken 3 \'introductory calls\' this month that turned into 45-minute product demos. Is that what this is?",
+      "Maybe. But I need to know what you\'re going to bring that I can\'t just read on your website.",
+      "[Checking calendar] I\'m slammed for the next two weeks. Send me something by email first, and if it\'s relevant I\'ll find time.",
+      "Here\'s my filter: does this meeting end with me knowing something actionable I didn\'t know before? If yes, sure. If no, email.",
+      "Depends. Is this a \'you talk for 30 minutes\' thing or a \'we collaborate on solving X\' thing? Because I only do the second one.",
+      "I\'ll take a meeting when you can tell me — in one sentence — what the output will be. Not \'next steps\' — actual output.",
+      "My rule: I don\'t take meetings without a pre-read. Send me a one-pager. If it grabs me in 60 seconds, you\'ve got a meeting.",
+      "Hmm. How about this: you email me 3 questions you\'d want to ask my team. If they\'re good questions, I\'ll book the time."
     ],
     hard: [
       "A meeting. Right. So I can add another 30-minute block to my calendar that could have been an email? Pass.",
       "I have 47 meetings this week. Forty. Seven. Give me a compelling reason to make it 48.",
-      "The last 'quick call' with a vendor turned into me being added to a cadence with 6 follow-up emails. Hard no."
+      "The last \'quick call\' with a vendor turned into me being added to a cadence with 6 follow-up emails. Hard no.",
+      "You know what, no. And I\'ll tell you why: nothing you\'ve said so far makes me think a meeting would be different from this call.",
+      "I don\'t do meetings to \'explore.\' I do meetings to decide. What would I be deciding in this meeting?",
+      "[sigh] Mate. You jumped to \'book a meeting\' without earning it. That\'s cold calling 101. Give me VALUE first.",
+      "No. But I\'ll tell you what — send me something by email. If my team reads it and goes \'we should talk to them\', I\'ll reach out to YOU.",
+      "Right now? No. Ask me again at the end of this call IF you\'ve said something that makes me think differently."
     ]
   },
 
@@ -1470,13 +1486,39 @@ function sendMsg() {
       
       showTyping();
       setTimeout(function(){
+        var proposedDay = lower2.match(/monday/) ? "Monday" : lower2.match(/tuesday/) ? "Tuesday" : lower2.match(/wednesday/) ? "Wednesday" : lower2.match(/thursday/) ? "Thursday" : lower2.match(/friday/) ? "Friday" : "next week";
         var timeResponses = [
-          "Yeah " + (lower2.match(/tuesday/) ? "Tuesday" : lower2.match(/wednesday/) ? "Wednesday" : lower2.match(/thursday/) ? "Thursday" : "next week") + " works. Make it 15 minutes — I'll hold you to that.",
-          "Let me check... [pause] yeah that works. 15 or 20 minutes max though. And bring specifics about " + pickConcern() + ".",
-          "Sure. Actually — can we do 30 minutes later? I've got back-to-backs in the morning. Say 2pm?",
-          "Works for me. Send the invite and include a brief agenda — I want to know exactly what we're covering.",
-          "Fine. But here's my ask — bring someone technical who knows " + state.industry + ". I don't want a generic overview."
-        ];
+          // --- Direct acceptance ---
+          "Yeah " + proposedDay + " works. Make it 15 minutes — I\'ll hold you to that.",
+          "Let me check... [pause] yeah that works. " + (Math.random()>0.5?"15":"20") + " minutes max though. And bring specifics about " + pickConcern() + ".",
+          "[checking calendar] " + proposedDay + "... yes. I\'ve got a gap at " + (Math.random()>0.5?"10:30":"2:00") + ". Does that work your end?",
+          "Sure. " + proposedDay + " it is. My Zoom or yours?",
+          
+          // --- Counter-proposal (different time) ---
+          "Hmm, " + proposedDay + " is packed actually. What about " + (proposedDay==="Tuesday"?"Thursday":"Wednesday") + " instead? Same time works.",
+          "Actually " + proposedDay + " I\'m at a client site. Can we do the day after? I\'ll be at my desk then.",
+          "That works... wait no. I\'ve got a board prep that day. Push it to " + (proposedDay==="Monday"?"Wednesday":"the following Monday") + "?",
+          "[scrolling calendar] " + proposedDay + " morning is chaos. " + proposedDay + " afternoon? Like 3pm? Or I\'m free " + (proposedDay==="Thursday"?"Friday morning":"Thursday late afternoon") + ".",
+          
+          // --- Conditional scheduling ---
+          "Fine. But here\'s what I need in the invite: a 3-bullet agenda and the name of the technical person joining. Otherwise I\'ll decline.",
+          "Works for me. Send the invite and include a brief agenda — I want to know exactly what we\'re covering. And who else from your side?",
+          "Sure. Actually — can we do 30 minutes instead of 15? If I\'m giving you time I want to go deep on " + pickConcern() + ". Otherwise it\'s just another surface chat.",
+          "I\'ll accept on one condition: no slides for the first 10 minutes. Just talk to me about our specific situation. Then show me something if it\'s relevant.",
+          
+          // --- Delegating logistics ---
+          "Yeah that works. Actually, CC my " + (Math.random()>0.5?"EA":"office manager") + " on the invite — they manage my diary better than I do.",
+          "Sure. Send to " + (state.cfg && state.cfg.contacts && state.cfg.contacts[0] ? state.cfg.contacts[0].name.split(' ')[0].toLowerCase() : "my team") + " too so they\'re in the loop. They\'ll be the ones doing the follow-up anyway.",
+          
+          // --- Adding context to the meeting ---
+          "Fine. But between now and " + proposedDay + " — send me a one-pager. Not a brochure. Something that shows you understand " + (state.industry || "our business") + ". I\'ll read it beforehand.",
+          "Works. Oh, and: I might bring my " + (Math.random()>0.5?"CTO":"VP Engineering") + " if they\'re free. Just a heads up — they\'ll ask harder questions than me.",
+          "Deal. " + proposedDay + " at " + (Math.random()>0.5?"10":"2:30") + ". But I\'m warning you — if it feels like a pitch within the first 2 minutes, I\'m walking. Make it conversational.",
+          
+          // --- Time-conscious ---
+          "Quick " + proposedDay + "... yeah that\'s clear. But listen: 15 minutes SHARP. I\'m back-to-back all week and if you run over I\'ll have to drop.",
+          "Sure, lock it in. Send the invite now while I\'ve got context — if you send it tomorrow I won\'t remember what this was about."
+        ]
         var resp = pickFrom(timeResponses);
         state.conversationHistory.push({role:'customer', text:resp});
     generateCoachTip(resp);
@@ -1494,12 +1536,30 @@ function sendMsg() {
       showTyping();
       setTimeout(function(){
         var confirmResponses = [
-          "Great. Looking forward to it. Alright — I need to get back to it. Talk " + (lower2.match(/tuesday/) ? "Tuesday" : "next week") + ". Cheers.",
-          "Perfect. Send that invite over. And hey — good call. You're not like the usual cold callers. Talk soon.",
-          "Sounds good. Alright I'm jumping back into my day. See you then. Bye.",
-          "Done deal. Looking forward to it. Quick question though — before we hang up, anything you need from me before the call?",
-          "Cool. I'll accept when it comes through. Alright — thanks for being respectful of my time. Rare these days. Bye!"
-        ];
+          // --- Clean wrap-up ---
+          "Great. Looking forward to it. Alright — I need to get back to it. Talk " + (state.meetingTimeProposed ? proposedDay||"next week" : "soon") + ". Cheers.",
+          "Perfect. Send that invite over. And hey — good call. You\'re not like the usual cold callers. Talk soon.",
+          "Sounds good. Alright I\'m jumping back into my day. See you then. Bye.",
+          "Cool. I\'ll accept when it comes through. Thanks for being respectful of my time. Rare these days. Bye!",
+          
+          // --- Asks follow-up question before hanging up ---
+          "Done deal. Quick question though — before we hang up, anything you need from me before the call? Background docs, access to anything?",
+          "Locked in. Oh wait — one thing. Should I invite anyone else from my side? I\'m thinking my " + (Math.random()>0.5?"head of platform":"technical lead") + " might find this useful.",
+          "Perfect. Actually — last thing. What\'s YOUR title again? Just so I can brief my team on who they\'re meeting.",
+          
+          // --- Gives homework to DGR ---
+          "Brilliant. Before you go: can you send me a case study? Something in " + (state.industry||"our space") + " — not a generic PDF. Something specific. That\'ll help me prep my team.",
+          "Great. One request: in the invite, put a 2-line summary of what we discussed today. I\'ll forget otherwise — I take 15 calls a week.",
+          
+          // --- Warm goodbye (high rapport) ---
+          "You know what? Looking forward to it genuinely. Not just politely. " + (Math.random()>0.5?"And hey — if you ever want to grab a coffee instead of a Zoom, I\'m in London.":"Good chat. See you then."),
+          "Ace. Right — I\'m off. Actually enjoyed this one. Don\'t tell my team I said that — they think I hate vendor calls. [laughs] Cheers.",
+          "Sorted. Alright " + (Math.random()>0.5?"mate":"thanks") + ". Good chat — genuinely. Most people who cold call me are... not this. See you " + (proposedDay||"next week") + ".",
+          
+          // --- Business-like wrap ---
+          "Confirmed. I\'ll accept the invite. Please be punctual — if you\'re more than 2 minutes late I leave. Nothing personal, just how I operate.",
+          "Good. Send it over. And make sure the Zoom link works — last three vendors sent me broken Teams links. Pet peeve."
+        ]
         var resp = pickFrom(confirmResponses);
         state.conversationHistory.push({role:'customer', text:resp});
     generateCoachTip(resp);
@@ -2708,36 +2768,98 @@ function generateContextualResponse(dgrText, scoreResult) {
   // === CLOSING ATTEMPT ===
   // ============================================================
   if(closing) {
+    // --- ENGAGED (patience > 60): Accept meeting with rich scheduling scenarios ---
     if(patience > 60 && turn >= 3 && mem.specific > 0) {
       state.meetingAccepted = true;
-      resp = pick([
-        "...yeah, alright. " + (pri ? "Make it about " + pri.toLowerCase() + " though." : "But keep it tight.") + " 15 minutes. Not a second more.",
-        "Okay. You\'ve earned it. " + (Math.random() > 0.5 ? "Tuesday or Thursday?" : "Next week sometime.") + " Send me a calendar link.",
-        "[slight surprise] You know what, yeah. You actually said something useful which is... rare. Book it.",
-        "Fine. But I\'m warning you — if you show up with a generic deck I\'m leaving after 3 slides. Deal?",
-        "Alright. " + name + " agreeing to a cold call meeting. Mark the date. [laughs] Send the invite.",
-        "Tentatively yes. TENTATIVELY. If something comes up I might push it. But... yeah. Let\'s try."
-      ]);
+      
+      // Persona-specific acceptance style
+      var days = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+      var nextDay = days[Math.floor(Math.random() * 5)];
+      var altDay = days[Math.floor(Math.random() * 5)];
+      while(altDay === nextDay) altDay = days[Math.floor(Math.random() * 5)];
+      var timeSlot = Math.random() > 0.5 ? "morning" : "afternoon";
+      var duration = Math.random() > 0.6 ? "15" : "20";
+      
+      var acceptanceScenarios = [];
+      
+      // --- Scenario 1: Direct acceptance with day/time proposal ---
+      acceptanceScenarios.push(
+        "...yeah, alright. " + nextDay + " " + timeSlot + " work? " + duration + " min max. " + (pri ? "Focus on " + pri.toLowerCase() + "." : "And come prepared."),
+        "Fine. [checking calendar] " + nextDay + " I\'ve got a gap at " + (timeSlot==='morning'?'10':'2') + ". Or " + altDay + " " + (timeSlot==='morning'?'11':'3') + ". Which works?",
+        "Okay. You\'ve earned it. Let\'s say " + nextDay + " at " + (Math.random()>0.5?"10am":"2pm") + ". " + duration + " minutes — not a second more."
+      );
+      
+      // --- Scenario 2: Conditional acceptance (bring someone, cover specific topic) ---
+      acceptanceScenarios.push(
+        "Yes — BUT. Bring someone technical. An SA or engineer who actually knows " + (state.industry || "our space") + ". I don\'t want a second sales call.",
+        "Alright. One condition: I want a concrete agenda in the invite. Not \'intro call\' — actual topics. Then I\'ll accept.",
+        "Sure. [firm] But here\'s the deal — first 5 minutes you show me something specific to us. " + (company.name ? "Not generic cloud. Something for " + company.name + "." : "Not a boilerplate deck.") + " Otherwise I\'m dropping off.",
+        "I\'ll take the meeting. But I\'m inviting my " + (persona==='cto'?'VP of Engineering':'Head of IT') + " too. They\'ll have the real questions."
+      );
+      
+      // --- Scenario 3: Delegate to assistant/EA ---
+      if(persona === 'ceo' || persona === 'cfo' || persona === 'cio') {
+        acceptanceScenarios.push(
+          "You know what — yes. But email my EA: " + (Math.random()>0.5?"sarah":"james") + "@" + (company.name||"company").toLowerCase().replace(/\s/g,'') + ".com. They manage my diary. Tell them I said to find 20 min next week.",
+          "Fine. I\'m going to put you in touch with my chief of staff. They\'ll find the slot. I\'ll be there but they handle logistics.",
+          "[to someone off-call] Hey can you find me 20 minutes next week for a cloud infrastructure call? [back] Yeah, you\'ll get an invite from my team."
+        );
+      }
+      
+      // --- Scenario 4: Counter-proposal (different format) ---
+      acceptanceScenarios.push(
+        "Meeting yes — but not a call. Can you come to our office? I want to whiteboard this. " + (Math.random()>0.5?nextDay:altDay) + " afternoon?",
+        "Actually — skip the meeting. Send me a 2-minute Loom video showing exactly what you\'d demo. If it\'s good, I\'ll book a proper session.",
+        "Rather than a meeting — could you join our team standup " + nextDay + " for 10 minutes? My engineers will be there. More efficient."
+      );
+      
+      // --- Scenario 5: Enthusiastic acceptance (rapport was built) ---
+      if(patience > 75) {
+        acceptanceScenarios.push(
+          "[genuinely] You know what? This is the first cold call in months where I didn\'t want to hang up. Yeah — " + nextDay + ". Let\'s do this properly though — give us 30 min?",
+          "Honestly? I\'m in. And not just the polite \'send me something\' kind. Actually interested. " + nextDay + " work?",
+          "Yes. And — this is rare — I want to loop in my boss too. They should hear this. Can we do " + altDay + " so I can check their calendar?"
+        );
+      }
+      
+      // --- Scenario 6: Time-pressure acceptance ---
+      acceptanceScenarios.push(
+        "[glances at time] Look I need to go but — yes. " + nextDay + " works. Send the invite now before I forget this call happened.",
+        "Yep. Do it. " + nextDay + " or " + altDay + ". Honestly any morning slot. Just not Fridays — I\'m always in offsites.",
+        "Book it before I change my mind. [laughs] " + nextDay + " " + timeSlot + ". And add a Zoom link — I\'m remote " + (Math.random()>0.5?"Tuesdays and Thursdays":"most days") + "."
+      );
+      
+      resp = pick(acceptanceScenarios);
     }
+    // --- WARMING UP (patience 45-60): Not quite there yet ---
     else if(patience > 45 && mem.specific > 0) {
-      resp = pick([
-        "Hmm. Maybe. Send me something first — a one-pager. If it\'s relevant I\'ll book 15 min.",
+      var warmingResponses = [
+        "Hmm. Maybe. Send me something first — a one-pager, not a whitepaper. If it\'s relevant I\'ll book 15 min.",
         "Not yet. You\'re... getting there. But I need one more thing that\'s specific to US. Then maybe.",
-        "Tell you what — email me. If I open it and go \'oh that\'s interesting\' then I\'ll reply. No promises.",
+        "Tell you what — email me. If I open it and go \'oh that\'s interesting\' then I\'ll reply with a slot. No promises.",
         "I\'m like 60% convinced. " + (pain ? "Nail the " + pain.toLowerCase().split('.')[0] + " angle and I\'m in." : "One more good point and I\'m in."),
-        "[hesitates] ...maybe. What EXACTLY would the agenda be? Because if it\'s a product demo I\'m out."
-      ]);
+        "[hesitates] ...maybe. What EXACTLY would the agenda be? Because if it\'s a product demo I\'m out.",
+        "Here\'s my compromise: send me three bullet points of what you\'d cover. If they\'re good → meeting. If they\'re generic → bin.",
+        "Not a meeting yet. But... I\'d read an email. A SHORT one. Can you do that?",
+        "You\'re close. But \'a meeting\' is too vague. Propose exactly what you\'d show me in 15 minutes. If it\'s compelling — I\'m in."
+      ];
+      resp = pick(warmingResponses);
     }
+    // --- NOT ENGAGED (patience < 45 or no specifics): Reject ---
     else {
       state.patience -= 5;
-      resp = pick([
+      var rejectResponses = [
         "A meeting? No. You haven\'t given me a single reason to give you more of my time.",
-        "Whoa. Slow down. We\'ve talked for " + turn + " turns and I still don\'t know what you DO.",
+        "Whoa. Slow down. We\'ve talked for " + turn + " turns and I still don\'t know what you DO differently.",
         "[laughs] Nice try. No. Earn it first. Tell me something that makes me go \'oh, interesting.\'",
         "Meeting about WHAT though? You\'ve been vague this whole call. Book a meeting for what purpose?",
         "Not happening. You jumped to close without giving me value. That\'s... not how this works mate.",
-        "I\'ve got 40 meetings next week. You need to give me a REASON. \'A call\' isn\'t a reason."
-      ]);
+        "I\'ve got 40 meetings next week. You need to give me a REASON. \'A call\' isn\'t a reason.",
+        "Zero chance. You\'ve told me nothing I couldn\'t Google in 30 seconds. Why would I give you 30 more minutes?",
+        "This is literally the \'let\'s schedule a follow-up\' line they teach in sales training, isn\'t it? I\'ve heard it 50 times.",
+        "No. And honestly? The fact you\'re asking for a meeting this early tells me you don\'t have a plan for THIS call."
+      ];
+      resp = pick(rejectResponses);
     }
     return resp;
   }
