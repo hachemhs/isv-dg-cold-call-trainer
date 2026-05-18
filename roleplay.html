@@ -127,10 +127,16 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="logo"><i class="fa-brands fa-aws"></i></div>
-  <h1>Cold Call Roleplay Simulator</h1>
-  <span class="badge">ISV DG EMEA</span>
+<div class="header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;flex-wrap:wrap;gap:8px">
+  <a href="roleplay.html" onclick="if(state&&state.active){if(!confirm('End current call?'))return false;}document.getElementById('setup').style.display='block';document.getElementById('chat').style.display='none';document.getElementById('scorecard').style.display='none';return false;" style="display:flex;align-items:center;gap:10px;text-decoration:none;cursor:pointer">
+    <div class="logo"><i class="fa-brands fa-aws"></i></div>
+    <h1 style="margin:0;font-size:16px">Cold Call Roleplay Simulator</h1>
+  </a>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="index.html" style="color:#8892a4;text-decoration:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;border:1px solid #2d3748;transition:all 0.2s" onmouseover="this.style.background='#2d3748';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#8892a4'"><i class="fa-solid fa-phone" style="margin-right:4px"></i>Prospecting</a>
+    <a href="dashboard.html" style="color:#8892a4;text-decoration:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;border:1px solid #2d3748;transition:all 0.2s" onmouseover="this.style.background='#2d3748';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#8892a4'"><i class="fa-solid fa-chart-line" style="margin-right:4px"></i>Dashboard</a>
+    <span class="badge">ISV DG EMEA</span>
+  </div>
 </div>
 
 <div class="call-timer" id="callTimer">
@@ -3973,7 +3979,7 @@ var typingSafetyInterval = setInterval(function() {
 </script>
 
 <!-- Floating Coaching Tips Panel (only in practice/coaching mode) -->
-<div id="coachingPanel" style="display:none; position:fixed; bottom:20px; left:20px; max-width:320px; z-index:9000;">
+<div id="coachingPanel" style="display:none; position:fixed; bottom:80px; left:20px; max-width:320px; z-index:9000;">
   <div id="coachingTip" style="background:linear-gradient(135deg,#1e1b4b,#312e81); color:white; padding:14px 18px; border-radius:14px; font-size:12px; line-height:1.5; box-shadow:0 8px 24px rgba(30,27,75,0.4); border:1px solid rgba(99,102,241,0.3); animation:fadeIn 0.3s;">
     <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
       <span style="font-size:16px;">💡</span>
@@ -3983,10 +3989,6 @@ var typingSafetyInterval = setInterval(function() {
   </div>
 </div>
 
-<div style="position:fixed;bottom:0;left:0;right:0;background:#1a2332;border-top:1px solid #2d3748;padding:8px 20px;display:flex;justify-content:center;gap:16px;z-index:9999;font-size:12px">
-  <a href="index.html" style="color:#8892a4;text-decoration:none;padding:6px 12px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.background='#2d3748';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='#8892a4'"><i class="fa-solid fa-phone"></i> Prospecting</a>
-  <a href="roleplay.html" style="color:#7c4dff;text-decoration:none;padding:6px 12px;border-radius:6px;background:rgba(124,77,255,0.15);font-weight:600"><i class="fa-solid fa-comments"></i> Roleplay</a>
-  <a href="dashboard.html" style="color:#8892a4;text-decoration:none;padding:6px 12px;border-radius:6px;transition:all 0.2s" onmouseover="this.style.background='#2d3748';this.style.color='#fff'" onmouseout="this.style.background='none';this.style.color='#8892a4'"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-</div>
+
 </body>
 </html>
