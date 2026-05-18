@@ -11,8 +11,8 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 
 .top-bar {
   display:flex; align-items:center; justify-content:space-between;
-  padding:12px 24px; background:#1a2332; border-bottom:1px solid #2d3748;
-  flex-shrink:0;
+  padding:12px 24px; background:rgba(26,35,50,0.95); border-bottom:1px solid #2d3748;
+  flex-shrink:0; backdrop-filter:blur(12px); z-index:10;
 }
 .top-bar .brand { display:flex; align-items:center; gap:12px; cursor:pointer; text-decoration:none; }
 .top-bar .brand:hover h1 { color:#7c4dff; }
@@ -35,30 +35,63 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 
 /* HOME SCREEN */
 .home-screen {
-  display:flex; align-items:center; justify-content:center; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;
   padding:40px;
+  background: 
+    linear-gradient(180deg, rgba(15,20,25,0.7) 0%, rgba(15,20,25,0.5) 30%, rgba(15,20,25,0.85) 100%),
+    url('https://images.unsplash.com/photo-1552664730-d307ca884978?w=1920&q=80') center/cover no-repeat;
 }
+
+.hero-section {
+  text-align:center; margin-bottom:40px;
+}
+.hero-section h2 {
+  font-size:36px; font-weight:800; color:#fff; margin-bottom:12px;
+  text-shadow:0 2px 12px rgba(0,0,0,0.5);
+  background:linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-section .tagline {
+  font-size:16px; color:#cbd5e1; max-width:600px; margin:0 auto; line-height:1.6;
+  text-shadow:0 1px 4px rgba(0,0,0,0.5);
+}
+.hero-section .stats-bar {
+  display:flex; justify-content:center; gap:32px; margin-top:20px;
+}
+.hero-section .stat {
+  text-align:center;
+}
+.hero-section .stat .num {
+  font-size:24px; font-weight:800; color:#ff9900;
+}
+.hero-section .stat .label {
+  font-size:11px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;
+}
+
 .home-grid {
-  display:grid; grid-template-columns:1fr 1fr; gap:24px;
+  display:grid; grid-template-columns:1fr 1fr; gap:20px;
   max-width:900px; width:100%;
 }
 .home-card {
-  background:#1a2332; border:2px solid #2d3748; border-radius:20px;
-  padding:40px 32px; text-align:center; cursor:pointer;
+  background:rgba(26,35,50,0.85); border:2px solid rgba(45,55,72,0.6); border-radius:20px;
+  padding:32px 28px; text-align:center; cursor:pointer;
   transition:all 0.3s ease; text-decoration:none; color:#e2e8f0;
-  display:flex; flex-direction:column; align-items:center; gap:16px;
+  display:flex; flex-direction:column; align-items:center; gap:14px;
+  backdrop-filter:blur(12px);
 }
 .home-card:hover {
   border-color:#7c4dff; transform:translateY(-4px);
-  box-shadow:0 12px 40px rgba(124,77,255,0.2);
+  box-shadow:0 12px 40px rgba(124,77,255,0.25);
+  background:rgba(26,35,50,0.95);
 }
 .home-card .card-icon {
-  width:72px; height:72px; border-radius:16px;
+  width:64px; height:64px; border-radius:16px;
   display:flex; align-items:center; justify-content:center;
-  font-size:28px;
+  font-size:26px; color:#fff;
 }
-.home-card h2 { font-size:18px; font-weight:700; }
-.home-card p { font-size:13px; color:#8892a4; line-height:1.5; max-width:280px; }
+.home-card h2 { font-size:17px; font-weight:700; }
+.home-card p { font-size:12px; color:#8892a4; line-height:1.5; max-width:280px; }
 
 .home-card:nth-child(1) .card-icon { background:linear-gradient(135deg,#1565C0,#42A5F5); }
 .home-card:nth-child(2) .card-icon { background:linear-gradient(135deg,#5E35B1,#7C4DFF); }
@@ -78,6 +111,8 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
   .tabs { gap:2px; }
   .tab { padding:8px 10px; font-size:11px; }
   .tab span { display:none; }
+  .hero-section h2 { font-size:24px; }
+  .hero-section .stats-bar { gap:16px; }
 }
 </style>
 </head>
@@ -110,29 +145,15 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 <div class="main-content" id="mainContent">
   <!-- HOME SCREEN -->
   <div class="home-screen" id="homeScreen">
-    <div style="text-align:center;margin-bottom:32px">
-      <!-- Inspiring SVG illustration -->
-      <svg width="180" height="120" viewBox="0 0 180 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:16px">
-        <!-- Rising chart bars -->
-        <rect x="20" y="80" width="20" height="30" rx="4" fill="#1565C0" opacity="0.6"/>
-        <rect x="48" y="60" width="20" height="50" rx="4" fill="#5E35B1" opacity="0.7"/>
-        <rect x="76" y="40" width="20" height="70" rx="4" fill="#7C4DFF" opacity="0.8"/>
-        <rect x="104" y="25" width="20" height="85" rx="4" fill="#FF9900" opacity="0.9"/>
-        <rect x="132" y="10" width="20" height="100" rx="4" fill="#00BFA5"/>
-        <!-- Upward arrow -->
-        <path d="M155 15 L165 5 L175 15" stroke="#22c55e" stroke-width="3" stroke-linecap="round" fill="none"/>
-        <path d="M165 5 L165 35" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
-        <!-- Phone icon -->
-        <circle cx="30" cy="30" r="18" fill="#1a2332" stroke="#7C4DFF" stroke-width="2"/>
-        <path d="M24 26 C24 24 26 22 28 22 L32 22 C34 22 36 24 36 26 L36 34 C36 36 34 38 32 38 L28 38 C26 38 24 36 24 34 Z" fill="#7C4DFF" opacity="0.5"/>
-        <path d="M26 28 L30 32 L34 28" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-        <!-- Sparkle -->
-        <circle cx="150" cy="45" r="3" fill="#ff9900"/>
-        <circle cx="160" cy="55" r="2" fill="#7c4dff"/>
-        <circle cx="45" cy="15" r="2" fill="#00bfa5"/>
-      </svg>
-      <h2 style="font-size:24px;font-weight:700;color:#fff;margin-bottom:8px">Train Smarter. Close Faster.</h2>
-      <p style="font-size:14px;color:#8892a4;max-width:500px;margin:0 auto">AI-powered coaching for EMEA DGRs — practice calls, handle objections, and track your progress like the top performers.</p>
+    <div class="hero-section">
+      <h2>Train Smarter. Close Faster.</h2>
+      <p class="tagline">AI-powered cold call coaching for EMEA ISV DGRs — practice against real personas, master objection handling, and build the skills that book meetings.</p>
+      <div class="stats-bar">
+        <div class="stat"><div class="num">107s</div><div class="label">Avg call length</div></div>
+        <div class="stat"><div class="num">43/57</div><div class="label">Talk ratio</div></div>
+        <div class="stat"><div class="num">16.7%</div><div class="label">Top set rate</div></div>
+        <div class="stat"><div class="num">5:50</div><div class="label">Win call avg</div></div>
+      </div>
     </div>
     <div class="home-grid">
       <a class="home-card" onclick="switchTab('prospecting')">
@@ -167,28 +188,18 @@ body { font-family:'Amazon Ember','Segoe UI',system-ui,sans-serif; background:#0
 
 <script>
 function goHome() {
-  // Hide all frames
   document.querySelectorAll('.tab-frame').forEach(function(f) { f.classList.remove('active'); });
-  // Show home screen
   document.getElementById('homeScreen').style.display = 'flex';
-  // Deactivate all tabs
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
 }
 
 function switchTab(name) {
-  // Hide home screen
   document.getElementById('homeScreen').style.display = 'none';
-  
-  // Update tabs
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('tab-' + name).classList.add('active');
-  
-  // Update frames
   document.querySelectorAll('.tab-frame').forEach(function(f) { f.classList.remove('active'); });
   var frame = document.getElementById('frame-' + name);
   frame.classList.add('active');
-  
-  // Lazy load iframe on first click
   if(!frame.src || frame.src === window.location.href || frame.src === '') {
     var dataSrc = frame.getAttribute('data-src');
     if(dataSrc) frame.src = dataSrc;
