@@ -4014,6 +4014,8 @@ var typingSafetyInterval = setInterval(function() {
 // ===== VOICE CONVERSATION MODULE =====
 // Separate script to ensure correct load order
 
+try {
+document.addEventListener('DOMContentLoaded', function() {
 (function() {
   // State
   var voice = window._voice = {
@@ -4244,8 +4246,7 @@ var typingSafetyInterval = setInterval(function() {
       btn.style.color = '#fff';
       if(panel) panel.style.display = 'flex';
       updateVoiceStatus('listening');
-      // Start listening immediately
-      startMic();
+      // Mic will start after customer speaks first greeting
     } else {
       stopMic();
       voice.synth.cancel();
@@ -4264,6 +4265,9 @@ var typingSafetyInterval = setInterval(function() {
   };
   
 })();
+
+});
+} catch(voiceErr) { console.error('Voice module error:', voiceErr); }
 </script>
 
 
