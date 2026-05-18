@@ -186,10 +186,22 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
     <!-- Mode Selection -->
     
     
+    
+    <div style="margin:16px 0;padding:16px;background:linear-gradient(135deg,#0f172a,#1e293b);border:2px solid #6366f1;border-radius:12px;text-align:center">
+      <label style="display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;font-size:15px;font-weight:600;color:#e2e8f0">
+        <input type="checkbox" id="voiceModeCheckbox" style="width:20px;height:20px;accent-color:#6366f1">
+        <span><i class="fa-solid fa-microphone" style="margin-right:6px;color:#6366f1"></i> Enable Voice Mode</span>
+      </label>
+      <p style="font-size:11px;color:#8892a4;margin-top:8px">Speak with the customer using your microphone. Customer responds with audio. Chrome/Edge only.</p>
+    </div>
     <button class="start-btn" onclick="startSim()"><i class="fa-solid fa-phone"></i> Start Simulation</button>
   </div>
 
   <div class="chat" id="chat">
+    <div id="voiceStatusBar" style="display:none;padding:8px 16px;background:linear-gradient(90deg,#1e293b,#0f172a);border-bottom:1px solid #334155;text-align:center;font-size:13px;font-weight:600">
+      <span id="voiceStatusText" style="color:#6366f1">🎤 Voice Mode Active</span>
+    </div>
+
     
     <div class="chat-header">
       <img class="avatar" id="avatarImg" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgcng9Ijc1IiBmaWxsPSIjM2I4MmY2Ii8+PHRleHQgeD0iNzUiIHk9Ijc1IiBkeT0iLjM1ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtZmFtaWx5PSJBcmlhbCxzYW5zLXNlcmlmIiBmb250LXNpemU9IjU2IiBmb250LXdlaWdodD0iNzAwIj5BQzwvdGV4dD48L3N2Zz4=" style="width:40px;height:40px;border-radius:50%;border:2px solid #6366f1;" />
@@ -1226,6 +1238,10 @@ function startSim() {
     return;
   }
   dgrNameInput.style.border = '1px solid #2d3748';
+  // Check if voice mode was enabled in setup
+  var voiceCheckbox = document.getElementById('voiceModeCheckbox');
+  var startWithVoice = voiceCheckbox && voiceCheckbox.checked;
+
   // Save DGR name for session tracking
   try { localStorage.setItem('rpDgrName', dgrName); } catch(e) {}
   
@@ -1338,6 +1354,16 @@ function startSim() {
   var g = cfg.greetings[Math.floor(Math.random()*cfg.greetings.length)];
   state.conversationHistory.push({role:'customer', text:g});
   addMsg('customer', g);
+  // Activate voice mode if selected
+  if(startWithVoice && typeof toggleVoiceMode === 'function') {
+    setTimeout(function() { 
+      if(!window._voice || !window._voice.on) toggleVoiceMode();
+      // Speak the greeting
+      var greetingText = state.conversationHistory[state.conversationHistory.length - 1];
+      if(greetingText && greetingText.text && window.voiceSpeak) window.voiceSpeak(greetingText.text);
+    }, 500);
+  }
+
   document.getElementById('userInput').focus();
   startTimer();
 }
@@ -4180,17 +4206,23 @@ var typingSafetyInterval = setInterval(function() {
   // === UI UPDATE ===
   function updateVoiceStatus(mode) {
     var el = document.getElementById('voiceStatus');
+    var bar = document.getElementById('voiceStatusBar');
+    var barText = document.getElementById('voiceStatusText');
+    if(bar) bar.style.display = voice.on ? 'block' : 'none';
     var btn = document.getElementById('voiceModeBtn');
     if(!el) return;
     if(mode === 'speaking') {
       el.textContent = '🔊 Customer speaking...';
       el.style.color = '#22c55e';
+      if(barText) { barText.textContent = '🔊 Customer speaking...'; barText.style.color = '#22c55e'; }
     } else if(mode === 'listening') {
       el.textContent = '🎤 Your turn — speak now';
       el.style.color = '#6366f1';
+      if(barText) { barText.textContent = '🎤 Your turn — speak now'; barText.style.color = '#6366f1'; }
     } else if(mode === 'processing') {
       el.textContent = '⏳ Processing...';
       el.style.color = '#ff9900';
+      if(barText) { barText.textContent = '⏳ Processing...'; barText.style.color = '#ff9900'; }
     } else {
       el.textContent = 'Click Voice Mode to start';
       el.style.color = '#8892a4';
