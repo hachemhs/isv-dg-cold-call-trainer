@@ -35,7 +35,22 @@
   --aws-dark: #232F3E;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); line-height: 1.5; }
+body { 
+  font-family: var(--font-sans); 
+  background: var(--color-bg); 
+  color: var(--color-text); 
+  line-height: 1.5;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.85) 40%, rgba(15,23,42,0.95) 100%),
+    url('https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1920&q=80') center/cover no-repeat;
+  z-index: -1;
+}
 .header { background: var(--aws-dark); color: white; padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
 .header .logo { color: var(--aws-orange); font-weight: 700; font-size: 18px; }
 .header h1 { font-size: 15px; font-weight: 500; opacity: 0.95; }
