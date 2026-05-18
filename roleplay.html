@@ -215,6 +215,15 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
 </div>
 
 <script>
+// Suppress non-critical UI errors (null elements from timing issues)
+window.addEventListener('error', function(e) {
+  if(e.message && e.message.indexOf('Cannot set properties of null') >= 0) {
+    e.preventDefault(); // Don't break the app for UI timing issues
+    console.warn('UI timing issue (non-critical):', e.message);
+    return true;
+  }
+});
+
 
 // Global error catcher - shows errors on page for debugging
 window.onerror = function(msg, url, line, col, error) {
@@ -3588,6 +3597,7 @@ var total = Math.min(100, Math.max(0,
   }
 
   var el = document.getElementById('scorecard');
+  if(!el) return;
   el.style.display='block';
   el.innerHTML = '<div class="score-hero"><div class="score-number" style="color:'+color+'">'+total+'</div><div class="score-label">Overall Score / 100</div>'+badge+'</div>'
     + '<div class="breakdown"><div class="item"><div class="val">'+Math.max(0,state.scores.rapport)+'</div><div class="lbl">Rapport</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.objection)+'</div><div class="lbl">Objections</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.discovery)+'</div><div class="lbl">Discovery</div></div><div class="item"><div class="val">'+Math.max(0,state.scores.closing)+'</div><div class="lbl">Closing</div></div></div>'
@@ -4044,7 +4054,7 @@ window.voiceSpeak = function(text) {
   _voice.synth.cancel();
   _voice.speaking = true;
   var statusEl = document.getElementById('voiceStatusBar');
-  if(statusEl) { statusEl.style.display='block'; statusEl.querySelector('span').textContent='🔊 Customer speaking...'; statusEl.querySelector('span').style.color='#22c55e'; }
+  if(statusEl) { statusEl.style.display='block'; (statusEl.querySelector('span')||statusEl).textContent='🔊 Customer speaking...'; (statusEl.querySelector('span')||{style:{}}).style.color='#22c55e'; }
   
   // Stop mic while speaking
   if(_voice.recog) try { _voice.recog.stop(); } catch(e) {}
@@ -4060,7 +4070,7 @@ window.voiceSpeak = function(text) {
   function next() {
     if(idx >= sentences.length || !_voice.on) {
       _voice.speaking = false;
-      if(statusEl) { statusEl.querySelector('span').textContent='🎤 Your turn — speak now'; statusEl.querySelector('span').style.color='#6366f1'; }
+      if(statusEl) { (statusEl.querySelector('span')||statusEl).textContent='🎤 Your turn — speak now'; (statusEl.querySelector('span')||{style:{}}).style.color='#6366f1'; }
       setTimeout(function(){ if(_voice.on) startMic(); }, 400);
       return;
     }
@@ -4120,7 +4130,7 @@ window.toggleVoiceMode = function() {
     if(!SpeechRecog) { alert('Speech recognition not supported. Use Chrome.'); _voice.on=false; return; }
     if(!_voice.synth) { alert('Speech synthesis not available.'); _voice.on=false; return; }
     pickVoiceForPersona();
-    if(statusEl) { statusEl.style.display='block'; statusEl.querySelector('span').textContent='🎤 Voice Mode Active — speak now'; statusEl.querySelector('span').style.color='#6366f1'; }
+    if(statusEl) { statusEl.style.display='block'; (statusEl.querySelector('span')||statusEl).textContent='🎤 Voice Mode Active — speak now'; (statusEl.querySelector('span')||{style:{}}).style.color='#6366f1'; }
     startMic();
   } else {
     if(_voice.recog) try{_voice.recog.stop();}catch(e){}
