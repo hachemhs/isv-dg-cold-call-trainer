@@ -209,6 +209,10 @@ body { font-family: var(--font-sans); background: var(--color-bg); color: var(--
       <input type="text" id="userInput" placeholder="Type your response..." onkeydown="if(event.key==='Enter')sendMsg()">
       <button onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
+    <div style="padding:4px 16px 8px;text-align:right">
+      <button onclick="endCallEarly()" style="padding:8px 16px;background:transparent;border:1px solid #dc2626;border-radius:8px;color:#dc2626;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background='#dc2626';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#dc2626'"><i class="fa-solid fa-phone-slash" style="margin-right:4px"></i> End Call</button>
+    </div>
+
   </div>
 
   <div class="scorecard" id="scorecard"></div>
@@ -273,6 +277,29 @@ var GOODBYE_RESPONSES = {
     "Done. Looking forward to it. And hey — you're pretty good at this. [laughs] Alright, bye."
   ]
 };
+
+
+function endCallEarly() {
+  if(!state || !state.active) return;
+  if(!confirm('End this call and see your scorecard?')) return;
+  
+  // Stop voice if active
+  if(window._voice && window._voice.on) {
+    window._voice.on = false;
+    if(window._voice.synth) window._voice.synth.cancel();
+    if(window._voice.recog) try { window._voice.recog.stop(); } catch(e) {}
+  }
+  
+  // End the call
+  state.active = false;
+  stopTimer();
+  addMsg('system', '📞 Call ended by DGR.');
+  
+  // Show scorecard after short delay
+  setTimeout(function() {
+    endSim(state.meetingAccepted ? 'booked' : 'ended');
+  }, 500);
+}
 
 function triggerGoodbye(outcome) {
   state.active = false;
